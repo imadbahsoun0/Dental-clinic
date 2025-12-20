@@ -1,0 +1,160 @@
+.container {
+    min-height: 100vh;
+    background: var(--bg-cream);
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.formCard {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 700px;
+    width: 100%;
+    padding: 40px;
+}
+
+.logoSection {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.logo {
+    max-width: 200px;
+    height: auto;
+}
+
+.logoPlaceholder {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--primary);
+    font-family: 'Fraunces', serif;
+}
+
+.title {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 8px;
+    color: var(--text-dark);
+}
+
+.subtitle {
+    text-align: center;
+    color: var(--text-light);
+    margin-bottom: 30px;
+    font-size: 14px;
+}
+
+.section {
+    margin-bottom: 30px;
+}
+
+.sectionTitle {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-dark);
+}
+
+.questionGroup {
+    margin-bottom: 24px;
+}
+
+.questionLabel {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 12px;
+}
+
+.required {
+    color: var(--danger);
+    margin-left: 4px;
+}
+
+.radioGroup,
+.checkboxGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.radioOption,
+.checkboxOption {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: var(--bg-cream);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.radioOption:hover,
+.checkboxOption:hover {
+    border-color: var(--primary);
+    background: #e0f7f7;
+}
+
+.radioOption input,
+.checkboxOption input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 100px;
+}
+
+.textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(13, 110, 110, 0.1);
+}
+
+.signatureNote {
+    font-size: 13px;
+    color: var(--text-medium);
+    margin-bottom: 12px;
+}
+
+.signatureContainer {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    margin-bottom: 12px;
+    background: var(--bg-cream);
+}
+
+.signatureCanvas {
+    width: 100%;
+    height: 200px;
+    background: white;
+    border-radius: var(--radius-sm);
+    cursor: crosshair;
+}
+
+.submitSection {
+    display: flex;
+    justify-content: center;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}

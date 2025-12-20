@@ -1,0 +1,106 @@
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.pageTitle {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    margin-bottom: 4px;
+}
+
+.pageSubtitle {
+    color: var(--text-light);
+    font-size: 13px;
+}
+
+.marginBottom {
+    margin-bottom: 24px;
+}
+
+.filterBar {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.patientTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.patientTable th {
+    text-align: left;
+    padding: 12px 14px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-light);
+    background: var(--bg-cream);
+    font-weight: 600;
+}
+
+.patientTable td {
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+.patientTable tr:last-child td {
+    border-bottom: none;
+}
+
+.patientTable tr:hover td {
+    background: var(--bg-cream);
+}
+
+.patientInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.patientAvatar {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-full);
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.patientName {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.patientId {
+    font-size: 11px;
+    color: var(--text-light);
+}
+
+.actionBtn {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: var(--text-light);
+    margin-right: 4px;
+}
+
+.actionBtn:hover {
+    background: var(--bg-cream);
+    color: var(--primary);
+}

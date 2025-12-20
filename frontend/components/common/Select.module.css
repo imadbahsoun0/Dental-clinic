@@ -1,0 +1,108 @@
+.selectContainer {
+    position: relative;
+    margin-bottom: 18px;
+}
+
+.selectLabel {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+}
+
+.selectTrigger {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    background: var(--bg-white);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+}
+
+.selectTrigger:hover {
+    border-color: var(--primary);
+}
+
+.selectedValue {
+    color: var(--text-dark);
+}
+
+.placeholder {
+    color: var(--text-light);
+}
+
+.arrow {
+    transition: transform 0.2s ease;
+    color: var(--text-light);
+}
+
+.arrowOpen {
+    transform: rotate(180deg);
+}
+
+.dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    z-index: 1000;
+    max-height: 300px;
+    overflow: hidden;
+}
+
+.searchBox {
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.searchInput {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    outline: none;
+}
+
+.searchInput:focus {
+    border-color: var(--primary);
+}
+
+.optionsList {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.option {
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    font-size: 14px;
+}
+
+.option:hover {
+    background: var(--bg-cream);
+}
+
+.optionSelected {
+    background: rgba(13, 110, 110, 0.1);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.noOptions {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-light);
+    font-size: 13px;
+}

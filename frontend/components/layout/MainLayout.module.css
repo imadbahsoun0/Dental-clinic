@@ -1,0 +1,13 @@
+.appContainer {
+    display: flex;
+    min-height: 100vh;
+}
+
+.mainContent {
+    flex: 1;
+    margin-left: 260px;
+}
+
+.content {
+    padding: 28px;
+}

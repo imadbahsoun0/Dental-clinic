@@ -1,0 +1,83 @@
+.header {
+    background: var(--bg-white);
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.pageTitle {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.searchBar {
+    display: flex;
+    align-items: center;
+    background: var(--bg-cream);
+    border-radius: var(--radius-full);
+    padding: 10px 18px;
+    width: 320px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.searchBar:focus-within {
+    border-color: var(--primary);
+    background: white;
+}
+
+.searchBar input {
+    border: none;
+    background: transparent;
+    outline: none;
+    width: 100%;
+    font-size: 14px;
+    color: var(--text-dark);
+    margin-left: 10px;
+}
+
+.searchBar input::placeholder {
+    color: var(--text-light);
+}
+
+.headerRight {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.headerBtn {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background: var(--bg-cream);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.headerBtn:hover {
+    background: var(--border);
+}
+
+.notificationDot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 9px;
+    height: 9px;
+    background: var(--accent);
+    border-radius: 50%;
+    border: 2px solid white;
+}

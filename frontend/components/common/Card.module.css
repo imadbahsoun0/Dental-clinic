@@ -1,0 +1,31 @@
+.card {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.cardHeader {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cardTitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.cardAction {
+    font-size: 13px;
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.cardBody {
+    padding: 18px 22px;
+}
