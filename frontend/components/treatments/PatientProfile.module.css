@@ -1,0 +1,34 @@
+.patientProfile {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.field {
+    display: flex;
+    gap: 8px;
+}
+
+.label {
+    font-weight: 600;
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+.value {
+    color: var(--text-dark);
+    font-size: 14px;
+}
+
+@media (max-width: 768px) {
+    .row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}

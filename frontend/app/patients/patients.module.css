@@ -20,10 +20,41 @@
     margin-bottom: 24px;
 }
 
+/* Filter Bar */
 .filterBar {
     display: flex;
-    gap: 14px;
+    gap: 16px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.searchContainer {
+    flex: 1;
+    min-width: 300px;
+}
+
+.filterControls {
+    display: flex;
+    gap: 16px;
     align-items: center;
+}
+
+.pageSizeControl {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filterLabel {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* Table */
+.tableWrapper {
+    overflow-x: auto;
 }
 
 .patientTable {
@@ -56,6 +87,10 @@
     background: var(--bg-cream);
 }
 
+.clickableRow {
+    cursor: pointer;
+}
+
 .patientInfo {
     display: flex;
     align-items: center;
@@ -85,6 +120,11 @@
     color: var(--text-light);
 }
 
+.actionButtons {
+    display: flex;
+    gap: 4px;
+}
+
 .actionBtn {
     width: 30px;
     height: 30px;
@@ -97,10 +137,182 @@
     justify-content: center;
     transition: all 0.2s ease;
     color: var(--text-light);
-    margin-right: 4px;
 }
 
 .actionBtn:hover {
     background: var(--bg-cream);
     color: var(--primary);
+}
+
+/* Empty State */
+.emptyState {
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.emptyState p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 16px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.paginationInfo {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.paginationControls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.paginationBtn {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    background: var(--bg-white);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.paginationBtn:hover:not(:disabled) {
+    background: var(--bg-hover);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.paginationBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pageNumbers {
+    display: flex;
+    gap: 4px;
+}
+
+.pageNumber {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    background: var(--bg-white);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pageNumber:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.pageNumber.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .filterBar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .searchContainer {
+        min-width: 100%;
+    }
+
+    .filterControls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .pagination {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .paginationControls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .pageNumbers {
+        order: -1;
+        margin-bottom: 8px;
+    }
+}
+
+/* Toggle Switch */
+.toggleContainer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.toggleOn {
+    background-color: #10b981;
+}
+
+.toggleOff {
+    background-color: #d1d5db;
+}
+
+.toggleSlider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: white;
+    transition: transform 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggleOn .toggleSlider {
+    transform: translateX(20px);
+}
+
+.toggleLabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.toggleOn+.toggleLabel {
+    color: #10b981;
 }

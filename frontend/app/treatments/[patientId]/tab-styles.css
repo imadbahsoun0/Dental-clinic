@@ -1,0 +1,29 @@
+.tabNavigation {
+    display: flex;
+    gap: 0;
+    margin: 24px 0 20px 0;
+    border-bottom: 2px solid var(--border);
+}
+
+.tab {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    margin-bottom: -2px;
+}
+
+.tab:hover {
+    color: var(--primary);
+    background: var(--bg-secondary);
+}
+
+.activeTab {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}

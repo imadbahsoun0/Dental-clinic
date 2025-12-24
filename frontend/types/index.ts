@@ -7,14 +7,34 @@ export interface Patient {
   mobileNumber: string;
   email?: string;
   dateOfBirth?: string;
+  address?: string;
+  medicalHistory?: MedicalHistorySubmission;
+  enablePaymentReminders?: boolean; // Enable/disable payment reminder notifications (default: true)
   createdAt: string;
   updatedAt: string;
 }
 
-export interface AppointmentType {
+export interface TreatmentCategory {
   id: string;
   name: string;
+  icon: string; // emoji icon
+  order: number; // for sorting
+}
+
+export interface PriceVariant {
+  id: string;
+  toothSpec: string; // e.g., "14", "1-8", "5,6,7", "Front teeth", or "Default"
+  toothNumbers?: number[]; // Parsed tooth numbers for matching (empty for default)
   price: number;
+  label?: string; // Optional display label like "Front Teeth", "Molars"
+  isDefault?: boolean; // If true, this is the default price when no tooth-specific match
+}
+
+export interface AppointmentType {
+  id: string;
+  categoryId?: string; // Optional for backward compatibility
+  name: string;
+  priceVariants: PriceVariant[]; // Flexible pricing based on tooth numbers
   duration: number; // in minutes
   color: string; // hex color code
 }
@@ -28,6 +48,7 @@ export interface Appointment {
   date: string; // ISO date string
   time: string; // HH:mm format
   status: 'confirmed' | 'pending' | 'cancelled';
+  drName?: string; // Doctor name
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -36,14 +57,43 @@ export interface Appointment {
 export interface Treatment {
   id: string;
   patientId: string;
-  toothNumber: number; // 1-32
+  toothNumber: number; // Legacy: single tooth (kept for backward compatibility)
+  toothNumbers?: number[]; // New: support multiple teeth
+  toothName?: string; // Optional: descriptive tooth name
   appointmentTypeId: string;
   appointmentType?: AppointmentType;
-  totalPrice: number;
+  appointmentId?: string; // Link to appointment (for non-planned treatments)
+  totalPrice: number; // Total price for all teeth
   amountPaid: number;
   discount: number;
-  date: string; // ISO date string
+  date: string; // ISO date string (from appointment or manual for planned)
+  drName?: string; // Doctor name (from appointment or manual for planned)
+  status?: 'planned' | 'in-progress' | 'completed' | 'cancelled';
   notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Payment {
+  id: string;
+  patientId: string;
+  amount: number;
+  date: string; // ISO date string
+  paymentMethod: 'cash' | 'card' | 'transfer' | 'check' | 'other';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Expense {
+  id: string;
+  name: string; // Selected from dropdown or custom "Other" value
+  amount: number;
+  date: string; // ISO date string
+  invoiceFile?: string; // Optional file path/URL
+  notes?: string;
+  doctorId?: string; // Link to doctor user for doctor payment expenses
+  expenseType?: string; // Type of expense (e.g., "Doctor Payment", "Supplies", etc.)
   createdAt: string;
   updatedAt: string;
 }
@@ -80,6 +130,42 @@ export interface Settings {
   doctorLogo?: string; // base64 or URL
   appointmentTypes: AppointmentType[];
   medicalHistoryQuestions: MedicalHistoryQuestion[];
+  doctors?: string[]; // List of doctor names
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: 'dentist' | 'secretary' | 'admin';
+  status: 'active' | 'inactive';
+  password?: string; // Password for authentication
+  wallet?: number; // Current wallet balance for dentists (default 0)
+  percentage?: number; // Commission percentage for dentists (e.g., 30 for 30%)
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClinicBranding {
+  logo?: string; // base64 or URL
+  clinicName: string;
+  location: string;
+  phone: string;
+  email: string;
+  website?: string;
+}
+
+export interface NotificationTemplate {
+  enabled: boolean;
+  timing: number; // in hours for appointment reminder, days for payment reminder
+  timingUnit: 'hours' | 'days';
+  messageTemplate: string; // Template with {{variables}}
+}
+
+export interface NotificationSettings {
+  appointmentReminder: NotificationTemplate;
+  paymentReminder: NotificationTemplate;
 }
 
 // UI Component Props Types
@@ -170,13 +256,6 @@ export interface CalendarDay {
 }
 
 // Auth Types
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'dentist' | 'admin' | 'staff';
-}
 
 export interface AuthContextType {
   user: User | null;

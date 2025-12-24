@@ -7,6 +7,7 @@ interface PatientStore {
     selectedPatient: Patient | null;
     addPatient: (patient: Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>) => void;
     updatePatient: (id: string, patient: Partial<Patient>) => void;
+    deletePatient: (id: string) => void;
     setSelectedPatient: (patient: Patient | null) => void;
     searchPatients: (query: string) => Patient[];
 }
@@ -30,6 +31,12 @@ export const usePatientStore = create<PatientStore>()((set, get) => ({
             patients: state.patients.map((p) =>
                 p.id === id ? { ...p, ...patientData, updatedAt: new Date().toISOString() } : p
             ),
+        }));
+    },
+
+    deletePatient: (id) => {
+        set((state) => ({
+            patients: state.patients.filter((p) => p.id !== id),
         }));
     },
 

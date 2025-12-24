@@ -1,0 +1,156 @@
+.tableContainer {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-white);
+}
+
+.treatmentsTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.treatmentsTable thead {
+    background: var(--bg-cream);
+    border-bottom: 2px solid var(--border);
+}
+
+.treatmentsTable th {
+    text-align: left;
+    padding: 12px 16px;
+    font-weight: 600;
+    color: var(--text-dark);
+    white-space: nowrap;
+}
+
+.treatmentsTable td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dark);
+}
+
+.treatmentsTable tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.treatmentsTable tbody tr:hover {
+    background: var(--bg-cream);
+}
+
+.selectedRow {
+    background-color: #e0f2fe !important;
+}
+
+.selectedRow:hover {
+    background-color: #bae6fd !important;
+}
+
+.currency {
+    text-align: right;
+    font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.totalPrice {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.statusBadge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.statusPlanned {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.statusInProgress {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.statusCompleted {
+    background: #e8f5e9;
+    color: #388e3c;
+}
+
+.statusCancelled {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.editBtn,
+.deleteBtn {
+    padding: 6px 10px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s ease;
+}
+
+.editBtn:hover {
+    background: #e3f2fd;
+}
+
+.deleteBtn:hover {
+    background: #ffebee;
+}
+
+.emptyState {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--text-light);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-cream);
+}
+
+.emptyState p {
+    margin: 0;
+    font-size: 16px;
+}
+
+@media (max-width: 1200px) {
+    .treatmentsTable {
+        font-size: 13px;
+    }
+
+    .treatmentsTable th,
+    .treatmentsTable td {
+        padding: 10px 12px;
+    }
+}
+
+.statusSelect {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.statusSelect:hover {
+    opacity: 0.8;
+}
+
+.statusSelect option {
+    background: white;
+    color: var(--text-dark);
+    font-weight: normal;
+}

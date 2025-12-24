@@ -1,0 +1,75 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.treatmentsList {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+}
+
+.sectionTitle {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.treatmentItem {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.treatmentItem:last-child {
+    border-bottom: none;
+}
+
+.treatmentInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.treatmentName {
+    font-size: 14px;
+    color: var(--text);
+}
+
+.treatmentPrice {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.discountSection {
+    padding: 16px;
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+}
+
+.priceInfo {
+    padding: 16px;
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.priceRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+
+.totalRow {
+    padding-top: 8px;
+    border-top: 2px solid var(--border);
+    font-size: 16px;
+    font-weight: 600;
+}

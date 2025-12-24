@@ -1,0 +1,90 @@
+.medicalHistory {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.submissionInfo {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.label {
+    font-weight: 600;
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+.value {
+    color: var(--text-dark);
+    font-size: 14px;
+}
+
+.questionsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.questionItem {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    padding: 12px 16px;
+    background: var(--bg-cream);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+}
+
+.questionText {
+    font-size: 14px;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.answerText {
+    font-size: 14px;
+    color: var(--text-dark);
+    font-weight: 600;
+    text-align: right;
+}
+
+.notesSection {
+    padding: 16px;
+    background: #fffbea;
+    border: 1px solid #ffd00a;
+    border-radius: var(--radius-sm);
+}
+
+.notes {
+    margin: 8px 0 0 0;
+    font-size: 14px;
+    color: var(--text-dark);
+    line-height: 1.6;
+}
+
+.emptyState {
+    padding: 32px 24px;
+    text-align: center;
+    color: var(--text-light);
+    background: var(--bg-cream);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+}
+
+.emptyState p {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .questionItem {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .answerText {
+        text-align: left;
+    }
+}

@@ -2,239 +2,264 @@
 
 import React, { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
-import { Modal } from '@/components/common/Modal';
-import { Input } from '@/components/common/Input';
-import { Select } from '@/components/common/Select';
+import { Card } from '@/components/common/Card';
 import { usePatientStore } from '@/store/patientStore';
 import { useTreatmentStore } from '@/store/treatmentStore';
+import { CollapsibleSection } from '@/components/treatments/CollapsibleSection';
+import { PatientProfile } from '@/components/treatments/PatientProfile';
+import { TreatmentsTable } from '@/components/treatments/TreatmentsTable';
+import { TreatmentModal } from '@/components/treatments/TreatmentModal';
+import { BulkDiscountModal } from '@/components/treatments/BulkDiscountModal';
+import { MedicalHistoryDisplay } from '@/components/treatments/MedicalHistoryDisplay';
+import { PaymentsTable } from '@/components/payments/PaymentsTable';
+import { PaymentModal } from '@/components/payments/PaymentModal';
 import { useSettingsStore } from '@/store/settingsStore';
+import { usePaymentStore } from '@/store/paymentStore';
+import { Treatment, Payment } from '@/types';
 import styles from './treatments.module.css';
-
-type Jaw = 'upper' | 'lower';
 
 export default function TreatmentsPage({ params }: { params: Promise<{ patientId: string }> }) {
     const { patientId } = React.use(params);
-    const [selectedJaw, setSelectedJaw] = useState<Jaw>('upper');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedTooth, setSelectedTooth] = useState<number | null>(null);
+    const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
+    const [selectedTreatmentIds, setSelectedTreatmentIds] = useState<string[]>([]);
+    const [isBulkDiscountModalOpen, setIsBulkDiscountModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'treatments' | 'payments'>('treatments');
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 
     const patients = usePatientStore((state) => state.patients);
+    const medicalHistoryQuestions = useSettingsStore((state) => state.medicalHistoryQuestions);
     const allTreatments = useTreatmentStore((state) => state.treatments);
     const addTreatment = useTreatmentStore((state) => state.addTreatment);
-    const appointmentTypes = useSettingsStore((state) => state.appointmentTypes);
+    const updateTreatment = useTreatmentStore((state) => state.updateTreatment);
+    const deleteTreatment = useTreatmentStore((state) => state.deleteTreatment);
 
+    const allPayments = usePaymentStore((state) => state.payments);
+    const addPayment = usePaymentStore((state) => state.addPayment);
+    const updatePayment = usePaymentStore((state) => state.updatePayment);
+    const deletePayment = usePaymentStore((state) => state.deletePayment);
+
+    const patient = patients.find((p) => p.id === patientId);
     const treatments = useMemo(() => {
         return allTreatments.filter((t) => t.patientId === patientId);
     }, [allTreatments, patientId]);
 
-    const patient = patients.find((p) => p.id === patientId);
+    const payments = useMemo(() => {
+        return allPayments.filter((p) => p.patientId === patientId);
+    }, [allPayments, patientId]);
 
-    const [formData, setFormData] = useState({
-        appointmentTypeId: '',
-        amountPaid: 0,
-        discount: 0,
-        date: '',
-    });
+    // Calculate totals
+    const totalPrice = treatments.reduce((sum, t) => sum + (t.totalPrice - t.discount), 0);
+    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+    const balance = totalPrice - totalPaid;
 
-    const handleToothClick = (toothNumber: number) => {
-        setSelectedTooth(toothNumber);
+    const handleAddTreatment = () => {
+        setSelectedTreatment(null);
         setIsModalOpen(true);
     };
 
-    const handleSubmit = () => {
-        if (selectedTooth && formData.appointmentTypeId && formData.date) {
-            const aptType = appointmentTypes.find((t) => t.id === formData.appointmentTypeId);
-            if (aptType) {
-                addTreatment({
-                    patientId: patientId,
-                    toothNumber: selectedTooth,
-                    appointmentTypeId: formData.appointmentTypeId,
-                    totalPrice: aptType.price,
-                    amountPaid: formData.amountPaid,
-                    discount: formData.discount,
-                    date: formData.date,
-                });
-                setIsModalOpen(false);
-                setSelectedTooth(null);
-                setFormData({ appointmentTypeId: '', amountPaid: 0, discount: 0, date: '' });
-            }
+    const handleEditTreatment = (treatment: Treatment) => {
+        setSelectedTreatment(treatment);
+        setIsModalOpen(true);
+    };
+
+    const handleDeleteTreatment = (treatmentId: string) => {
+        if (confirm('Are you sure you want to delete this treatment?')) {
+            deleteTreatment(treatmentId);
         }
     };
 
-    const totalPrice = treatments.reduce((sum, t) => sum + (t.totalPrice - t.discount), 0);
-    const totalPaid = treatments.reduce((sum, t) => sum + t.amountPaid, 0);
-    const balance = totalPrice - totalPaid;
+    const handleStatusChange = (treatmentId: string, newStatus: Treatment['status']) => {
+        updateTreatment(treatmentId, { status: newStatus });
+    };
 
-    // Get teeth for selected jaw
-    const upperTeeth = Array.from({ length: 16 }, (_, i) => i + 1);
-    const lowerTeeth = Array.from({ length: 16 }, (_, i) => i + 17);
-    const currentTeeth = selectedJaw === 'upper' ? upperTeeth : lowerTeeth;
+    const handleSaveTreatment = (treatmentData: Partial<Treatment>) => {
+        if (selectedTreatment) {
+            // Update existing treatment
+            updateTreatment(selectedTreatment.id, treatmentData);
+        } else {
+            // Add new treatment
+            addTreatment({
+                ...treatmentData as Omit<Treatment, 'id' | 'createdAt' | 'updatedAt'>,
+                patientId,
+            });
+        }
+    };
+
+    const handleBulkDiscount = (discountPercent: number) => {
+        selectedTreatmentIds.forEach(treatmentId => {
+            const treatment = treatments.find(t => t.id === treatmentId);
+            if (treatment) {
+                const discountAmount = (treatment.totalPrice * discountPercent) / 100;
+                updateTreatment(treatmentId, { discount: discountAmount });
+            }
+        });
+        setSelectedTreatmentIds([]);
+    };
+
+    const handleAddPayment = () => {
+        setSelectedPayment(null);
+        setIsPaymentModalOpen(true);
+    };
+
+    const handleEditPayment = (payment: Payment) => {
+        setSelectedPayment(payment);
+        setIsPaymentModalOpen(true);
+    };
+
+    const handleDeletePayment = (paymentId: string) => {
+        if (confirm('Are you sure you want to delete this payment?')) {
+            deletePayment(paymentId);
+        }
+    };
+
+    const handleSavePayment = (paymentData: Partial<Payment>) => {
+        if (selectedPayment) {
+            updatePayment(selectedPayment.id, paymentData);
+        } else {
+            addPayment({
+                ...paymentData as Omit<Payment, 'id' | 'createdAt' | 'updatedAt'>,
+                patientId,
+            });
+        }
+    };
+
+    if (!patient) {
+        return (
+            <MainLayout title="Treatments">
+                <div className={styles.errorState}>
+                    <p>Patient not found</p>
+                </div>
+            </MainLayout>
+        );
+    }
 
     return (
-        <MainLayout title="Chart">
-            <div className={styles.pageLayout}>
-                {/* Left Column - Dental Chart */}
-                <div className={styles.chartSection}>
-                    {/* Compact Patient Header */}
-                    <div className={styles.compactHeader}>
-                        <div className={styles.patientAvatar}>
-                            {patient?.firstName[0]}{patient?.lastName[0]}
-                        </div>
-                        <div className={styles.patientDetails}>
-                            <h2 className={styles.patientName}>
-                                {patient?.firstName} {patient?.lastName}
-                            </h2>
-                            <p className={styles.patientId}>ID: {patient?.id}</p>
-                        </div>
-                    </div>
+        <MainLayout title="Treatments">
+            <div className={styles.pageContainer}>
+                {/* Collapsible Patient Profile */}
+                <CollapsibleSection title="Patient Information" defaultCollapsed={true}>
+                    <PatientProfile patient={patient} />
+                </CollapsibleSection>
 
-                    {/* Jaw Selection Tabs */}
-                    <div className={styles.jawTabs}>
-                        <button
-                            className={`${styles.jawTab} ${selectedJaw === 'upper' ? styles.activeTab : ''}`}
-                            onClick={() => setSelectedJaw('upper')}
-                        >
-                            Upper jaw
-                        </button>
-                        <button
-                            className={`${styles.jawTab} ${selectedJaw === 'lower' ? styles.activeTab : ''}`}
-                            onClick={() => setSelectedJaw('lower')}
-                        >
-                            Lower jaw
-                        </button>
-                    </div>
+                {/* Collapsible Medical History */}
+                <CollapsibleSection title="Medical History" defaultCollapsed={true}>
+                    <MedicalHistoryDisplay
+                        medicalHistory={patient.medicalHistory}
+                        questions={medicalHistoryQuestions}
+                    />
+                </CollapsibleSection>
 
-                    {/* Dental Chart */}
-                    <Card className={styles.dentalChartCard}>
-                        <div className={styles.dentalChart}>
-                            <div className={selectedJaw === 'upper' ? styles.upperArchSingle : styles.lowerArchSingle}>
-                                {currentTeeth.map((toothNum) => {
-                                    const treatment = treatments.find((t) => t.toothNumber === toothNum);
-                                    const aptType = treatment ? appointmentTypes.find((a) => a.id === treatment.appointmentTypeId) : null;
-                                    const isSelected = selectedTooth === toothNum;
-
-                                    return (
-                                        <div
-                                            key={toothNum}
-                                            className={`${styles.tooth} ${isSelected ? styles.selectedTooth : ''}`}
-                                            style={{ backgroundColor: aptType?.color || '#ffffff' }}
-                                            onClick={() => handleToothClick(toothNum)}
-                                            title={`Tooth ${toothNum}`}
-                                        >
-                                            {toothNum}
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                {/* Summary Cards */}
+                <div className={styles.summaryCards}>
+                    <Card className={styles.summaryCard}>
+                        <div className={styles.summaryLabel}>Total Price</div>
+                        <div className={styles.summaryValue}>${totalPrice.toFixed(2)}</div>
+                    </Card>
+                    <Card className={styles.summaryCard}>
+                        <div className={styles.summaryLabel}>Total Paid</div>
+                        <div className={styles.summaryValue}>${totalPaid.toFixed(2)}</div>
+                    </Card>
+                    <Card className={`${styles.summaryCard} ${styles.balanceCard}`}>
+                        <div className={styles.summaryLabel}>Balance</div>
+                        <div className={`${styles.summaryValue} ${balance > 0 ? styles.balancePositive : styles.balanceZero}`}>
+                            ${balance.toFixed(2)}
                         </div>
                     </Card>
                 </div>
 
-                {/* Right Column - Treatment Panel */}
-                <div className={styles.treatmentPanel}>
-                    <Card>
-                        <h3 className={styles.panelTitle}>Treatments</h3>
-                        <div className={styles.treatmentSummary}>
-                            <div className={styles.summaryItem}>
-                                <span className={styles.summaryLabel}>Total:</span>
-                                <span className={styles.summaryValue}>${totalPrice.toFixed(2)}</span>
-                            </div>
-                            <div className={styles.summaryItem}>
-                                <span className={styles.summaryLabel}>Paid:</span>
-                                <span className={styles.summaryValue}>${totalPaid.toFixed(2)}</span>
-                            </div>
-                            <div className={styles.summaryItem}>
-                                <span className={styles.summaryLabel}>Balance:</span>
-                                <span className={`${styles.summaryValue} ${styles.balanceValue}`}>
-                                    ${balance.toFixed(2)}
-                                </span>
-                            </div>
-                        </div>
+                {/* Tab Navigation */}
+                <div className={styles.tabNavigation}>
+                    <button
+                        className={`${styles.tab} ${activeTab === 'treatments' ? styles.activeTab : ''}`}
+                        onClick={() => setActiveTab('treatments')}
+                    >
+                        Treatments
+                    </button>
+                    <button
+                        className={`${styles.tab} ${activeTab === 'payments' ? styles.activeTab : ''}`}
+                        onClick={() => setActiveTab('payments')}
+                    >
+                        Payments
+                    </button>
+                </div>
 
-                        <div className={styles.treatmentList}>
-                            {treatments.length === 0 ? (
-                                <p className={styles.emptyState}>No treatments yet. Click on a tooth to add a treatment.</p>
-                            ) : (
-                                treatments.map((treatment) => {
-                                    const aptType = appointmentTypes.find((a) => a.id === treatment.appointmentTypeId);
-                                    const treatmentBalance = treatment.totalPrice - treatment.discount - treatment.amountPaid;
-
-                                    return (
-                                        <div key={treatment.id} className={styles.treatmentItem}>
-                                            <div className={styles.treatmentHeader}>
-                                                <span className={styles.toothBadge}>#{treatment.toothNumber}</span>
-                                                <span className={styles.treatmentName}>{aptType?.name}</span>
-                                            </div>
-                                            <div className={styles.treatmentDetails}>
-                                                <span className={styles.treatmentDate}>
-                                                    {new Date(treatment.date).toLocaleDateString()}
-                                                </span>
-                                                <span className={styles.treatmentPrice}>
-                                                    ${treatment.totalPrice.toFixed(2)}
-                                                </span>
-                                            </div>
-                                            {treatmentBalance > 0 && (
-                                                <div className={styles.treatmentBalance}>
-                                                    Balance: ${treatmentBalance.toFixed(2)}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })
+                {/* Treatments Tab Content */}
+                {activeTab === 'treatments' && (
+                    <>
+                        {/* Add Treatment Button */}
+                        <div className={styles.actions}>
+                            <Button onClick={handleAddTreatment}>+ Add Treatment</Button>
+                            {selectedTreatmentIds.length > 0 && (
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setIsBulkDiscountModalOpen(true)}
+                                >
+                                    Apply Discount ({selectedTreatmentIds.length})
+                                </Button>
                             )}
                         </div>
-                    </Card>
-                </div>
-            </div>
 
-            {/* Treatment Modal */}
-            <Modal
-                isOpen={isModalOpen}
-                onClose={() => {
-                    setIsModalOpen(false);
-                    setSelectedTooth(null);
-                }}
-                title={`Add Treatment - Tooth #${selectedTooth}`}
-                footer={
-                    <>
-                        <Button variant="secondary" onClick={() => {
-                            setIsModalOpen(false);
-                            setSelectedTooth(null);
-                        }}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSubmit}>Add Treatment</Button>
+                        {/* Treatments Table */}
+                        <TreatmentsTable
+                            treatments={treatments}
+                            selectedTreatments={selectedTreatmentIds}
+                            onSelectionChange={setSelectedTreatmentIds}
+                            onEdit={handleEditTreatment}
+                            onDelete={handleDeleteTreatment}
+                            onStatusChange={handleStatusChange}
+                        />
                     </>
-                }
-            >
-                <Select
-                    label="Treatment Type"
-                    options={appointmentTypes.map((t) => ({ value: t.id, label: `${t.name} - $${t.price}` }))}
-                    value={formData.appointmentTypeId}
-                    onChange={(value) => setFormData({ ...formData, appointmentTypeId: value })}
+                )}
+
+                {/* Payments Tab Content */}
+                {activeTab === 'payments' && (
+                    <>
+                        <div className={styles.actions}>
+                            <Button onClick={handleAddPayment}>+ Add Payment</Button>
+                        </div>
+
+                        <PaymentsTable
+                            payments={payments}
+                            onEdit={handleEditPayment}
+                            onDelete={handleDeletePayment}
+                        />
+                    </>
+                )}
+
+                {/* Treatment Modal */}
+                <TreatmentModal
+                    isOpen={isModalOpen}
+                    treatment={selectedTreatment}
+                    patientId={patientId}
+                    onSave={handleSaveTreatment}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setSelectedTreatment(null);
+                    }}
                 />
-                <Input
-                    type="date"
-                    label="Date"
-                    value={formData.date}
-                    onChange={(value) => setFormData({ ...formData, date: value })}
-                    required
+
+                {/* Bulk Discount Modal */}
+                <BulkDiscountModal
+                    isOpen={isBulkDiscountModalOpen}
+                    treatments={treatments.filter(t => selectedTreatmentIds.includes(t.id))}
+                    onApply={handleBulkDiscount}
+                    onClose={() => setIsBulkDiscountModalOpen(false)}
                 />
-                <Input
-                    type="number"
-                    label="Amount Paid"
-                    value={String(formData.amountPaid)}
-                    onChange={(value) => setFormData({ ...formData, amountPaid: parseFloat(value) || 0 })}
+
+                {/* Payment Modal */}
+                <PaymentModal
+                    isOpen={isPaymentModalOpen}
+                    payment={selectedPayment}
+                    onSave={handleSavePayment}
+                    onClose={() => {
+                        setIsPaymentModalOpen(false);
+                        setSelectedPayment(null);
+                    }}
                 />
-                <Input
-                    type="number"
-                    label="Discount"
-                    value={String(formData.discount)}
-                    onChange={(value) => setFormData({ ...formData, discount: parseFloat(value) || 0 })}
-                />
-            </Modal>
+            </div>
         </MainLayout>
     );
 }

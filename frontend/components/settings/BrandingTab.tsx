@@ -1,0 +1,100 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Card } from '@/components/common/Card';
+import { Input } from '@/components/common/Input';
+import { Button } from '@/components/common/Button';
+import { useSettingsStore } from '@/store/settingsStore';
+import styles from './settings-tabs.module.css';
+
+export const BrandingTab: React.FC = () => {
+    const clinicBranding = useSettingsStore((state) => state.clinicBranding);
+    const updateClinicBranding = useSettingsStore((state) => state.updateClinicBranding);
+    const doctorLogo = useSettingsStore((state) => state.doctorLogo);
+    const updateDoctorLogo = useSettingsStore((state) => state.updateDoctorLogo);
+
+    const [branding, setBranding] = useState(clinicBranding);
+
+    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                updateDoctorLogo(reader.result as string);
+                alert('Logo uploaded successfully!');
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSave = () => {
+        updateClinicBranding(branding);
+        alert('Branding information saved successfully!');
+    };
+
+    return (
+        <div className={styles.tabContent}>
+            <Card title="Clinic Logo">
+                <div className={styles.logoSection}>
+                    {doctorLogo && (
+                        <div className={styles.logoPreview}>
+                            <img src={doctorLogo} alt="Clinic Logo" className={styles.logoImage} />
+                        </div>
+                    )}
+                    <p className={styles.description}>
+                        Upload your clinic logo. This will be displayed on medical history forms and other patient-facing documents.
+                    </p>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className={styles.fileInput}
+                    />
+                </div>
+            </Card>
+
+            <Card title="Clinic Information" className={styles.marginTop}>
+                <div className={styles.form}>
+                    <Input
+                        type="text"
+                        label="Clinic Name *"
+                        value={branding.clinicName}
+                        onChange={(value) => setBranding({ ...branding, clinicName: value })}
+                        placeholder="e.g., DentaCare Pro"
+                    />
+                    <Input
+                        type="text"
+                        label="Location / Address *"
+                        value={branding.location}
+                        onChange={(value) => setBranding({ ...branding, location: value })}
+                        placeholder="123 Dental Street, Suite 100, New York, NY 10001"
+                    />
+                    <Input
+                        type="tel"
+                        label="Phone Number *"
+                        value={branding.phone}
+                        onChange={(value) => setBranding({ ...branding, phone: value })}
+                        placeholder="+1 (555) 123-4567"
+                    />
+                    <Input
+                        type="email"
+                        label="Email Address *"
+                        value={branding.email}
+                        onChange={(value) => setBranding({ ...branding, email: value })}
+                        placeholder="info@dentacarepro.com"
+                    />
+                    <Input
+                        type="text"
+                        label="Website"
+                        value={branding.website || ''}
+                        onChange={(value) => setBranding({ ...branding, website: value })}
+                        placeholder="https://www.dentacarepro.com"
+                    />
+                    <div className={styles.formActions}>
+                        <Button onClick={handleSave}>Save Branding</Button>
+                    </div>
+                </div>
+            </Card>
+        </div>
+    );
+};

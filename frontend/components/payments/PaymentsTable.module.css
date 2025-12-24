@@ -1,0 +1,94 @@
+.tableContainer {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-white);
+}
+
+.paymentsTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.paymentsTable thead {
+    background: var(--bg-cream);
+    border-bottom: 2px solid var(--border);
+}
+
+.paymentsTable th {
+    text-align: left;
+    padding: 12px 16px;
+    font-weight: 600;
+    color: var(--text-dark);
+    white-space: nowrap;
+}
+
+.paymentsTable td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dark);
+}
+
+.paymentsTable tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.paymentsTable tbody tr:hover {
+    background: var(--bg-cream);
+}
+
+.currency {
+    text-align: right;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.methodBadge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.editBtn,
+.deleteBtn {
+    padding: 6px 10px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s ease;
+}
+
+.editBtn:hover {
+    background: #e3f2fd;
+}
+
+.deleteBtn:hover {
+    background: #ffebee;
+}
+
+.emptyState {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--text-light);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-cream);
+}
+
+.emptyState p {
+    margin: 0;
+    font-size: 16px;
+}

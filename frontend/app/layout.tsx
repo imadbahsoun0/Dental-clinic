@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "../styles/theme.css";
 import "./globals.css";
+import { AuthInitializer } from "@/components/auth/AuthInitializer";
 
 export const metadata: Metadata = {
   title: "DentaCare Pro - Clinic Management System",
@@ -22,7 +23,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <AuthInitializer />
+        {children}
+      </body>
     </html>
   );
 }
