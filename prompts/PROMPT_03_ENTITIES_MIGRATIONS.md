@@ -16,12 +16,70 @@ Create all database entities based on the frontend data models and generate init
 
 ## Tasks
 
-### 1. Create Organization Entity
+### 1. Create Attachment Entity
+
+**File: `src/common/entities/attachment.entity.ts`**
+```typescript
+import { Entity, Property, Index } from '@mikro-orm/core';
+import { BaseEntity } from './base.entity';
+
+@Entity({ tableName: 'attachments' })
+@Index({ properties: ['orgId'] })
+export class Attachment extends BaseEntity {
+  @Property({ length: 255 })
+  filename!: string;
+
+  @Property({ length: 1024 })
+  s3Key!: string;
+
+  @Property({ length: 255 })
+  bucket!: string;
+
+  @Property({ length: 255 })
+  mimeType!: string;
+
+  @Property({ type: 'integer' })
+  size!: number; // in bytes
+
+  constructor(filename: string, s3Key: string, bucket: string, mimeType: string, size: number) {
+    super();
+    this.filename = filename;
+    this.s3Key = s3Key;
+    this.bucket = bucket;
+    this.mimeType = mimeType;
+    this.size = size;
+  }
+}
+```
+
+### 2. Create Tooth Entity (Static Reference)
+
+**File: `src/common/entities/tooth.entity.ts`**
+```typescript
+import { Entity, Property, PrimaryKey } from '@mikro-orm/core';
+
+@Entity({ tableName: 'teeth' })
+export class Tooth {
+  @PrimaryKey({ autoincrement: false })
+  number!: number; // ISO 3950 or Universal
+
+  @Property({ length: 255 })
+  name!: string;
+
+  constructor(number: number, name: string) {
+    this.number = number;
+    this.name = name;
+  }
+}
+```
+
+### 3. Create Organization Entity
 
 **File: `src/common/entities/organization.entity.ts`**
 ```typescript
-import { Entity, Property, Collection, OneToMany } from '@mikro-orm/core';
+import { Entity, Property, OneToOne } from '@mikro-orm/core';
 import { BaseEntity } from './base.entity';
+import { Attachment } from './attachment.entity';
 
 @Entity({ tableName: 'organizations' })
 export class Organization extends BaseEntity {
@@ -40,8 +98,8 @@ export class Organization extends BaseEntity {
   @Property({ length: 255, nullable: true })
   website?: string;
 
-  @Property({ type: 'text', nullable: true })
-  logo?: string; // base64 or URL
+  @OneToOne(() => Attachment, { nullable: true })
+  logo?: Attachment;
 
   @Property({ default: true })
   isActive: boolean = true;
@@ -49,37 +107,36 @@ export class Organization extends BaseEntity {
   constructor(name: string) {
     super();
     this.name = name;
-    // For Organization, orgId references itself
     this.orgId = this.id;
   }
 }
 ```
 
-### 2. Create User Entity
+### 4. Create User Entity
 
 **File: `src/common/entities/user.entity.ts`**
 ```typescript
-import { Entity, Property, Collection, OneToMany, Index } from '@mikro-orm/core';
+import { Entity, Property, Collection, OneToMany, Unique } from '@mikro-orm/core';
 import { BaseEntity } from './base.entity';
 import { UserOrganization } from './user-organization.entity';
 
 @Entity({ tableName: 'users' })
-@Index({ properties: ['email'], unique: true })
+@Unique({ properties: ['email'] })
 export class User extends BaseEntity {
   @Property({ length: 255 })
   name!: string;
 
-  @Property({ length: 255, unique: true })
+  @Property({ length: 255 })
   email!: string;
 
   @Property({ length: 255 })
-  password!: string; // Will be hashed
+  password!: string;
 
   @Property({ length: 50, nullable: true })
   phone?: string;
 
   @Property({ type: 'text', nullable: true })
-  refreshToken?: string; // For token revocation
+  refreshToken?: string;
 
   @Property({ nullable: true })
   refreshTokenExpiresAt?: Date;
@@ -92,17 +149,15 @@ export class User extends BaseEntity {
     this.name = name;
     this.email = email;
     this.password = password;
-    // User entity doesn't have orgId since they can belong to multiple orgs
-    // We'll set it to a default value and override in BaseEntity
   }
 }
 ```
 
-### 3. Create UserOrganization Entity (Junction Table)
+### 5. Create UserOrganization Entity
 
 **File: `src/common/entities/user-organization.entity.ts`**
 ```typescript
-import { Entity, Property, ManyToOne, Enum, Index } from '@mikro-orm/core';
+import { Entity, Property, ManyToOne, Enum, Unique, Index } from '@mikro-orm/core';
 import { BaseEntity } from './base.entity';
 import { User } from './user.entity';
 import { Organization } from './organization.entity';
@@ -119,14 +174,11 @@ export enum UserStatus {
 }
 
 @Entity({ tableName: 'user_organizations' })
-@Index({ properties: ['userId', 'orgId'], unique: true })
+@Unique({ properties: ['user', 'orgId'] })
 @Index({ properties: ['orgId'] })
 export class UserOrganization extends BaseEntity {
   @ManyToOne(() => User)
   user!: User;
-
-  @Property({ type: 'uuid' })
-  userId!: string;
 
   @ManyToOne(() => Organization)
   organization!: Organization;
@@ -138,26 +190,27 @@ export class UserOrganization extends BaseEntity {
   status: UserStatus = UserStatus.ACTIVE;
 
   @Property({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  wallet?: number; // For dentists only - wallet per organization
+  wallet?: number;
 
   @Property({ type: 'integer', nullable: true })
-  percentage?: number; // Commission percentage for dentists - per organization
+  percentage?: number;
 
-  constructor(userId: string, orgId: string, role: UserRole) {
+  constructor(user: User, orgId: string, role: UserRole) {
     super();
-    this.userId = userId;
+    this.user = user;
     this.orgId = orgId;
     this.role = role;
   }
 }
 ```
 
-### 3. Create Patient Entity
+### 6. Create Patient Entity
 
 **File: `src/common/entities/patient.entity.ts`**
 ```typescript
-import { Entity, Property, Index } from '@mikro-orm/core';
+import { Entity, Property, Index, ManyToMany, Collection } from '@mikro-orm/core';
 import { BaseEntity } from './base.entity';
+import { Attachment } from './attachment.entity';
 
 @Entity({ tableName: 'patients' })
 @Index({ properties: ['orgId'] })
@@ -183,45 +236,35 @@ export class Patient extends BaseEntity {
   address?: string;
 
   @Property({ type: 'jsonb', nullable: true })
-  medicalHistory?: any; // JSON object for medical history
+  medicalHistory?: any;
 
   @Property({ default: true })
   enablePaymentReminders: boolean = true;
+
+  @ManyToMany(() => Attachment)
+  documents = new Collection<Attachment>(this);
 }
 ```
 
-### 4. Create Treatment Category Entity
+### 7. Create Treatment Category & Type Entities
 
 **File: `src/common/entities/treatment-category.entity.ts`**
-```typescript
-import { Entity, Property, Collection, OneToMany, Index } from '@mikro-orm/core';
-import { BaseEntity } from './base.entity';
+... (Same as before) ...
 
-@Entity({ tableName: 'treatment_categories' })
-@Index({ properties: ['orgId'] })
-export class TreatmentCategory extends BaseEntity {
-  @Property({ length: 255 })
-  name!: string;
-
-  @Property({ length: 10 })
-  icon!: string; // emoji
-
-  @Property({ type: 'integer' })
-  order!: number;
-}
-```
-
-### 5. Create Appointment Type Entity
-
-**File: `src/common/entities/appointment-type.entity.ts`**
+**File: `src/common/entities/treatment-type.entity.ts`**
 ```typescript
 import { Entity, Property, ManyToOne, Index } from '@mikro-orm/core';
 import { BaseEntity } from './base.entity';
 import { TreatmentCategory } from './treatment-category.entity';
 
-@Entity({ tableName: 'appointment_types' })
+export interface PriceVariant {
+  name: string;
+  price: number;
+}
+
+@Entity({ tableName: 'treatment_types' })
 @Index({ properties: ['orgId'] })
-export class AppointmentType extends BaseEntity {
+export class TreatmentType extends BaseEntity {
   @Property({ length: 255 })
   name!: string;
 
@@ -229,24 +272,25 @@ export class AppointmentType extends BaseEntity {
   category?: TreatmentCategory;
 
   @Property({ type: 'jsonb' })
-  priceVariants!: any[]; // Array of PriceVariant objects
+  priceVariants!: PriceVariant[];
 
   @Property({ type: 'integer' })
-  duration!: number; // in minutes
+  duration!: number;
 
   @Property({ length: 7 })
-  color!: string; // hex color code
+  color!: string;
 }
 ```
 
-### 6. Create Appointment Entity
+### 8. Create Appointment Entity
 
 **File: `src/common/entities/appointment.entity.ts`**
 ```typescript
 import { Entity, Property, ManyToOne, Enum, Index } from '@mikro-orm/core';
 import { BaseEntity } from './base.entity';
 import { Patient } from './patient.entity';
-import { AppointmentType } from './appointment-type.entity';
+import { TreatmentType } from './treatment-type.entity';
+import { User } from './user.entity';
 
 export enum AppointmentStatus {
   CONFIRMED = 'confirmed',
@@ -257,46 +301,41 @@ export enum AppointmentStatus {
 @Entity({ tableName: 'appointments' })
 @Index({ properties: ['orgId'] })
 @Index({ properties: ['date', 'orgId'] })
-@Index({ properties: ['patientId', 'orgId'] })
+@Index({ properties: ['patient', 'orgId'] })
 export class Appointment extends BaseEntity {
   @ManyToOne(() => Patient)
   patient!: Patient;
 
-  @Property({ type: 'uuid' })
-  patientId!: string;
-
-  @ManyToOne(() => AppointmentType)
-  appointmentType!: AppointmentType;
-
-  @Property({ type: 'uuid' })
-  appointmentTypeId!: string;
+  @ManyToOne(() => TreatmentType)
+  treatmentType!: TreatmentType;
 
   @Property({ type: 'date' })
   date!: Date;
 
   @Property({ type: 'time' })
-  time!: string; // HH:mm format
+  time!: string; 
 
   @Enum(() => AppointmentStatus)
   status: AppointmentStatus = AppointmentStatus.PENDING;
 
-  @Property({ length: 255, nullable: true })
-  drName?: string;
+  @ManyToOne(() => User, { nullable: true })
+  doctor?: User;
 
   @Property({ type: 'text', nullable: true })
   notes?: string;
 }
 ```
 
-### 7. Create Treatment Entity
+### 9. Create Treatment Entity
 
 **File: `src/common/entities/treatment.entity.ts`**
 ```typescript
-import { Entity, Property, ManyToOne, Enum, Index } from '@mikro-orm/core';
+import { Entity, Property, ManyToOne, Enum, Index, ManyToMany, Collection } from '@mikro-orm/core';
 import { BaseEntity } from './base.entity';
 import { Patient } from './patient.entity';
-import { AppointmentType } from './appointment-type.entity';
+import { TreatmentType } from './treatment-type.entity';
 import { Appointment } from './appointment.entity';
+import { Tooth } from './tooth.entity';
 
 export enum TreatmentStatus {
   PLANNED = 'planned',
@@ -307,51 +346,26 @@ export enum TreatmentStatus {
 
 @Entity({ tableName: 'treatments' })
 @Index({ properties: ['orgId'] })
-@Index({ properties: ['patientId', 'orgId'] })
-@Index({ properties: ['date', 'orgId'] })
+@Index({ properties: ['patient', 'orgId'] })
 @Index({ properties: ['status', 'orgId'] })
 export class Treatment extends BaseEntity {
   @ManyToOne(() => Patient)
   patient!: Patient;
 
-  @Property({ type: 'uuid' })
-  patientId!: string;
+  @ManyToMany(() => Tooth)
+  teeth = new Collection<Tooth>(this);
 
-  @Property({ type: 'integer' })
-  toothNumber!: number; // Legacy: single tooth
-
-  @Property({ type: 'jsonb', nullable: true })
-  toothNumbers?: number[]; // New: support multiple teeth
-
-  @Property({ length: 255, nullable: true })
-  toothName?: string;
-
-  @ManyToOne(() => AppointmentType)
-  appointmentType!: AppointmentType;
-
-  @Property({ type: 'uuid' })
-  appointmentTypeId!: string;
+  @ManyToOne(() => TreatmentType)
+  treatmentType!: TreatmentType;
 
   @ManyToOne(() => Appointment, { nullable: true })
   appointment?: Appointment;
-
-  @Property({ type: 'uuid', nullable: true })
-  appointmentId?: string;
 
   @Property({ type: 'decimal', precision: 10, scale: 2 })
   totalPrice!: number;
 
   @Property({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  amountPaid: number = 0;
-
-  @Property({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   discount: number = 0;
-
-  @Property({ type: 'date' })
-  date!: Date;
-
-  @Property({ length: 255, nullable: true })
-  drName?: string;
 
   @Enum(() => TreatmentStatus)
   status: TreatmentStatus = TreatmentStatus.PLANNED;
@@ -361,59 +375,32 @@ export class Treatment extends BaseEntity {
 }
 ```
 
-### 8. Create Payment Entity
+### 10. Keep Payment, MedicalHistoryQuestion, NotificationSettings Entities
+(Similar structure, ensure imports are correct)
 
-**File: `src/common/entities/payment.entity.ts`**
-```typescript
-import { Entity, Property, ManyToOne, Enum, Index } from '@mikro-orm/core';
-import { BaseEntity } from './base.entity';
-import { Patient } from './patient.entity';
-
-export enum PaymentMethod {
-  CASH = 'cash',
-  CARD = 'card',
-  TRANSFER = 'transfer',
-  CHECK = 'check',
-  OTHER = 'other',
-}
-
-@Entity({ tableName: 'payments' })
-@Index({ properties: ['orgId'] })
-@Index({ properties: ['patientId', 'orgId'] })
-@Index({ properties: ['date', 'orgId'] })
-export class Payment extends BaseEntity {
-  @ManyToOne(() => Patient)
-  patient!: Patient;
-
-  @Property({ type: 'uuid' })
-  patientId!: string;
-
-  @Property({ type: 'decimal', precision: 10, scale: 2 })
-  amount!: number;
-
-  @Property({ type: 'date' })
-  date!: Date;
-
-  @Enum(() => PaymentMethod)
-  paymentMethod!: PaymentMethod;
-
-  @Property({ type: 'text', nullable: true })
-  notes?: string;
-}
-```
-
-### 9. Create Expense Entity
+### 11. Create Expense Entity
 
 **File: `src/common/entities/expense.entity.ts`**
 ```typescript
-import { Entity, Property, ManyToOne, Index } from '@mikro-orm/core';
+import { Entity, Property, ManyToOne, Index, OneToOne, Enum } from '@mikro-orm/core';
 import { BaseEntity } from './base.entity';
 import { User } from './user.entity';
+import { Attachment } from './attachment.entity';
+
+export enum ExpenseType {
+  LAB = 'lab',
+  EQUIPMENT = 'equipment',
+  UTILITIES = 'utilities',
+  RENT = 'rent',
+  SALARY = 'salary',
+  DOCTOR_PAYMENT = 'doctor_payment',
+  OTHER = 'other',
+}
 
 @Entity({ tableName: 'expenses' })
 @Index({ properties: ['orgId'] })
 @Index({ properties: ['date', 'orgId'] })
-@Index({ properties: ['doctorId', 'orgId'] })
+@Index({ properties: ['doctor', 'orgId'] })
 export class Expense extends BaseEntity {
   @Property({ length: 255 })
   name!: string;
@@ -424,8 +411,8 @@ export class Expense extends BaseEntity {
   @Property({ type: 'date' })
   date!: Date;
 
-  @Property({ type: 'text', nullable: true })
-  invoiceFile?: string;
+  @OneToOne(() => Attachment, { nullable: true })
+  invoice?: Attachment;
 
   @Property({ type: 'text', nullable: true })
   notes?: string;
@@ -433,233 +420,21 @@ export class Expense extends BaseEntity {
   @ManyToOne(() => User, { nullable: true })
   doctor?: User;
 
-  @Property({ type: 'uuid', nullable: true })
-  doctorId?: string;
-
-  @Property({ length: 255, nullable: true })
-  expenseType?: string;
+  @Enum(() => ExpenseType)
+  expenseType: ExpenseType = ExpenseType.OTHER;
 }
 ```
 
-### 10. Create Medical History Question Entity
-
-**File: `src/common/entities/medical-history-question.entity.ts`**
-```typescript
-import { Entity, Property, Enum, Index } from '@mikro-orm/core';
-import { BaseEntity } from './base.entity';
-
-export enum QuestionType {
-  TEXT = 'text',
-  RADIO = 'radio',
-  CHECKBOX = 'checkbox',
-  TEXTAREA = 'textarea',
-}
-
-@Entity({ tableName: 'medical_history_questions' })
-@Index({ properties: ['orgId'] })
-export class MedicalHistoryQuestion extends BaseEntity {
-  @Property({ type: 'text' })
-  question!: string;
-
-  @Enum(() => QuestionType)
-  type!: QuestionType;
-
-  @Property({ type: 'jsonb', nullable: true })
-  options?: string[]; // for radio/checkbox
-
-  @Property({ default: false })
-  required: boolean = false;
-
-  @Property({ type: 'integer' })
-  order!: number;
-}
-```
-
-### 11. Create Notification Settings Entity
-
-**File: `src/common/entities/notification-settings.entity.ts`**
-```typescript
-import { Entity, Property, Index } from '@mikro-orm/core';
-import { BaseEntity } from './base.entity';
-
-@Entity({ tableName: 'notification_settings' })
-@Index({ properties: ['orgId'], unique: true })
-export class NotificationSettings extends BaseEntity {
-  @Property({ type: 'jsonb' })
-  appointmentReminder!: {
-    enabled: boolean;
-    timing: number;
-    timingUnit: 'hours' | 'days';
-    messageTemplate: string;
-  };
-
-  @Property({ type: 'jsonb' })
-  paymentReminder!: {
-    enabled: boolean;
-    timing: number;
-    timingUnit: 'hours' | 'days';
-    messageTemplate: string;
-  };
-}
-```
-
-### 12. Update MikroORM Config
-
-**File: `src/mikro-orm.config.ts`** (update entities path):
-```typescript
-import { Options } from '@mikro-orm/core';
-import { PostgreSqlDriver } from '@mikro-orm/postgresql';
-import { Migrator } from '@mikro-orm/migrations';
-
-const config: Options = {
-  driver: PostgreSqlDriver,
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  dbName: process.env.DB_NAME || 'dental_clinic',
-  entities: ['dist/common/entities/**/*.entity.js'],
-  entitiesTs: ['src/common/entities/**/*.entity.ts'],
-  migrations: {
-    path: 'dist/migrations',
-    pathTs: 'src/migrations',
-    snapshot: false,
-    disableForeignKeys: false,
-  },
-  extensions: [Migrator],
-  debug: process.env.NODE_ENV !== 'production',
-  allowGlobalContext: true,
-};
-
-export default config;
-```
-
-### 13. Create Initial Migration
-
-```bash
-# Generate migration
-npm run migration:create -- --name=initial_schema
-
-# Review the generated migration file in src/migrations/
-# Verify all entities are included
-
-# Run migration
-npm run migration:up
-```
-
-### 14. Create Index File for Entities
-
-**File: `src/common/entities/index.ts`**
-```typescript
-export * from './base.entity';
-export * from './organization.entity';
-export * from './user.entity';
-export * from './user-organization.entity';
-export * from './patient.entity';
-export * from './treatment-category.entity';
-export * from './appointment-type.entity';
-export * from './appointment.entity';
-export * from './treatment.entity';
-export * from './payment.entity';
-export * from './expense.entity';
-export * from './medical-history-question.entity';
-export * from './notification-settings.entity';
-```
+### 12. Update Index File
+...
 
 ## Acceptance Criteria
-
 - [ ] All entities created with proper decorators
-- [ ] Indexes added for frequently queried fields
-- [ ] All entities extend BaseEntity
-- [ ] orgId field present in all entities
-- [ ] Enums defined for status fields
-- [ ] Relationships properly defined
 - [ ] Migration generated successfully
-- [ ] Migration runs without errors
 - [ ] Database schema created correctly
-- [ ] No TypeScript compilation errors
 
 ## Testing Steps
-
-1. **Build the project**:
-   ```bash
-   npm run build
-   ```
-
-2. **Generate migration**:
-   ```bash
-   npm run migration:create -- --name=initial_schema
-   ```
-
-3. **Review migration**:
-   - Check `src/migrations/` for the generated file
-   - Verify all tables are included
-   - Verify indexes are created
-
-4. **Run migration**:
-   ```bash
-   npm run migration:up
-   ```
-
-5. **Verify database**:
-   ```bash
-   psql -U postgres -d dental_clinic -c "\dt"
-   ```
-   Should show all tables
-
-6. **Check schema**:
-   ```bash
-   psql -U postgres -d dental_clinic -c "\d+ users"
-   ```
-   Verify columns and indexes
-
-## Files Created
-
-```
-src/common/entities/
-├── index.ts
-├── base.entity.ts (already exists)
-├── organization.entity.ts
-├── user.entity.ts
-├── user-organization.entity.ts
-├── patient.entity.ts
-├── treatment-category.entity.ts
-├── appointment-type.entity.ts
-├── appointment.entity.ts
-├── treatment.entity.ts
-├── payment.entity.ts
-├── expense.entity.ts
-├── medical-history-question.entity.ts
-└── notification-settings.entity.ts
-
-src/migrations/
-└── Migration[timestamp]_initial_schema.ts
-```
-
-## Common Issues & Solutions
-
-1. **Migration fails**: Check entity decorators and relationships
-2. **Duplicate columns**: Ensure no conflicting property names
-3. **Type errors**: Verify all imports are correct
-4. **Index errors**: Check index syntax and field names
-
-## Next Steps
-
-After completing this prompt:
-- Proceed to **Prompt 4: Auth Module with JWT**
-- Do not proceed until all acceptance criteria are met
-- Verify database schema is correct
-
-## Notes
-
-- All entities are in `common/entities` as per requirements
-- Indexes added for performance on large datasets
-- JSONB used for flexible data (medical history, price variants)
-- Enums used for type safety
-- Relationships defined but can be lazy-loaded
-
----
-
-**Estimated Time**: 60-90 minutes
-**Difficulty**: Medium-High
-**Dependencies**: Prompts 1, 2
+1. Build project
+2. Generate migration
+3. Run migration
+4. Verify schema via psql

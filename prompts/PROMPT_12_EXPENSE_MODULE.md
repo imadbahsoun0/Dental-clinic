@@ -10,12 +10,12 @@ Implement expense management including doctor payments, with date filtering and 
 
 ## Prerequisites
 - Prompts 1-11 completed
-- Expense entity exists
+- Expense and Attachment entities exist
 
 ## Key Features
 - Expense CRUD with org scoping
-- Expense categories/types
-- Invoice file upload (optional - base64 or URL)
+- Expense categories/types (Enum: LAB, EQUIPMENT, RENT, SALARY, DOCTOR_PAYMENT, OTHER)
+- Invoice file upload (via Attachment entity link)
 - Doctor payment expenses (linked to doctor)
 - Date range filtering
 - Calculate total expenses
@@ -35,6 +35,8 @@ src/modules/expenses/
 ## Key Service Methods
 
 ```typescript
+import { ExpenseType } from '../../common/entities';
+
 async getTotalExpenses(orgId: string, startDate?: string, endDate?: string) {
   const where: any = { orgId };
   
@@ -54,11 +56,11 @@ async getTotalExpenses(orgId: string, startDate?: string, endDate?: string) {
 async getDoctorPayments(orgId: string, doctorId?: string) {
   const where: any = {
     orgId,
-    expenseType: 'Doctor Payment',
+    expenseType: ExpenseType.DOCTOR_PAYMENT,
   };
   
   if (doctorId) {
-    where.doctorId = doctorId;
+    where.doctor = { id: doctorId };
   }
   
   return this.em.find(Expense, where, {
@@ -68,9 +70,28 @@ async getDoctorPayments(orgId: string, doctorId?: string) {
 }
 ```
 
+## Input DTO Example (CreateExpenseDto)
+```typescript
+export class CreateExpenseDto {
+    @ApiProperty()
+    name!: string;
+    
+    @ApiProperty()
+    amount!: number;
+    
+    @ApiProperty({ enum: ExpenseType })
+    expenseType!: ExpenseType;
+    
+    @ApiProperty({ required: false })
+    invoiceId?: string; // Links to Attachment
+
+    // ...
+}
+```
+
 ## Acceptance Criteria
 - [ ] Expense CRUD working
-- [ ] Invoice file upload support
+- [ ] Invoice file upload support (via Attachment ID)
 - [ ] Doctor payment expenses
 - [ ] Date range filtering
 - [ ] Calculate total expenses

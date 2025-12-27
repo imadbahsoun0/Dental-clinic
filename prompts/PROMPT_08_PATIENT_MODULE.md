@@ -8,10 +8,11 @@ Implement patient management APIs with full CRUD operations, medical history sup
 - All roles can view patients
 - Secretary and Admin can create/edit patients
 - Data scoped to organization
+- Patients can have file attachments (documents)
 
 ## Prerequisites
 - Prompts 1-7 completed successfully
-- Patient entity exists in database
+- Patient and Attachment entities exist in database
 
 ## Tasks
 
@@ -20,7 +21,7 @@ Implement patient management APIs with full CRUD operations, medical history sup
 **File: `src/modules/patients/dto/create-patient.dto.ts`**
 ```typescript
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEmail, IsOptional, IsDateString, IsBoolean } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsDateString, IsBoolean, IsArray } from 'class-validator';
 
 export class CreatePatientDto {
   @ApiProperty({ example: 'John' })
@@ -58,6 +59,12 @@ export class CreatePatientDto {
   @IsOptional()
   @IsBoolean()
   enablePaymentReminders?: boolean;
+
+  @ApiProperty({ type: [String], required: false })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  documentIds?: string[];
 }
 ```
 
@@ -101,6 +108,9 @@ export class PatientResponseDto {
   @ApiProperty()
   enablePaymentReminders!: boolean;
 
+  @ApiProperty({ type: [Object], required: false })
+  documents?: any[]; // Attachments
+
   @ApiProperty()
   createdAt!: Date;
 
@@ -115,7 +125,7 @@ export class PatientResponseDto {
 ```typescript
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
-import { Patient } from '../../common/entities';
+import { Patient, Attachment } from '../../common/entities';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
@@ -132,6 +142,11 @@ export class PatientsService {
       createdBy,
       dateOfBirth: createPatientDto.dateOfBirth ? new Date(createPatientDto.dateOfBirth) : undefined,
     });
+
+    if (createPatientDto.documentIds?.length) {
+       const attachments = await this.em.find(Attachment, { id: { $in: createPatientDto.documentIds } });
+       patient.documents.set(attachments);
+    }
 
     await this.em.persistAndFlush(patient);
     return this.mapToResponse(patient);
@@ -175,6 +190,9 @@ export class PatientsService {
 
     const [patients, total] = await qb.getResultAndCount();
 
+    // Populate documents if needed, usually lazy or specific request
+    await this.em.populate(patients, ['documents']);
+
     return {
       data: patients.map(p => this.mapToResponse(p)),
       meta: {
@@ -187,7 +205,7 @@ export class PatientsService {
   }
 
   async findOne(id: string, orgId: string) {
-    const patient = await this.em.findOne(Patient, { id, orgId });
+    const patient = await this.em.findOne(Patient, { id, orgId }, { populate: ['documents'] });
 
     if (!patient) {
       throw new NotFoundException('Patient not found');
@@ -197,7 +215,7 @@ export class PatientsService {
   }
 
   async update(id: string, updatePatientDto: UpdatePatientDto, orgId: string, updatedBy: string) {
-    const patient = await this.em.findOne(Patient, { id, orgId });
+    const patient = await this.em.findOne(Patient, { id, orgId }, { populate: ['documents'] });
 
     if (!patient) {
       throw new NotFoundException('Patient not found');
@@ -208,6 +226,11 @@ export class PatientsService {
       updatedBy,
       dateOfBirth: updatePatientDto.dateOfBirth ? new Date(updatePatientDto.dateOfBirth) : patient.dateOfBirth,
     });
+
+    if (updatePatientDto.documentIds) {
+       const attachments = await this.em.find(Attachment, { id: { $in: updatePatientDto.documentIds } });
+       patient.documents.set(attachments);
+    }
 
     await this.em.flush();
     return this.mapToResponse(patient);
@@ -248,6 +271,7 @@ export class PatientsService {
       address: patient.address,
       medicalHistory: patient.medicalHistory,
       enablePaymentReminders: patient.enablePaymentReminders,
+      documents: patient.documents.isInitialized() ? patient.documents.getItems() : [],
       createdAt: patient.createdAt,
       updatedAt: patient.updatedAt,
     };
@@ -256,138 +280,14 @@ export class PatientsService {
 ```
 
 ### 3. Create Patients Controller
-
-**File: `src/modules/patients/patients.controller.ts`**
-```typescript
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { PatientsService } from './patients.service';
-import { CreatePatientDto } from './dto/create-patient.dto';
-import { UpdatePatientDto } from './dto/update-patient.dto';
-import { PatientResponseDto } from './dto/patient-response.dto';
-import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
-import { Roles, UserRole } from '../../common/decorators/roles.decorator';
-import { ApiStandardResponse } from '../../common/decorators/api-standard-response.decorator';
-import { StandardResponse } from '../../common/dto/standard-response.dto';
-import { PaginationDto } from '../../common/dto/pagination.dto';
-import { FilterDto } from '../../common/dto/filter.dto';
-import { ParseUUIDPipe } from '../../common/pipes/parse-uuid.pipe';
-
-@ApiTags('Patients')
-@ApiBearerAuth('JWT-auth')
-@Controller('patients')
-export class PatientsController {
-  constructor(private readonly patientsService: PatientsService) {}
-
-  @Post()
-  @Roles(UserRole.ADMIN, UserRole.SECRETARY)
-  @ApiOperation({ summary: 'Create a new patient' })
-  @ApiStandardResponse(PatientResponseDto, false, 'created')
-  async create(
-    @Body() createPatientDto: CreatePatientDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
-    const result = await this.patientsService.create(
-      createPatientDto,
-      user.orgId,
-      user.id,
-    );
-    return new StandardResponse(result, 'Patient created successfully');
-  }
-
-  @Get()
-  @ApiOperation({ summary: 'Get all patients' })
-  @ApiStandardResponse(PatientResponseDto, true)
-  async findAll(
-    @CurrentUser() user: CurrentUserData,
-    @Query() pagination: PaginationDto,
-    @Query() filter: FilterDto,
-  ) {
-    const result = await this.patientsService.findAll(user.orgId, pagination, filter);
-    return new StandardResponse(result);
-  }
-
-  @Get('search')
-  @ApiOperation({ summary: 'Search patients' })
-  @ApiStandardResponse(PatientResponseDto, true)
-  async search(
-    @Query('q') query: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
-    const result = await this.patientsService.search(query, user.orgId);
-    return new StandardResponse(result);
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Get a patient by ID' })
-  @ApiStandardResponse(PatientResponseDto)
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
-    const result = await this.patientsService.findOne(id, user.orgId);
-    return new StandardResponse(result);
-  }
-
-  @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.SECRETARY)
-  @ApiOperation({ summary: 'Update a patient' })
-  @ApiStandardResponse(PatientResponseDto)
-  async update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updatePatientDto: UpdatePatientDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
-    const result = await this.patientsService.update(
-      id,
-      updatePatientDto,
-      user.orgId,
-      user.id,
-    );
-    return new StandardResponse(result, 'Patient updated successfully');
-  }
-
-  @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.SECRETARY)
-  @ApiOperation({ summary: 'Delete a patient' })
-  @ApiStandardResponse(Object)
-  async remove(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
-    const result = await this.patientsService.remove(id, user.orgId);
-    return new StandardResponse(result);
-  }
-}
-```
+... (Same as before)
 
 ### 4. Create Patients Module
-
-**File: `src/modules/patients/patients.module.ts`**
-```typescript
-import { Module } from '@nestjs/common';
-import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { PatientsController } from './patients.controller';
-import { PatientsService } from './patients.service';
-import { Patient } from '../../common/entities';
-
-@Module({
-  imports: [MikroOrmModule.forFeature([Patient])],
-  controllers: [PatientsController],
-  providers: [PatientsService],
-  exports: [PatientsService],
-})
-export class PatientsModule {}
-```
-
-### 5. Update App Module
-
-Add PatientsModule to imports in `src/app.module.ts`.
+... (Ensure Attachment is in MikroOrmModule.forFeature)
 
 ## Acceptance Criteria
-
 - [ ] Patients module created
-- [ ] Create patient endpoint working
+- [ ] Create patient endpoint working (with document linking)
 - [ ] List patients with pagination working
 - [ ] Search patients working
 - [ ] Get patient by ID working
@@ -399,58 +299,8 @@ Add PatientsModule to imports in `src/app.module.ts`.
 - [ ] Swagger documentation complete
 
 ## Testing Steps
-
-1. **Create patient**:
-   ```bash
-   curl -X POST http://localhost:3000/api/v1/patients \
-     -H "Authorization: Bearer ADMIN_TOKEN" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "firstName": "John",
-       "lastName": "Doe",
-       "mobileNumber": "+1 (555) 123-4567",
-       "email": "john.doe@email.com",
-       "dateOfBirth": "1990-05-15"
-     }'
-   ```
-
-2. **List patients with pagination**:
-   ```bash
-   curl -X GET "http://localhost:3000/api/v1/patients?page=1&limit=10" \
-     -H "Authorization: Bearer TOKEN"
-   ```
-
-3. **Search patients**:
-   ```bash
-   curl -X GET "http://localhost:3000/api/v1/patients/search?q=John" \
-     -H "Authorization: Bearer TOKEN"
-   ```
-
-4. **Filter patients**:
-   ```bash
-   curl -X GET "http://localhost:3000/api/v1/patients?search=Doe&sortBy=firstName&sortOrder=ASC" \
-     -H "Authorization: Bearer TOKEN"
-   ```
-
-## Files Created
-
-```
-src/modules/patients/
-├── patients.module.ts
-├── patients.controller.ts
-├── patients.service.ts
-└── dto/
-    ├── create-patient.dto.ts
-    ├── update-patient.dto.ts
-    └── patient-response.dto.ts
-```
+...
+(Example curl can include documentIds)
 
 ## Next Steps
-
 Proceed to **Prompt 9: Appointment Module**
-
----
-
-**Estimated Time**: 60-75 minutes
-**Difficulty**: Medium
-**Dependencies**: Prompts 1-7
