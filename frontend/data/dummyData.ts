@@ -539,55 +539,123 @@ export const dummyExpenses: Expense[] = [
     },
 ];
 
-// Users
+// Users with multi-org support
 export const dummyUsers: User[] = [
     {
         id: 'user-1',
         name: 'Dr. Sarah Smith',
         email: 'sarah.smith@dentalclinic.com',
         phone: '+1 (555) 100-0001',
-        role: 'dentist',
-        status: 'active',
         password: 'password123',
-        wallet: 450.00, // Current wallet balance
-        percentage: 30, // 30% commission
         createdAt: '2024-01-01T08:00:00Z',
         updatedAt: '2024-01-01T08:00:00Z',
+        organizations: [
+            {
+                id: 'user-org-1',
+                userId: 'user-1',
+                orgId: 'org-1', // Main clinic
+                role: 'dentist',
+                status: 'active',
+                wallet: 450.00,
+                percentage: 30,
+                createdAt: '2024-01-01T08:00:00Z',
+                updatedAt: '2024-01-01T08:00:00Z',
+            },
+        ],
     },
     {
         id: 'user-2',
         name: 'Dr. Michael Johnson',
         email: 'michael.johnson@dentalclinic.com',
         phone: '+1 (555) 100-0002',
-        role: 'dentist',
-        status: 'active',
         password: 'password123',
-        wallet: 820.00, // Current wallet balance
-        percentage: 35, // 35% commission
         createdAt: '2024-01-01T08:00:00Z',
         updatedAt: '2024-01-01T08:00:00Z',
+        organizations: [
+            {
+                id: 'user-org-2',
+                userId: 'user-2',
+                orgId: 'org-1', // Main clinic
+                role: 'dentist',
+                status: 'active',
+                wallet: 820.00,
+                percentage: 35,
+                createdAt: '2024-01-01T08:00:00Z',
+                updatedAt: '2024-01-01T08:00:00Z',
+            },
+        ],
     },
     {
         id: 'user-3',
         name: 'Emily Davis',
         email: 'emily.davis@dentalclinic.com',
         phone: '+1 (555) 100-0003',
-        role: 'secretary',
-        status: 'active',
         password: 'password123',
         createdAt: '2024-02-01T08:00:00Z',
         updatedAt: '2024-02-01T08:00:00Z',
+        organizations: [
+            {
+                id: 'user-org-3',
+                userId: 'user-3',
+                orgId: 'org-1', // Main clinic
+                role: 'secretary',
+                status: 'active',
+                createdAt: '2024-02-01T08:00:00Z',
+                updatedAt: '2024-02-01T08:00:00Z',
+            },
+        ],
     },
     {
         id: 'user-4',
         name: 'James Wilson',
         email: 'james.wilson@dentalclinic.com',
         phone: '+1 (555) 100-0004',
-        role: 'admin',
-        status: 'active',
         password: 'password123',
         createdAt: '2024-01-15T08:00:00Z',
         updatedAt: '2024-01-15T08:00:00Z',
+        organizations: [
+            {
+                id: 'user-org-4',
+                userId: 'user-4',
+                orgId: 'org-1', // Main clinic
+                role: 'admin',
+                status: 'active',
+                createdAt: '2024-01-15T08:00:00Z',
+                updatedAt: '2024-01-15T08:00:00Z',
+            },
+        ],
+    },
+    // Example: User with multiple organizations
+    {
+        id: 'user-5',
+        name: 'Dr. Alex Martinez',
+        email: 'alex.martinez@dentalclinic.com',
+        phone: '+1 (555) 100-0005',
+        password: 'password123',
+        createdAt: '2024-03-01T08:00:00Z',
+        updatedAt: '2024-03-01T08:00:00Z',
+        organizations: [
+            {
+                id: 'user-org-5',
+                userId: 'user-5',
+                orgId: 'org-1', // Main clinic
+                role: 'dentist',
+                status: 'active',
+                wallet: 1200.00,
+                percentage: 40,
+                createdAt: '2024-03-01T08:00:00Z',
+                updatedAt: '2024-03-01T08:00:00Z',
+            },
+            {
+                id: 'user-org-6',
+                userId: 'user-5',
+                orgId: 'org-2', // Branch clinic
+                role: 'admin',
+                status: 'active',
+                createdAt: '2024-03-15T08:00:00Z',
+                updatedAt: '2024-03-15T08:00:00Z',
+            },
+        ],
     },
 ];
 

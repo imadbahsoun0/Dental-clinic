@@ -133,18 +133,31 @@ export interface Settings {
   doctors?: string[]; // List of doctor names
 }
 
+// User can belong to multiple organizations with different roles
+export interface UserOrganization {
+  id: string;
+  userId: string;
+  orgId: string;
+  role: 'dentist' | 'secretary' | 'admin';
+  status: 'active' | 'inactive';
+  wallet?: number; // Current wallet balance for dentists in this org (default 0)
+  percentage?: number; // Commission percentage for dentists in this org (e.g., 30 for 30%)
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   phone?: string;
-  role: 'dentist' | 'secretary' | 'admin';
-  status: 'active' | 'inactive';
   password?: string; // Password for authentication
-  wallet?: number; // Current wallet balance for dentists (default 0)
-  percentage?: number; // Commission percentage for dentists (e.g., 30 for 30%)
   createdAt: string;
   updatedAt: string;
+  // User's organizations and roles
+  organizations?: UserOrganization[];
+  // Current active organization (set after login/org selection)
+  currentOrg?: UserOrganization;
 }
 
 export interface ClinicBranding {

@@ -12,6 +12,7 @@ export default function LoginPage() {
     const router = useRouter();
     const login = useAuthStore((state) => state.login);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const needsOrgSelection = useAuthStore((state) => state.needsOrgSelection);
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -22,8 +23,10 @@ export default function LoginPage() {
     useEffect(() => {
         if (isAuthenticated) {
             router.push('/dashboard');
+        } else if (needsOrgSelection) {
+            router.push('/select-organization');
         }
-    }, [isAuthenticated, router]);
+    }, [isAuthenticated, needsOrgSelection, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,7 +37,13 @@ export default function LoginPage() {
             const result = await login(email, password);
 
             if (result.success) {
-                router.push('/dashboard');
+                if (result.needsOrgSelection) {
+                    // User has multiple orgs - redirect to org selector
+                    router.push('/select-organization');
+                } else {
+                    // User has single org - go to dashboard
+                    router.push('/dashboard');
+                }
             } else {
                 setError(result.error || 'Login failed');
             }
