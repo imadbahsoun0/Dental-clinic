@@ -428,5 +428,97 @@ export class Api<
         format: "json",
         ...params,
       }),
+
+    /**
+     * No description
+     *
+     * @tags Test
+     * @name TestControllerAdminOnly
+     * @summary Admin only endpoint
+     * @request GET:/api/v1/test/admin-only
+     * @secure
+     */
+    testControllerAdminOnly: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/test/admin-only`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Test
+     * @name TestControllerDentistOrAdmin
+     * @summary Dentist or Admin endpoint
+     * @request GET:/api/v1/test/dentist-or-admin
+     * @secure
+     */
+    testControllerDentistOrAdmin: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/test/dentist-or-admin`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Test
+     * @name TestControllerViewRevenue
+     * @summary View revenue (permission-based)
+     * @request GET:/api/v1/test/view-revenue
+     * @secure
+     */
+    testControllerViewRevenue: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/test/view-revenue`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Test
+     * @name TestControllerGetCurrentUser
+     * @summary Get current user info
+     * @request GET:/api/v1/test/current-user
+     * @secure
+     */
+    testControllerGetCurrentUser: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/test/current-user`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
   };
 }

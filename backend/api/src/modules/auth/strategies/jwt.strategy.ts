@@ -13,6 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
                 (request: any) => {
                     return request?.cookies?.access_token;
                 },
+                ExtractJwt.fromAuthHeaderAsBearerToken(),
             ]),
             ignoreExpiration: false,
             secretOrKey: configService.get<string>('jwt.accessSecret')!,

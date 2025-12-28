@@ -8,6 +8,9 @@ import mikroOrmConfig from './common/config/mikro-orm.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { EmailModule } from './modules/email/email.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
+import { PermissionsGuard } from './common/guards/permissions.guard';
+import { TestModule } from './modules/test/test.module';
 
 @Module({
   imports: [
@@ -19,11 +22,20 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     MikroOrmModule.forRoot(mikroOrmConfig),
     AuthModule,
     EmailModule,
+    TestModule,
   ],
   providers: [
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PermissionsGuard,
     },
   ],
 })
