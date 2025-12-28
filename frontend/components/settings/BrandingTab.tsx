@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { Card } from '@/components/common/Card';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
@@ -9,27 +10,49 @@ import styles from './settings-tabs.module.css';
 
 export const BrandingTab: React.FC = () => {
     const clinicBranding = useSettingsStore((state) => state.clinicBranding);
+    const fetchClinicBranding = useSettingsStore((state) => state.fetchClinicBranding);
     const updateClinicBranding = useSettingsStore((state) => state.updateClinicBranding);
     const doctorLogo = useSettingsStore((state) => state.doctorLogo);
     const updateDoctorLogo = useSettingsStore((state) => state.updateDoctorLogo);
+    const uploadLogo = useSettingsStore((state) => state.uploadLogo);
 
     const [branding, setBranding] = useState(clinicBranding);
 
-    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    useEffect(() => {
+        fetchClinicBranding();
+    }, [fetchClinicBranding]);
+
+    useEffect(() => {
+        setBranding(clinicBranding);
+    }, [clinicBranding]);
+
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // Preview
             const reader = new FileReader();
             reader.onloadend = () => {
                 updateDoctorLogo(reader.result as string);
-                alert('Logo uploaded successfully!');
             };
             reader.readAsDataURL(file);
+
+            // Upload to API
+            try {
+                const { id, url } = await uploadLogo(file);
+                // Store logoId in branding state so "Save" sends it
+                // We cast to any because ClinicBranding doesn't have logoId explicitly, but settingsStore handles it
+                setBranding((prev) => ({ ...prev, logoId: id, logo: url } as any));
+                toast.success('Logo uploaded successfully!');
+            } catch (error) {
+                console.error(error);
+                toast.error('Failed to upload logo');
+            }
         }
     };
 
     const handleSave = () => {
         updateClinicBranding(branding);
-        alert('Branding information saved successfully!');
+        toast.success('Branding information saved successfully!');
     };
 
     return (

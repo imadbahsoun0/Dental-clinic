@@ -34,7 +34,9 @@ interface SettingsStore {
 
     // Clinic Branding
     clinicBranding: ClinicBranding;
+    fetchClinicBranding: () => Promise<void>;
     updateClinicBranding: (branding: Partial<ClinicBranding>) => void;
+    uploadLogo: (file: File) => Promise<{ id: string; url: string }>;
 
     // Notification Settings
     notificationSettings: NotificationSettings;
@@ -234,12 +236,80 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
     },
 
     // Clinic Branding
-    clinicBranding: dummyClinicBranding,
+    // Clinic Branding
+    clinicBranding: {
+        clinicName: '',
+        location: '',
+        phone: '',
+        email: '',
+    }, // Initialize empty
 
-    updateClinicBranding: (branding) => {
-        set((state) => ({
-            clinicBranding: { ...state.clinicBranding, ...branding },
-        }));
+    fetchClinicBranding: async () => {
+        try {
+            const response = await api.api.organizationsControllerGetCurrent();
+            const orgIndex = response.data as any; // Handle potential wrapper
+            const org = orgIndex.data || orgIndex; // Sometimes response is wrapped in data
+
+            // Map Organization response to ClinicBranding
+            set({
+                clinicBranding: {
+                    clinicName: org.name || '',
+                    location: org.location || '',
+                    phone: org.phone || '',
+                    email: org.email || '',
+                    website: org.website,
+                    logo: org.logo?.url || null, // Assuming logo attachment might have URL derived or need logic
+                },
+                doctorLogo: org.logo?.url || null,
+            });
+        } catch (error) {
+            console.error('Failed to fetch clinic branding:', error);
+        }
+    },
+
+    updateClinicBranding: async (branding) => {
+        try {
+            // Map ClinicBranding to UpdateOrganizationDto
+            // Note: Branding UI sends base64 logo string usually?
+            // If API expects logoId (UUID), we need to upload file first to get ID.
+            // But UpdateOrganizationDto has `logoId?: string`.
+            // If `branding.logo` is a base64 string, we can't send it to `logoId`.
+            // For now, we update text fields. Logo upload logic is separate or needs adjustment.
+
+            const updateDto: any = {};
+            if (branding.clinicName) updateDto.name = branding.clinicName;
+            if (branding.location) updateDto.location = branding.location;
+            if (branding.phone) updateDto.phone = branding.phone;
+            if (branding.email) updateDto.email = branding.email;
+            if (branding.website) updateDto.website = branding.website;
+            if ((branding as any).logoId) updateDto.logoId = (branding as any).logoId;
+
+            await api.api.organizationsControllerUpdateCurrent(updateDto);
+
+            set((state) => ({
+                clinicBranding: { ...state.clinicBranding, ...branding },
+                // If logo was updated via logoId, we assume URL will be refreshed or handled separately.
+                // If branding has logo string (URL) passed?
+                doctorLogo: branding.logo || state.doctorLogo,
+            }));
+        } catch (error) {
+            console.error('Failed to update clinic branding:', error);
+        }
+    },
+
+    uploadLogo: async (file) => {
+        try {
+            const response = await api.api.filesControllerUploadFile({ file: file as any }) as any;
+            const data = response.data || response; // Handle wrapped or unwrapped
+            // data.data should have { id, ... url }
+            const attachment = data.data || data; // StandardResponse.data or direct attachment if no standard response
+            // If StandardResponse: { success: true, data: { ... } }
+            // So attachment = data.data.
+            return { id: attachment.id, url: attachment.url };
+        } catch (error) {
+            console.error('Failed to upload logo:', error);
+            throw error;
+        }
     },
 
     // Notification Settings

@@ -12,6 +12,8 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 import { TestModule } from './modules/test/test.module';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { FilesModule } from './modules/files/files.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { TestModule } from './modules/test/test.module';
     AuthModule,
     UsersModule,
     EmailModule,
+    OrganizationsModule,
+    FilesModule,
     TestModule,
   ],
   providers: [

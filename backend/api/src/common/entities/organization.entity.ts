@@ -19,8 +19,8 @@ export class Organization extends BaseEntity {
     @Property({ length: 255, nullable: true })
     website?: string;
 
-    @Property({ type: 'text', nullable: true })
-    logo?: string; // base64 or URL
+    @OneToOne(() => Attachment, { nullable: true })
+    logo?: Attachment;
 
     @Property({ default: true })
     isActive: boolean = true;

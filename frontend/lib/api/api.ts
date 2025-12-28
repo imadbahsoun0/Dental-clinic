@@ -125,7 +125,7 @@ export interface CreateUserDto {
    * @minLength 6
    * @example "password123"
    */
-  password: string;
+  password?: string;
   /** @example "+1 (555) 123-4567" */
   phone?: string;
   /** @example "dentist" */
@@ -146,6 +146,45 @@ export interface UpdateUserDto {
   status?: "active" | "inactive";
   /** @example 30 */
   percentage?: number;
+}
+
+export interface OrganizationResponseDto {
+  id: string;
+  name: string;
+  location?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  logo?: object;
+  isActive: boolean;
+  /** @format date-time */
+  createdAt: string;
+  /** @format date-time */
+  updatedAt: string;
+}
+
+export interface CreateOrganizationDto {
+  /** @example "DentaCare Pro Clinic" */
+  name: string;
+  /** @example "123 Dental Street, Suite 100, New York, NY 10001" */
+  location?: string;
+  /** @example "+1 (555) 123-4567" */
+  phone?: string;
+  /** @example "info@dentacarepro.com" */
+  email?: string;
+  /** @example "https://www.dentacarepro.com" */
+  website?: string;
+}
+
+export interface UpdateOrganizationDto {
+  name?: string;
+  location?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  /** Attachment ID for the logo */
+  logoId?: string;
+  isActive?: boolean;
 }
 
 import type {
@@ -641,6 +680,110 @@ export class Api<
         method: "DELETE",
         secure: true,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Organizations
+     * @name OrganizationsControllerCreate
+     * @summary Create a new organization (manual/super admin only)
+     * @request POST:/api/v1/organizations
+     * @secure
+     */
+    organizationsControllerCreate: (
+      data: CreateOrganizationDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: OrganizationResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/organizations`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Organizations
+     * @name OrganizationsControllerGetCurrent
+     * @summary Get current organization details
+     * @request GET:/api/v1/organizations/current
+     * @secure
+     */
+    organizationsControllerGetCurrent: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: OrganizationResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/organizations/current`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Organizations
+     * @name OrganizationsControllerUpdateCurrent
+     * @summary Update current organization (admin only)
+     * @request PATCH:/api/v1/organizations/current
+     * @secure
+     */
+    organizationsControllerUpdateCurrent: (
+      data: UpdateOrganizationDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: OrganizationResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/organizations/current`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Files
+     * @name FilesControllerUploadFile
+     * @summary Upload a file
+     * @request POST:/api/v1/files/upload
+     * @secure
+     */
+    filesControllerUploadFile: (
+      data: {
+        /** @format binary */
+        file?: File;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/files/upload`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.FormData,
         ...params,
       }),
 
