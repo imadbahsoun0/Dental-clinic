@@ -2,75 +2,36 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useSettingsStore } from '@/store/settingsStore';
+import { api } from '@/lib/api';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
-import styles from '../login/login.module.css';
+import styles from './forgot-password.module.css';
 
 export default function ForgotPasswordPage() {
-    const router = useRouter();
-    const users = useSettingsStore((state) => state.users);
-    const updateUser = useSettingsStore((state) => state.updateUser);
-
-    const [step, setStep] = useState<'email' | 'reset'>('email');
     const [email, setEmail] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [message, setMessage] = useState('');
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-    const [userId, setUserId] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleEmailSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setMessage('');
+        setIsLoading(true);
 
-        // Find user by email
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-        if (!user) {
-            setError('No account found with this email address');
-            return;
+        try {
+            const response = await api.api.authControllerForgotPassword({ email });
+            if (response.success) {
+                setMessage(response.message);
+                setEmail('');
+            } else {
+                setError(response.message || 'Failed to send reset email');
+            }
+        } catch (err: any) {
+            setError(err?.response?.data?.message || 'An unexpected error occurred');
+        } finally {
+            setIsLoading(false);
         }
-
-        if (user.status !== 'active') {
-            setError('Account is inactive. Please contact administrator.');
-            return;
-        }
-
-        // In a real app, you would send a reset email here
-        // For demo purposes, we'll just move to the reset step
-        setUserId(user.id);
-        setStep('reset');
-        setSuccess('Email verified! You can now reset your password.');
-    };
-
-    const handlePasswordReset = (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-
-        if (!newPassword || !confirmPassword) {
-            setError('Please fill in all fields');
-            return;
-        }
-
-        if (newPassword.length < 6) {
-            setError('Password must be at least 6 characters long');
-            return;
-        }
-
-        if (newPassword !== confirmPassword) {
-            setError('Passwords do not match');
-            return;
-        }
-
-        // Update user password
-        updateUser(userId, { password: newPassword });
-
-        setSuccess('Password reset successful! Redirecting to login...');
-        setTimeout(() => {
-            router.push('/login');
-        }, 2000);
     };
 
     return (
@@ -84,94 +45,48 @@ export default function ForgotPasswordPage() {
                             <div className={styles.logoSubtitle}>Pro</div>
                         </div>
                     </div>
-                    <h1 className={styles.title}>
-                        {step === 'email' ? 'Forgot Password?' : 'Reset Password'}
-                    </h1>
-                    <p className={styles.subtitle}>
-                        {step === 'email'
-                            ? 'Enter your email to reset your password'
-                            : 'Enter your new password'
-                        }
-                    </p>
+                    <h1 className={styles.title}>Forgot Password</h1>
+                    <p className={styles.subtitle}>Enter your email to receive reset instructions</p>
                 </div>
 
-                {step === 'email' ? (
-                    <form onSubmit={handleEmailSubmit} className={styles.form}>
-                        {error && (
-                            <div className={styles.error}>
-                                <span className={styles.errorIcon}>⚠️</span>
-                                {error}
-                            </div>
-                        )}
-
-                        <Input
-                            type="email"
-                            label="Email Address"
-                            value={email}
-                            onChange={setEmail}
-                            placeholder="your.email@dentalclinic.com"
-                            required
-                        />
-
-                        <Button type="submit" className={styles.submitButton}>
-                            Continue
-                        </Button>
-
-                        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                            <Link href="/login" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.875rem' }}>
-                                ← Back to Login
-                            </Link>
+                <form onSubmit={handleSubmit} className={styles.form}>
+                    {message && (
+                        <div className={styles.message}>
+                            <span className={styles.icon}>✅</span>
+                            {message}
                         </div>
-                    </form>
-                ) : (
-                    <form onSubmit={handlePasswordReset} className={styles.form}>
-                        {error && (
-                            <div className={styles.error}>
-                                <span className={styles.errorIcon}>⚠️</span>
-                                {error}
-                            </div>
-                        )}
+                    )}
 
-                        {success && (
-                            <div style={{
-                                backgroundColor: '#d1fae5',
-                                border: '1px solid #6ee7b7',
-                                color: '#065f46',
-                                padding: '0.875rem 1rem',
-                                borderRadius: '12px',
-                                fontSize: '0.875rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem'
-                            }}>
-                                <span style={{ fontSize: '1.125rem' }}>✓</span>
-                                {success}
-                            </div>
-                        )}
+                    {error && (
+                        <div className={styles.error}>
+                            <span className={styles.icon}>⚠️</span>
+                            {error}
+                        </div>
+                    )}
 
-                        <Input
-                            type="password"
-                            label="New Password"
-                            value={newPassword}
-                            onChange={setNewPassword}
-                            placeholder="Enter new password (min. 6 characters)"
-                            required
-                        />
+                    <Input
+                        type="email"
+                        label="Email Address"
+                        value={email}
+                        onChange={setEmail}
+                        placeholder="your.email@dentalclinic.com"
+                        required
+                    />
 
-                        <Input
-                            type="password"
-                            label="Confirm Password"
-                            value={confirmPassword}
-                            onChange={setConfirmPassword}
-                            placeholder="Confirm new password"
-                            required
-                        />
+                    <Button
+                        type="submit"
+                        disabled={isLoading}
+                        className={styles.submitButton}
+                    >
+                        {isLoading ? 'Sending...' : 'Send Reset Link'}
+                    </Button>
 
-                        <Button type="submit" className={styles.submitButton}>
-                            Reset Password
-                        </Button>
-                    </form>
-                )}
+                    <div className={styles.backLink}>
+                        <Link href="/login" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.875rem' }}>
+                            ← Back to Sign In
+                        </Link>
+                    </div>
+                </form>
             </div>
         </div>
     );

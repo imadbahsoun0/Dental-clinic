@@ -1,20 +1,20 @@
 import { create } from 'zustand';
-import { User, UserOrganization } from '@/types';
-import { useSettingsStore } from './settingsStore';
+import { api, UserDto, UserOrgDto, LoginDto } from '@/lib/api';
 
 interface AuthStore {
-    currentUser: User | null;
-    currentOrg: UserOrganization | null;
+    currentUser: UserDto | null;
+    currentOrg: UserOrgDto | null;
     isAuthenticated: boolean;
-    needsOrgSelection: boolean; // True when user has multiple orgs and needs to select one
-    login: (email: string, password: string) => Promise<{ success: boolean; error?: string; needsOrgSelection?: boolean }>;
+    needsOrgSelection: boolean;
+    login: (data: LoginDto) => Promise<{ success: boolean; error?: string; needsOrgSelection?: boolean }>;
     selectOrganization: (orgId: string) => Promise<{ success: boolean; error?: string }>;
-    logout: () => void;
+    logout: () => Promise<void>;
     initializeAuth: () => void;
 }
 
 const AUTH_STORAGE_KEY = 'dentacare_auth_user';
 const ORG_STORAGE_KEY = 'dentacare_current_org';
+const TOKEN_KEY = 'access_token';
 
 export const useAuthStore = create<AuthStore>()((set, get) => ({
     currentUser: null,
@@ -22,167 +22,127 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     isAuthenticated: false,
     needsOrgSelection: false,
 
-    login: async (email: string, password: string) => {
-        // Get users from settings store
-        const users = useSettingsStore.getState().users;
+    login: async (data: LoginDto) => {
+        try {
+            const response = await api.api.authControllerLogin(data);
 
-        // Find user by email
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+            if (response.success && response.data) {
+                const { user, needsOrgSelection } = response.data;
+                // Tokens handled by cookies
 
-        // Check if user exists
-        if (!user) {
-            return { success: false, error: 'Invalid email or password' };
+                // Save user to storage
+                localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+
+                // Determine current org
+                let currentOrg = user.currentOrg || null;
+
+                // If not set but no selection needed and has orgs, pick first
+                if (!currentOrg && !needsOrgSelection && user.organizations && user.organizations.length > 0) {
+                    currentOrg = user.organizations[0];
+                }
+
+                if (currentOrg) {
+                    localStorage.setItem(ORG_STORAGE_KEY, currentOrg.orgId);
+                }
+
+                set({
+                    currentUser: user,
+                    currentOrg: currentOrg,
+                    isAuthenticated: true,
+                    needsOrgSelection: needsOrgSelection
+                });
+
+                return { success: true, needsOrgSelection };
+            }
+            return { success: false, error: response.message || 'Login failed' };
+        } catch (error: any) {
+            console.error('Login error:', error);
+            return { success: false, error: error.response?.data?.message || 'Login failed' };
         }
-
-        // Check password
-        if (user.password !== password) {
-            return { success: false, error: 'Invalid email or password' };
-        }
-
-        // Check if user has any active organizations
-        const activeOrgs = user.organizations?.filter(org => org.status === 'active') || [];
-
-        if (activeOrgs.length === 0) {
-            return { success: false, error: 'No active organizations found. Please contact administrator.' };
-        }
-
-        // Save user to localStorage (without password for security)
-        const userToStore = { ...user };
-        delete userToStore.password;
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userToStore));
-
-        // If user has only one organization, auto-select it
-        if (activeOrgs.length === 1) {
-            const org = activeOrgs[0];
-            localStorage.setItem(ORG_STORAGE_KEY, org.orgId);
-            set({
-                currentUser: { ...userToStore, currentOrg: org },
-                currentOrg: org,
-                isAuthenticated: true,
-                needsOrgSelection: false
-            });
-            return { success: true };
-        }
-
-        // User has multiple organizations - needs to select one
-        set({
-            currentUser: userToStore,
-            currentOrg: null,
-            isAuthenticated: false,
-            needsOrgSelection: true
-        });
-        return { success: true, needsOrgSelection: true };
     },
 
     selectOrganization: async (orgId: string) => {
-        const { currentUser } = get();
+        try {
+            const response = await api.api.authControllerSelectOrganization({ orgId });
 
-        if (!currentUser) {
-            return { success: false, error: 'No user logged in' };
+            if (response.success && response.data) {
+                const { currentOrg } = response.data;
+                // Tokens handled by cookies
+
+                localStorage.setItem(ORG_STORAGE_KEY, orgId);
+
+                // Update current user's current org
+                const { currentUser } = get();
+                const updatedUser = currentUser ? { ...currentUser, currentOrg } : null;
+                if (updatedUser) {
+                    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedUser));
+                }
+
+                set({
+                    currentUser: updatedUser,
+                    currentOrg: currentOrg,
+                    isAuthenticated: true,
+                    needsOrgSelection: false
+                });
+
+                return { success: true };
+            }
+            return { success: false, error: response.message };
+        } catch (error: any) {
+            return { success: false, error: error.response?.data?.message || 'Organization selection failed' };
         }
-
-        const selectedOrg = currentUser.organizations?.find(
-            org => org.orgId === orgId && org.status === 'active'
-        );
-
-        if (!selectedOrg) {
-            return { success: false, error: 'Organization not found or inactive' };
-        }
-
-        // Save selected organization
-        localStorage.setItem(ORG_STORAGE_KEY, orgId);
-
-        set({
-            currentUser: { ...currentUser, currentOrg: selectedOrg },
-            currentOrg: selectedOrg,
-            isAuthenticated: true,
-            needsOrgSelection: false
-        });
-
-        return { success: true };
     },
 
-    logout: () => {
-        set({
-            currentUser: null,
-            currentOrg: null,
-            isAuthenticated: false,
-            needsOrgSelection: false
-        });
-        localStorage.removeItem(AUTH_STORAGE_KEY);
-        localStorage.removeItem(ORG_STORAGE_KEY);
+    logout: async () => {
+        try {
+            await api.api.authControllerLogout();
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(AUTH_STORAGE_KEY);
+            localStorage.removeItem(ORG_STORAGE_KEY);
+            set({
+                currentUser: null,
+                currentOrg: null,
+                isAuthenticated: false,
+                needsOrgSelection: false
+            });
+        }
     },
 
     initializeAuth: () => {
-        // Load user from localStorage on app start
         try {
             const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
+            // We can't check token in localStorage anymore, so we rely on user presence or an initial profile fetch.
+            // Ideally, we should fetch /me or similar, but for now strict checking might be tricky without making a request.
+            // Let's assume if user is in storage, we are 'potentially' authenticated, but the first API call will fail if no cookies.
+            // A better approach is to try a silent refresh or profile fetch here.
+
             const storedOrgId = localStorage.getItem(ORG_STORAGE_KEY);
 
             if (storedUser) {
-                const user = JSON.parse(storedUser) as User;
+                const user = JSON.parse(storedUser) as UserDto;
+                let currentOrg = user.currentOrg || null;
 
-                // Verify user still exists in settings store
-                const users = useSettingsStore.getState().users;
-                const currentUser = users.find(u => u.id === user.id);
-
-                if (!currentUser) {
-                    // User no longer exists - clear session
-                    localStorage.removeItem(AUTH_STORAGE_KEY);
-                    localStorage.removeItem(ORG_STORAGE_KEY);
-                    return;
+                if (!currentOrg && storedOrgId && user.organizations) {
+                    currentOrg = user.organizations.find(o => o.orgId === storedOrgId) || null;
                 }
 
-                // Get active organizations
-                const activeOrgs = currentUser.organizations?.filter(org => org.status === 'active') || [];
-
-                if (activeOrgs.length === 0) {
-                    // No active organizations - clear session
-                    localStorage.removeItem(AUTH_STORAGE_KEY);
-                    localStorage.removeItem(ORG_STORAGE_KEY);
-                    return;
+                if (!currentOrg && user.organizations && user.organizations.length > 0) {
+                    currentOrg = user.organizations[0];
                 }
 
-                // If we have a stored org ID, try to use it
-                if (storedOrgId) {
-                    const selectedOrg = activeOrgs.find(org => org.orgId === storedOrgId);
-
-                    if (selectedOrg) {
-                        set({
-                            currentUser: { ...currentUser, currentOrg: selectedOrg },
-                            currentOrg: selectedOrg,
-                            isAuthenticated: true,
-                            needsOrgSelection: false
-                        });
-                        return;
-                    }
-                }
-
-                // If only one org, auto-select it
-                if (activeOrgs.length === 1) {
-                    const org = activeOrgs[0];
-                    localStorage.setItem(ORG_STORAGE_KEY, org.orgId);
-                    set({
-                        currentUser: { ...currentUser, currentOrg: org },
-                        currentOrg: org,
-                        isAuthenticated: true,
-                        needsOrgSelection: false
-                    });
-                    return;
-                }
-
-                // Multiple orgs - need selection
                 set({
-                    currentUser,
-                    currentOrg: null,
-                    isAuthenticated: false,
-                    needsOrgSelection: true
+                    currentUser: user,
+                    currentOrg: currentOrg,
+                    isAuthenticated: true,
+                    needsOrgSelection: !currentOrg && (user.organizations?.length || 0) > 1
                 });
             }
         } catch (error) {
-            console.error('Error initializing auth:', error);
-            localStorage.removeItem(AUTH_STORAGE_KEY);
-            localStorage.removeItem(ORG_STORAGE_KEY);
+            console.error('Init auth error:', error);
+            localStorage.clear();
         }
-    },
+    }
 }));

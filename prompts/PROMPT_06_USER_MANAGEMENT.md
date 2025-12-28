@@ -165,7 +165,7 @@ export class UsersService {
     if (existingUser) {
       // User exists - check if they're already in this organization
       const existingUserOrg = await this.em.findOne(UserOrganization, {
-        userId: existingUser.id,
+        user: existingUser,
         orgId,
       });
 
@@ -187,7 +187,7 @@ export class UsersService {
     }
 
     // Create user-organization relationship
-    const userOrg = new UserOrganization(user.id, orgId, createUserDto.role);
+    const userOrg = new UserOrganization(user, orgId, createUserDto.role);
     userOrg.status = UserStatus.ACTIVE;
     userOrg.createdBy = createdBy;
 
@@ -258,7 +258,7 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    const userOrg = await this.em.findOne(UserOrganization, { userId, orgId });
+    const userOrg = await this.em.findOne(UserOrganization, { user: { id: userId }, orgId });
 
     if (!userOrg) {
       throw new NotFoundException('User not found in this organization');
@@ -285,7 +285,7 @@ export class UsersService {
   }
 
   async remove(userId: string, orgId: string) {
-    const userOrg = await this.em.findOne(UserOrganization, { userId, orgId });
+    const userOrg = await this.em.findOne(UserOrganization, { user: { id: userId }, orgId });
 
     if (!userOrg) {
       throw new NotFoundException('User not found in this organization');

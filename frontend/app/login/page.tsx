@@ -34,7 +34,7 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
-            const result = await login(email, password);
+            const result = await login({ email, password });
 
             if (result.success) {
                 if (result.needsOrgSelection) {
@@ -112,7 +112,7 @@ export default function LoginPage() {
 
                 <div className={styles.footer}>
                     <p className={styles.hint}>
-                        💡 Demo credentials: Use any email from the users list with password: <code>password123</code>
+                        💡 Demo credentials: Use <code>admin@dentalclinic.com</code> with password: <code>password123</code>
                     </p>
                 </div>
             </div>

@@ -23,6 +23,12 @@ export class User extends BaseEntity {
     @Property({ nullable: true })
     refreshTokenExpiresAt?: Date;
 
+    @Property({ type: 'text', nullable: true })
+    resetPasswordToken?: string;
+
+    @Property({ nullable: true })
+    resetPasswordExpires?: Date;
+
     @OneToMany(() => UserOrganization, userOrg => userOrg.user)
     organizations = new Collection<UserOrganization>(this);
 

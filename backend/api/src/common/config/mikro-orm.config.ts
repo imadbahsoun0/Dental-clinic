@@ -1,6 +1,7 @@
 import { Options } from '@mikro-orm/core';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { Migrator } from '@mikro-orm/migrations';
+import { SeedManager } from '@mikro-orm/seeder';
 
 const config: Options = {
     driver: PostgreSqlDriver,
@@ -21,7 +22,15 @@ const config: Options = {
         snapshot: false,
         disableForeignKeys: false,
     },
-    extensions: [Migrator],
+    extensions: [Migrator, SeedManager],
+    seeder: {
+        path: 'dist/seeders',
+        pathTs: 'src/seeders',
+        defaultSeeder: 'DatabaseSeeder',
+        glob: '!(*.d).{js,ts}',
+        emit: 'ts',
+        fileName: (className: string) => className,
+    },
     debug: process.env.NODE_ENV !== 'production',
     allowGlobalContext: true,
 };

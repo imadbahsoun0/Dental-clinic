@@ -22,6 +22,7 @@ export const Sidebar: React.FC = () => {
     const pathname = usePathname();
     const router = useRouter();
     const currentUser = useAuthStore((state) => state.currentUser);
+    const currentOrg = useAuthStore((state) => state.currentOrg);
     const logout = useAuthStore((state) => state.logout);
 
     const handleLogout = () => {
@@ -96,7 +97,7 @@ export const Sidebar: React.FC = () => {
                         <div className={styles.userInfo}>
                             <div className={styles.userName}>{currentUser.name}</div>
                             <div className={styles.userRole}>
-                                {currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1)}
+                                {(currentOrg?.role || 'user').charAt(0).toUpperCase() + (currentOrg?.role || 'user').slice(1)}
                             </div>
                         </div>
                     </div>

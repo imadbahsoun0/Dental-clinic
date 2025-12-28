@@ -52,7 +52,7 @@ export class CreateOrganizationDto {
 **File: `src/modules/organizations/dto/update-organization.dto.ts`**
 ```typescript
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEmail, IsOptional, IsUrl, IsBoolean } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsUrl, IsBoolean, IsUUID } from 'class-validator';
 
 export class UpdateOrganizationDto {
   @ApiProperty({ required: false })
@@ -80,10 +80,10 @@ export class UpdateOrganizationDto {
   @IsUrl()
   website?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, description: 'Attachment ID for the logo' })
   @IsOptional()
-  @IsString()
-  logo?: string; // base64 or URL
+  @IsUUID()
+  logoId?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
@@ -116,7 +116,7 @@ export class OrganizationResponseDto {
   website?: string;
 
   @ApiProperty({ required: false })
-  logo?: string;
+  logo?: any; // Attachment object
 
   @ApiProperty()
   isActive!: boolean;
@@ -135,7 +135,7 @@ export class OrganizationResponseDto {
 ```typescript
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
-import { Organization } from '../../common/entities';
+import { Organization, Attachment } from '../../common/entities';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 
@@ -180,7 +180,9 @@ export class OrganizationsService {
     if (updateOrgDto.phone !== undefined) organization.phone = updateOrgDto.phone;
     if (updateOrgDto.email !== undefined) organization.email = updateOrgDto.email;
     if (updateOrgDto.website !== undefined) organization.website = updateOrgDto.website;
-    if (updateOrgDto.logo !== undefined) organization.logo = updateOrgDto.logo;
+    if (updateOrgDto.logoId) {
+      organization.logo = this.em.getReference(Attachment, updateOrgDto.logoId);
+    }
     if (updateOrgDto.isActive !== undefined) organization.isActive = updateOrgDto.isActive;
 
     organization.updatedBy = updatedBy;

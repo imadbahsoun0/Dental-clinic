@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
+import styles from './OrganizationSelector.module.css';
 
 export default function OrganizationSelector() {
     const { currentUser, selectOrganization } = useAuthStore();
@@ -31,43 +32,48 @@ export default function OrganizationSelector() {
         }
     };
 
+    const handleLogout = async () => {
+        await useAuthStore.getState().logout();
+        router.push('/login');
+    };
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                        Select Organization
-                    </h1>
-                    <p className="text-gray-600">
+        <div className={styles.container}>
+            <div className={styles.card}>
+                <div className={styles.header}>
+                    <div className={styles.logo}>
+                        <div className={styles.logoIcon}>🦷</div>
+                        <div>
+                            <div className={styles.logoText}>DentaCare</div>
+                            <div className={styles.logoSubtitle}>Pro</div>
+                        </div>
+                    </div>
+                    <h1 className={styles.title}>Select Organization</h1>
+                    <p className={styles.subtitle}>
                         Welcome back, {currentUser?.name}
                     </p>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className={styles.description}>
                         You have access to multiple organizations. Please select one to continue.
                     </p>
                 </div>
 
-                <form onSubmit={handleSelectOrganization} className="space-y-6">
+                <form onSubmit={handleSelectOrganization} className={styles.form}>
                     {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                        <div className={styles.error}>
+                            <span className={styles.errorIcon}>⚠️</span>
                             {error}
                         </div>
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <div className={styles.sectionLabel}>
                             Choose Organization
-                        </label>
-                        <div className="space-y-3">
+                        </div>
+                        <div className={styles.orgList}>
                             {activeOrgs.map((org) => (
                                 <label
                                     key={org.id}
-                                    className={`
-                                        flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all
-                                        ${selectedOrgId === org.orgId
-                                            ? 'border-blue-500 bg-blue-50'
-                                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                                        }
-                                    `}
+                                    className={`${styles.orgCard} ${selectedOrgId === org.orgId ? styles.selected : ''}`}
                                 >
                                     <input
                                         type="radio"
@@ -75,26 +81,21 @@ export default function OrganizationSelector() {
                                         value={org.orgId}
                                         checked={selectedOrgId === org.orgId}
                                         onChange={(e) => setSelectedOrgId(e.target.value)}
-                                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                                        className={styles.radioInput}
                                     />
-                                    <div className="ml-3 flex-1">
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-medium text-gray-900">
-                                                Organization {org.orgId}
+                                    <div className={styles.orgInfo}>
+                                        <div className={styles.orgHeader}>
+                                            <span className={styles.orgName}>
+                                                {org.orgName || 'Unknown Organization'}
                                             </span>
-                                            <span className={`
-                                                px-2 py-1 text-xs font-medium rounded-full
-                                                ${org.role === 'admin' ? 'bg-purple-100 text-purple-800' :
-                                                    org.role === 'dentist' ? 'bg-blue-100 text-blue-800' :
-                                                        'bg-green-100 text-green-800'}
-                                            `}>
-                                                {org.role.charAt(0).toUpperCase() + org.role.slice(1)}
+                                            <span className={`${styles.roleBadge} ${styles[org.role]}`}>
+                                                {org.role}
                                             </span>
                                         </div>
                                         {org.role === 'dentist' && org.percentage && (
-                                            <p className="text-sm text-gray-500 mt-1">
+                                            <div className={styles.orgDetails}>
                                                 Commission: {org.percentage}%
-                                            </p>
+                                            </div>
                                         )}
                                     </div>
                                 </label>
@@ -105,17 +106,15 @@ export default function OrganizationSelector() {
                     <button
                         type="submit"
                         disabled={isLoading || !selectedOrgId}
-                        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium
-                                 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                                 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className={styles.submitButton}
                     >
                         {isLoading ? 'Loading...' : 'Continue'}
                     </button>
 
                     <button
                         type="button"
-                        onClick={() => useAuthStore.getState().logout()}
-                        className="w-full text-gray-600 hover:text-gray-900 py-2 text-sm font-medium transition-colors"
+                        onClick={handleLogout}
+                        className={styles.logoutButton}
                     >
                         Logout
                     </button>
