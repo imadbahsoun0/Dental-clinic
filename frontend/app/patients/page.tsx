@@ -1,64 +1,51 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
-import { Modal } from '@/components/common/Modal';
 import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
 import { usePatientStore } from '@/store/patientStore';
+import { PatientModal } from '@/components/patients/PatientModal';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import styles from './patients.module.css';
+import toast from 'react-hot-toast';
 
 export default function PatientsPage() {
     const router = useRouter();
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const patients = usePatientStore((state) => state.patients);
-    const addPatient = usePatientStore((state) => state.addPatient);
-    const updatePatient = usePatientStore((state) => state.updatePatient);
-    const deletePatient = usePatientStore((state) => state.deletePatient);
+    const {
+        patients,
+        fetchPatients,
+        loading,
+        total,
+        deletePatient,
+        updatePatient
+    } = usePatientStore();
 
-    // Pagination state
+    // Modal state
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingPatientId, setEditingPatientId] = useState<string | null>(null);
+
+    // Delete confirmation state
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [patientToDelete, setPatientToDelete] = useState<{ id: string; name: string } | null>(null);
+
+    // Pagination & Search state
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-
-    // Filter state
     const [searchQuery, setSearchQuery] = useState('');
 
-    const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
-        mobileNumber: '',
-    });
+    // Fetch patients on mount and when params change
+    useEffect(() => {
+        // Debounce search could be added here
+        const timer = setTimeout(() => {
+            fetchPatients(currentPage, pageSize, searchQuery);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [fetchPatients, currentPage, pageSize, searchQuery]);
 
-    // Filter and search logic
-    const filteredPatients = useMemo(() => {
-        return patients.filter((patient) => {
-            const searchLower = searchQuery.toLowerCase();
-            const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
-            const phone = patient.mobileNumber.toLowerCase();
-            const email = (patient.email || '').toLowerCase();
-            const id = patient.id.toLowerCase();
-
-            return (
-                fullName.includes(searchLower) ||
-                phone.includes(searchLower) ||
-                email.includes(searchLower) ||
-                id.includes(searchLower)
-            );
-        });
-    }, [patients, searchQuery]);
-
-    // Pagination logic
-    const totalPages = Math.ceil(filteredPatients.length / pageSize);
-    const paginatedPatients = useMemo(() => {
-        const startIndex = (currentPage - 1) * pageSize;
-        const endIndex = startIndex + pageSize;
-        return filteredPatients.slice(startIndex, endIndex);
-    }, [filteredPatients, currentPage, pageSize]);
-
-    // Reset to page 1 when filters change
     const handleSearchChange = (value: string) => {
         setSearchQuery(value);
         setCurrentPage(1);
@@ -73,29 +60,52 @@ export default function PatientsPage() {
         router.push(`/treatments/${patientId}`);
     };
 
+    const handleAddPatient = () => {
+        setEditingPatientId(null);
+        setIsModalOpen(true);
+    };
+
+    const handleEditPatient = (patientId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditingPatientId(patientId);
+        setIsModalOpen(true);
+    };
+
     const handleDeletePatient = (patientId: string, patientName: string) => {
-        if (confirm(`Are you sure you want to delete ${patientName}? This action cannot be undone.`)) {
-            deletePatient(patientId);
+        setPatientToDelete({ id: patientId, name: patientName });
+        setDeleteConfirmOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!patientToDelete) return;
+
+        try {
+            await deletePatient(patientToDelete.id);
+            toast.success('Patient deleted successfully');
+            fetchPatients(currentPage, pageSize, searchQuery);
+        } catch (e) {
+            toast.error('Failed to delete patient');
+        } finally {
+            setPatientToDelete(null);
         }
     };
 
-    const handleTogglePaymentReminders = (patientId: string, currentValue: boolean | undefined, e: React.MouseEvent) => {
+    const handleTogglePaymentReminders = async (patientId: string, currentValue: boolean | undefined, e: React.MouseEvent) => {
         e.stopPropagation();
-        updatePatient(patientId, { enablePaymentReminders: !currentValue });
-    };
-
-    const handleSubmit = () => {
-        if (formData.firstName && formData.lastName && formData.mobileNumber) {
-            addPatient(formData);
-            setIsModalOpen(false);
-            setFormData({ firstName: '', lastName: '', mobileNumber: '' });
-            alert('Patient added! Medical history link can be sent via SMS.');
+        try {
+            await updatePatient(patientId, { enablePaymentReminders: !currentValue });
+            toast.success(`Payment reminders ${!currentValue ? 'enabled' : 'disabled'}`);
+        } catch (e) {
+            toast.error('Failed to update settings');
         }
     };
 
     const goToPage = (page: number) => {
+        const totalPages = Math.ceil(total / pageSize);
         setCurrentPage(Math.max(1, Math.min(page, totalPages)));
     };
+
+    const totalPages = Math.ceil(total / pageSize);
 
     return (
         <MainLayout title="Patients">
@@ -103,10 +113,10 @@ export default function PatientsPage() {
                 <div>
                     <h2 className={styles.pageTitle}>Patient Records</h2>
                     <p className={styles.pageSubtitle}>
-                        {filteredPatients.length} {filteredPatients.length === 1 ? 'patient' : 'patients'} found
+                        {total} {total === 1 ? 'patient' : 'patients'} found
                     </p>
                 </div>
-                <Button onClick={() => setIsModalOpen(true)}>+ Add New Patient</Button>
+                <Button onClick={handleAddPatient}>+ Add New Patient</Button>
             </div>
 
             {/* Filters */}
@@ -141,7 +151,8 @@ export default function PatientsPage() {
 
             {/* Table */}
             <Card>
-                {paginatedPatients.length === 0 ? (
+                {/* Loading State could be added here */}
+                {patients.length === 0 && !loading ? (
                     <div className={styles.emptyState}>
                         <p>No patients found matching your search criteria.</p>
                         {searchQuery && (
@@ -165,7 +176,7 @@ export default function PatientsPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {paginatedPatients.map((patient) => (
+                                    {patients.map((patient) => (
                                         <tr
                                             key={patient.id}
                                             onClick={() => handleViewPatient(patient.id)}
@@ -174,19 +185,23 @@ export default function PatientsPage() {
                                             <td>
                                                 <div className={styles.patientInfo}>
                                                     <div className={styles.patientAvatar}>
-                                                        {patient.firstName[0]}{patient.lastName[0]}
+                                                        {patient.firstName?.[0]}{patient.lastName?.[0]}
                                                     </div>
                                                     <div>
                                                         <div className={styles.patientName}>
                                                             {patient.firstName} {patient.lastName}
                                                         </div>
-                                                        <div className={styles.patientId}>#{patient.id}</div>
+                                                        <div className={styles.patientId}>#{patient.id.slice(0, 8)}</div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>{patient.mobileNumber}</td>
                                             <td>{patient.email || 'N/A'}</td>
-                                            <td>{patient.dateOfBirth || 'N/A'}</td>
+                                            <td>
+                                                {patient.dateOfBirth
+                                                    ? new Date(patient.dateOfBirth).toLocaleDateString()
+                                                    : 'N/A'}
+                                            </td>
                                             <td>
                                                 <div
                                                     className={styles.toggleContainer}
@@ -202,6 +217,16 @@ export default function PatientsPage() {
                                             </td>
                                             <td>
                                                 <div className={styles.actionButtons}>
+                                                    <button
+                                                        className={styles.actionBtn}
+                                                        title="Edit Patient"
+                                                        onClick={(e) => handleEditPatient(patient.id, e)}
+                                                    >
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                        </svg>
+                                                    </button>
                                                     <button
                                                         className={styles.actionBtn}
                                                         title="View Treatments"
@@ -239,7 +264,7 @@ export default function PatientsPage() {
                         {totalPages > 1 && (
                             <div className={styles.pagination}>
                                 <div className={styles.paginationInfo}>
-                                    Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredPatients.length)} of {filteredPatients.length} patients
+                                    Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, total)} of {total} patients
                                 </div>
                                 <div className={styles.paginationControls}>
                                     <button
@@ -286,45 +311,29 @@ export default function PatientsPage() {
                 )}
             </Card>
 
-            <Modal
+            <PatientModal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                title="Add New Patient"
-                footer={
-                    <>
-                        <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSubmit}>Add Patient</Button>
-                    </>
-                }
-            >
-                <Input
-                    type="text"
-                    label="First Name"
-                    placeholder="First name"
-                    value={formData.firstName}
-                    onChange={(value) => setFormData({ ...formData, firstName: value })}
-                    required
-                />
-                <Input
-                    type="text"
-                    label="Last Name"
-                    placeholder="Last name"
-                    value={formData.lastName}
-                    onChange={(value) => setFormData({ ...formData, lastName: value })}
-                    required
-                />
-                <Input
-                    type="tel"
-                    label="Mobile Number"
-                    placeholder="+1 (555) 000-0000"
-                    value={formData.mobileNumber}
-                    onChange={(value) => setFormData({ ...formData, mobileNumber: value })}
-                    required
-                />
-                <p style={{ fontSize: '13px', color: 'var(--text-light)', marginTop: '10px' }}>
-                    After adding the patient, you can send them a link to fill out their medical history and date of birth.
-                </p>
-            </Modal>
+                onClose={() => {
+                    setIsModalOpen(false);
+                    // Optional: refresh to get latest data
+                    fetchPatients(currentPage, pageSize, searchQuery);
+                }}
+                patientId={editingPatientId}
+            />
+
+            <ConfirmDialog
+                isOpen={deleteConfirmOpen}
+                onClose={() => {
+                    setDeleteConfirmOpen(false);
+                    setPatientToDelete(null);
+                }}
+                onConfirm={confirmDelete}
+                title="Delete Patient"
+                message={`Are you sure you want to delete ${patientToDelete?.name}? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                isDestructive={true}
+            />
         </MainLayout>
     );
 }

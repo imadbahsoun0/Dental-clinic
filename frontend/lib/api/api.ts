@@ -187,6 +187,60 @@ export interface UpdateOrganizationDto {
   isActive?: boolean;
 }
 
+export interface PatientResponseDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+  mobileNumber: string;
+  email?: string;
+  /** @format date-time */
+  dateOfBirth?: string;
+  address?: string;
+  medicalHistory?: object;
+  enablePaymentReminders: boolean;
+  documents?: object[];
+  /** @format date-time */
+  createdAt: string;
+  /** @format date-time */
+  updatedAt: string;
+}
+
+export interface CreatePatientDto {
+  /** @example "John" */
+  firstName: string;
+  /** @example "Doe" */
+  lastName: string;
+  /** @example "+1 (555) 123-4567" */
+  mobileNumber: string;
+  /** @example "john.doe@email.com" */
+  email?: string;
+  /** @example "1990-05-15" */
+  dateOfBirth?: string;
+  address?: string;
+  medicalHistory?: object;
+  /** @example true */
+  enablePaymentReminders?: boolean;
+  documentIds?: string[];
+}
+
+export interface UpdatePatientDto {
+  /** @example "John" */
+  firstName?: string;
+  /** @example "Doe" */
+  lastName?: string;
+  /** @example "+1 (555) 123-4567" */
+  mobileNumber?: string;
+  /** @example "john.doe@email.com" */
+  email?: string;
+  /** @example "1990-05-15" */
+  dateOfBirth?: string;
+  address?: string;
+  medicalHistory?: object;
+  /** @example true */
+  enablePaymentReminders?: boolean;
+  documentIds?: string[];
+}
+
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -784,6 +838,182 @@ export class Api<
         body: data,
         secure: true,
         type: ContentType.FormData,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerCreate
+     * @summary Create a new patient
+     * @request POST:/api/v1/patients
+     * @secure
+     */
+    patientsControllerCreate: (
+      data: CreatePatientDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: PatientResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerFindAll
+     * @summary List all patients with pagination and filtering
+     * @request GET:/api/v1/patients
+     * @secure
+     */
+    patientsControllerFindAll: (
+      query?: {
+        /**
+         * @min 1
+         * @default 1
+         */
+        page?: number;
+        /**
+         * @min 1
+         * @max 100
+         * @default 10
+         */
+        limit?: number;
+        search?: string;
+        startDate?: string;
+        endDate?: string;
+        sortBy?: string;
+        sortOrder?: "ASC" | "DESC";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: PatientResponseDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerSearch
+     * @summary Search patients by name or phone
+     * @request GET:/api/v1/patients/search
+     * @secure
+     */
+    patientsControllerSearch: (
+      query: {
+        q: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: PatientResponseDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/search`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerFindOne
+     * @summary Get patient by ID
+     * @request GET:/api/v1/patients/{id}
+     * @secure
+     */
+    patientsControllerFindOne: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: PatientResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerUpdate
+     * @summary Update patient
+     * @request PATCH:/api/v1/patients/{id}
+     * @secure
+     */
+    patientsControllerUpdate: (
+      id: string,
+      data: UpdatePatientDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: PatientResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerRemove
+     * @summary Delete patient
+     * @request DELETE:/api/v1/patients/{id}
+     * @secure
+     */
+    patientsControllerRemove: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/${id}`,
+        method: "DELETE",
+        secure: true,
+        format: "json",
         ...params,
       }),
 

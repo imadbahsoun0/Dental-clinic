@@ -1,0 +1,7 @@
+.destructive {
+    background-color: #dc2626;
+}
+
+.destructive:hover {
+    background-color: #b91c1c;
+}
