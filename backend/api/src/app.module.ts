@@ -6,6 +6,7 @@ import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import mikroOrmConfig from './common/config/mikro-orm.config';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 import { EmailModule } from './modules/email/email.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -21,6 +22,7 @@ import { TestModule } from './modules/test/test.module';
     }),
     MikroOrmModule.forRoot(mikroOrmConfig),
     AuthModule,
+    UsersModule,
     EmailModule,
     TestModule,
   ],

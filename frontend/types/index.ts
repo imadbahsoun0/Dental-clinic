@@ -217,6 +217,8 @@ export interface SelectProps {
   placeholder?: string;
   searchable?: boolean;
   className?: string;
+  error?: string;
+  required?: boolean;
 }
 
 export interface ModalProps {

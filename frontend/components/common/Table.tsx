@@ -11,9 +11,9 @@ export interface TableColumn<T> {
 }
 
 export interface TableAction<T> {
-    label: string;
+    label: string | ((item: T) => React.ReactNode);
     onClick: (item: T) => void;
-    variant?: 'primary' | 'secondary' | 'danger';
+    variant?: 'primary' | 'secondary' | 'danger' | ((item: T) => 'primary' | 'secondary' | 'danger');
 }
 
 interface TableProps<T> {
@@ -61,16 +61,20 @@ export function Table<T extends Record<string, any>>({
                                 {actions && actions.length > 0 && (
                                     <td className={styles.actionsCell}>
                                         <div className={styles.actions}>
-                                            {actions.map((action, actionIndex) => (
-                                                <Button
-                                                    key={actionIndex}
-                                                    variant={action.variant || 'secondary'}
-                                                    size="sm"
-                                                    onClick={() => action.onClick(item)}
-                                                >
-                                                    {action.label}
-                                                </Button>
-                                            ))}
+                                            {actions.map((action, actionIndex) => {
+                                                const variant = typeof action.variant === 'function' ? action.variant(item) : (action.variant || 'secondary');
+                                                const label = typeof action.label === 'function' ? action.label(item) : action.label;
+                                                return (
+                                                    <Button
+                                                        key={actionIndex}
+                                                        variant={variant}
+                                                        size="sm"
+                                                        onClick={() => action.onClick(item)}
+                                                    >
+                                                        {label}
+                                                    </Button>
+                                                );
+                                            })}
                                         </div>
                                     </td>
                                 )}

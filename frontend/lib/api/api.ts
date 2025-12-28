@@ -95,6 +95,59 @@ export interface ResetPasswordDto {
   newPassword: string;
 }
 
+export interface UserOrgResponseDto {
+  id: string;
+  orgId: string;
+  role: string;
+  status: string;
+  wallet?: number;
+  percentage?: number;
+}
+
+export interface UserResponseDto {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  organizations: UserOrgResponseDto[];
+  /** @format date-time */
+  createdAt: string;
+  /** @format date-time */
+  updatedAt: string;
+}
+
+export interface CreateUserDto {
+  /** @example "Dr. John Doe" */
+  name: string;
+  /** @example "john.doe@dentalclinic.com" */
+  email: string;
+  /**
+   * @minLength 6
+   * @example "password123"
+   */
+  password: string;
+  /** @example "+1 (555) 123-4567" */
+  phone?: string;
+  /** @example "dentist" */
+  role: "admin" | "dentist" | "secretary";
+  /**
+   * Commission percentage for dentists
+   * @example 30
+   */
+  percentage?: number;
+}
+
+export interface UpdateUserDto {
+  /** @example "Dr. John Doe" */
+  name?: string;
+  /** @example "+1 (555) 123-4567" */
+  phone?: string;
+  role?: "admin" | "dentist" | "secretary";
+  status?: "active" | "inactive";
+  /** @example 30 */
+  percentage?: number;
+}
+
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -425,6 +478,168 @@ export class Api<
         method: "POST",
         body: data,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Users
+     * @name UsersControllerCreate
+     * @summary Create a new user in the organization
+     * @request POST:/api/v1/users
+     * @secure
+     */
+    usersControllerCreate: (data: CreateUserDto, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: UserResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/users`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Users
+     * @name UsersControllerFindAll
+     * @summary Get all users in the organization
+     * @request GET:/api/v1/users
+     * @secure
+     */
+    usersControllerFindAll: (
+      query?: {
+        /**
+         * @min 1
+         * @default 1
+         */
+        page?: number;
+        /**
+         * @min 1
+         * @max 100
+         * @default 10
+         */
+        limit?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: UserResponseDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/users`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Users
+     * @name UsersControllerGetDentists
+     * @summary Get all dentists in the organization
+     * @request GET:/api/v1/users/dentists
+     * @secure
+     */
+    usersControllerGetDentists: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/users/dentists`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Users
+     * @name UsersControllerFindOne
+     * @summary Get a user by ID
+     * @request GET:/api/v1/users/{id}
+     * @secure
+     */
+    usersControllerFindOne: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: UserResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/users/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Users
+     * @name UsersControllerUpdate
+     * @summary Update a user
+     * @request PATCH:/api/v1/users/{id}
+     * @secure
+     */
+    usersControllerUpdate: (
+      id: string,
+      data: UpdateUserDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: UserResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/users/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Users
+     * @name UsersControllerRemove
+     * @summary Deactivate a user
+     * @request DELETE:/api/v1/users/{id}
+     * @secure
+     */
+    usersControllerRemove: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/users/${id}`,
+        method: "DELETE",
+        secure: true,
         format: "json",
         ...params,
       }),

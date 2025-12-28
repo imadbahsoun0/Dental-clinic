@@ -1,6 +1,4 @@
-'use client';
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Table, TableColumn, TableAction } from '@/components/common/Table';
@@ -10,41 +8,56 @@ import { Select } from '@/components/common/Select';
 import { useSettingsStore } from '@/store/settingsStore';
 import { User } from '@/types';
 import styles from './settings-tabs.module.css';
+import { ConfirmationModal } from '../common/ConfirmationModal';
+import toast from 'react-hot-toast';
 
 export const UsersTab: React.FC = () => {
     const users = useSettingsStore((state) => state.users);
+    const fetchUsers = useSettingsStore((state) => state.fetchUsers);
     const addUser = useSettingsStore((state) => state.addUser);
     const updateUser = useSettingsStore((state) => state.updateUser);
     const deleteUser = useSettingsStore((state) => state.deleteUser);
 
+    useEffect(() => {
+        fetchUsers();
+    }, [fetchUsers]);
+
     const [modalOpen, setModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<any>(null); // any to handle legacy props
+    const [isLoading, setIsLoading] = useState(false);
+
     const [userForm, setUserForm] = useState({
         name: '',
         email: '',
         phone: '',
-        role: 'secretary' as 'dentist' | 'secretary' | 'admin',
+        role: 'secretary' as 'secretary' | 'dentist' | 'admin',
         status: 'active' as 'active' | 'inactive',
         wallet: '0',
         percentage: '',
     });
 
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
     const handleAddUser = () => {
         setEditingUser(null);
+        setFormErrors({});
         setUserForm({
             name: '',
             email: '',
             phone: '',
-            role: 'secretary',
-            status: 'active',
+            role: 'secretary' as 'secretary' | 'dentist' | 'admin',
+            status: 'active' as 'active' | 'inactive',
             wallet: '0',
             percentage: '',
         });
         setModalOpen(true);
     };
 
-    const handleEditUser = (user: User) => {
+    const handleEditUser = (user: any) => {
         setEditingUser(user);
+        setFormErrors({});
         setUserForm({
             name: user.name,
             email: user.email,
@@ -57,58 +70,92 @@ export const UsersTab: React.FC = () => {
         setModalOpen(true);
     };
 
-    const handleSaveUser = () => {
-        if (!userForm.name || !userForm.email) {
-            alert('Please fill in all required fields');
-            return;
-        }
+    const validateForm = () => {
+        const errors: Record<string, string> = {};
+        if (!userForm.name.trim()) errors.name = 'Full Name is required';
+        if (!userForm.email.trim()) errors.email = 'Email Address is required';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userForm.email)) errors.email = 'Invalid email format';
 
-        // Validate dentist-specific fields
-        if (userForm.role === 'dentist' && !userForm.percentage) {
-            alert('Percentage is required for dentists');
-            return;
-        }
-
-        const userData: any = {
-            name: userForm.name,
-            email: userForm.email,
-            phone: userForm.phone,
-            role: userForm.role,
-            status: userForm.status,
-        };
-
-        // Add wallet and percentage for dentists
         if (userForm.role === 'dentist') {
-            userData.wallet = parseFloat(userForm.wallet) || 0;
-            userData.percentage = parseFloat(userForm.percentage) || 0;
+            if (!userForm.percentage || isNaN(Number(userForm.percentage))) {
+                errors.percentage = 'Valid commission percentage is required';
+            }
         }
 
-        if (editingUser) {
-            updateUser(editingUser.id, userData);
-        } else {
-            addUser(userData);
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleSaveUser = async () => {
+        if (!validateForm()) return;
+
+        setIsLoading(true);
+        try {
+            const userData: any = {
+                name: userForm.name,
+                email: userForm.email,
+                phone: userForm.phone,
+                role: userForm.role,
+                status: userForm.status,
+            };
+
+            // Add wallet and percentage for dentists
+            if (userForm.role === 'dentist') {
+                userData.wallet = parseFloat(userForm.wallet) || 0;
+                userData.percentage = parseFloat(userForm.percentage) || 0;
+            }
+
+            if (editingUser) {
+                await updateUser(editingUser.id, userData);
+                toast.success('User updated successfully');
+            } else {
+                await addUser(userData);
+                toast.success('User created successfully');
+            }
+            setModalOpen(false);
+            fetchUsers(); // Refresh list to ensure sync
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to save user');
+        } finally {
+            setIsLoading(false);
         }
-        setModalOpen(false);
     };
 
-    const handleDeleteUser = (user: User) => {
-        if (confirm(`Are you sure you want to delete "${user.name}"?`)) {
-            deleteUser(user.id);
+    const initiateDeleteUser = (user: any) => {
+        setUserToDelete(user);
+        setConfirmDeleteOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!userToDelete) return;
+        setIsLoading(true);
+        try {
+            await deleteUser(userToDelete.id);
+            toast.success('User deleted successfully');
+            setConfirmDeleteOpen(false);
+            setUserToDelete(null);
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to delete user');
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleToggleStatus = (user: User) => {
-        updateUser(user.id, { status: user.status === 'active' ? 'inactive' : 'active' });
+    const handleToggleStatus = (user: any) => {
+        updateUser(user.id, { status: user.status === 'active' ? 'inactive' : 'active' } as any);
+        toast.success(`User set to ${user.status === 'active' ? 'Inactive' : 'Active'}`);
     };
 
-    const columns: TableColumn<User>[] = [
+    const columns: TableColumn<any>[] = [
         { key: 'name', label: 'Name' },
         { key: 'email', label: 'Email' },
         { key: 'phone', label: 'Phone' },
         {
             key: 'role',
             label: 'Role',
-            render: (user) => (
+            render: (user: any) => (
                 <span
                     style={{
                         padding: '4px 12px',
@@ -129,14 +176,14 @@ export const UsersTab: React.FC = () => {
                                     : '#6b21a8',
                     }}
                 >
-                    {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                    {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Unknown'}
                 </span>
             ),
         },
         {
             key: 'percentage',
             label: 'Commission',
-            render: (user) => (
+            render: (user: any) => (
                 user.role === 'dentist' && user.percentage ? (
                     <span style={{ fontWeight: 600, color: '#059669' }}>
                         {user.percentage}%
@@ -149,7 +196,7 @@ export const UsersTab: React.FC = () => {
         {
             key: 'wallet',
             label: 'Wallet',
-            render: (user) => (
+            render: (user: any) => (
                 user.role === 'dentist' ? (
                     <span style={{ fontWeight: 600, color: user.wallet && user.wallet > 0 ? '#dc2626' : '#6b7280' }}>
                         ${(user.wallet || 0).toFixed(2)}
@@ -162,7 +209,7 @@ export const UsersTab: React.FC = () => {
         {
             key: 'status',
             label: 'Status',
-            render: (user) => (
+            render: (user: any) => (
                 <span
                     style={{
                         padding: '4px 12px',
@@ -173,20 +220,20 @@ export const UsersTab: React.FC = () => {
                         color: user.status === 'active' ? '#065f46' : '#991b1b',
                     }}
                 >
-                    {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                    {user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Unknown'}
                 </span>
             ),
         },
     ];
 
-    const actions: TableAction<User>[] = [
+    const actions: TableAction<any>[] = [
         {
-            label: (user: User) => (user.status === 'active' ? 'Deactivate' : 'Activate'),
-            onClick: handleToggleStatus,
-            variant: 'secondary',
-        } as any,
+            label: (user: any) => (user.status === 'active' ? 'Deactivate' : 'Activate'),
+            onClick: handleToggleStatus, // Ensure this updates status correctly
+            variant: (user: any) => (user.status === 'active' ? 'danger' : 'primary'),
+        },
         { label: 'Edit', onClick: handleEditUser, variant: 'secondary' },
-        { label: 'Delete', onClick: handleDeleteUser, variant: 'danger' },
+        { label: 'Delete', onClick: initiateDeleteUser, variant: 'danger' },
     ];
 
     return (
@@ -206,27 +253,33 @@ export const UsersTab: React.FC = () => {
                 title={editingUser ? 'Edit User' : 'Add User'}
                 footer={
                     <>
-                        <Button variant="secondary" onClick={() => setModalOpen(false)}>
+                        <Button variant="secondary" onClick={() => setModalOpen(false)} disabled={isLoading}>
                             Cancel
                         </Button>
-                        <Button onClick={handleSaveUser}>{editingUser ? 'Update' : 'Add'} User</Button>
+                        <Button onClick={handleSaveUser} disabled={isLoading}>
+                            {isLoading ? 'Saving...' : (editingUser ? 'Update' : 'Add') + ' User'}
+                        </Button>
                     </>
                 }
             >
                 <div className={styles.form}>
                     <Input
                         type="text"
-                        label="Full Name *"
+                        label="Full Name"
                         value={userForm.name}
                         onChange={(value) => setUserForm({ ...userForm, name: value })}
                         placeholder="e.g., Dr. John Doe"
+                        error={formErrors.name}
+                        required
                     />
                     <Input
                         type="email"
-                        label="Email Address *"
+                        label="Email Address"
                         value={userForm.email}
                         onChange={(value) => setUserForm({ ...userForm, email: value })}
                         placeholder="john.doe@dentalclinic.com"
+                        error={formErrors.email}
+                        required
                     />
                     <Input
                         type="tel"
@@ -236,7 +289,7 @@ export const UsersTab: React.FC = () => {
                         placeholder="+1 (555) 123-4567"
                     />
                     <Select
-                        label="Role *"
+                        label="Role"
                         options={[
                             { value: 'dentist', label: 'Dentist' },
                             { value: 'secretary', label: 'Secretary' },
@@ -244,24 +297,30 @@ export const UsersTab: React.FC = () => {
                         ]}
                         value={userForm.role}
                         onChange={(value) => setUserForm({ ...userForm, role: value as any })}
+                        error={formErrors.role}
+                        required
                     />
                     <Select
-                        label="Status *"
+                        label="Status"
                         options={[
                             { value: 'active', label: 'Active' },
                             { value: 'inactive', label: 'Inactive' },
                         ]}
                         value={userForm.status}
                         onChange={(value) => setUserForm({ ...userForm, status: value as any })}
+                        error={formErrors.status}
+                        required
                     />
                     {userForm.role === 'dentist' && (
                         <>
                             <Input
                                 type="number"
-                                label="Commission Percentage *"
+                                label="Commission Percentage"
                                 value={userForm.percentage}
                                 onChange={(value) => setUserForm({ ...userForm, percentage: value })}
                                 placeholder="e.g., 30"
+                                error={formErrors.percentage}
+                                required
                             />
                             <Input
                                 type="number"
@@ -274,6 +333,17 @@ export const UsersTab: React.FC = () => {
                     )}
                 </div>
             </Modal>
+
+            <ConfirmationModal
+                isOpen={confirmDeleteOpen}
+                onClose={() => setConfirmDeleteOpen(false)}
+                onConfirm={handleConfirmDelete}
+                title="Delete User"
+                message={`Are you sure you want to delete ${userToDelete?.name}? This action cannot be undone.`}
+                confirmLabel="Delete"
+                variant="danger"
+                isLoading={isLoading}
+            />
         </div>
     );
 };

@@ -3,6 +3,8 @@ import "../styles/theme.css";
 import "./globals.css";
 import { AuthInitializer } from "@/components/auth/AuthInitializer";
 
+import { Toaster } from 'react-hot-toast';
+
 export const metadata: Metadata = {
   title: "DentaCare Pro - Clinic Management System",
   description: "Professional dental clinic management system",
@@ -25,6 +27,7 @@ export default function RootLayout({
       </head>
       <body>
         <AuthInitializer />
+        <Toaster position="top-right" />
         {children}
       </body>
     </html>

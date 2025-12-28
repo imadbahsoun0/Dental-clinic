@@ -10,6 +10,8 @@ export const Select: React.FC<SelectProps> = ({
     placeholder = 'Select...',
     searchable = false,
     className = '',
+    error,
+    required,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -43,9 +45,14 @@ export const Select: React.FC<SelectProps> = ({
 
     return (
         <div className={styles.selectContainer} ref={selectRef}>
-            {label && <label className={styles.selectLabel}>{label}</label>}
+            {label && (
+                <label className={styles.selectLabel}>
+                    {label}
+                    {required && <span className={styles.required}>*</span>}
+                </label>
+            )}
             <div
-                className={`${styles.selectTrigger} ${className}`}
+                className={`${styles.selectTrigger} ${error ? styles.error : ''} ${className}`}
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <span className={selectedOption ? styles.selectedValue : styles.placeholder}>
@@ -95,6 +102,7 @@ export const Select: React.FC<SelectProps> = ({
                     </div>
                 </div>
             )}
+            {error && <span className={styles.errorMessage}>{error}</span>}
         </div>
     );
 };
