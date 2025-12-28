@@ -290,6 +290,22 @@ export class OrganizationsModule {}
 
 Add OrganizationsModule to imports in `src/app.module.ts`.
 
+### 6. Generate API Client
+
+Run the following command in the `frontend` directory to update the API client with the new endpoints:
+
+```bash
+cd frontend
+npm run generate:api
+```
+
+### 7. Frontend Integration
+
+**File: `frontend/app/settings/page.tsx`** or **`frontend/dashboard/page.tsx`** (update to use real API):
+
+Create or update setting components to fetch current organization details using `api.organizations.organizationsControllerGetCurrent`.
+Connect the organization settings form to `api.organizations.organizationsControllerUpdateCurrent`.
+
 ## Acceptance Criteria
 
 - [ ] Organizations module created

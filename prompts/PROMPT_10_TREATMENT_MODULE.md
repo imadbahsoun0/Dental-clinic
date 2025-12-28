@@ -134,6 +134,24 @@ if (createDto.toothNumbers?.length) {
 - [ ] Wallet auto-update on completion (via Appointment Doctor)
 - [ ] Support for multiple tooth numbers (Tooth entity relation)
 
+### X. Generate API Client
+
+Run the following command in the `frontend` directory:
+
+```bash
+cd frontend
+npm run generate:api
+```
+
+### Y. Frontend Integration
+
+**File: `frontend/app/patients/[id]/treatments/page.tsx`** (update to use real API):
+
+Create or update treatment list component to fetch treatments using `api.treatments.treatmentsControllerFindAll`.
+Connect the "Add Treatment" modal to `api.treatments.treatmentsControllerCreate`.
+Implement status update action (e.g. Complete) using `api.treatments.treatmentsControllerUpdateStatus`.
+Verify wallet updates by checking the doctor's profile/dashboard (if visible).
+
 ## Next Steps
 Proceed to **Prompt 11: Payment Module**
 

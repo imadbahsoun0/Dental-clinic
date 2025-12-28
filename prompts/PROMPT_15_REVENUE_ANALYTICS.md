@@ -144,6 +144,25 @@ export class AnalyticsController {
 }
 ```
 
+```
+
+### Generate API Client
+
+Run the following command in the `frontend` directory:
+
+```bash
+cd frontend
+npm run generate:api
+```
+
+### Frontend Integration
+
+**File: `frontend/app/dashboard/page.tsx`** and **`frontend/app/analytics/page.tsx`** (update to use real API):
+
+Create Analytics Dashboard component showing charts.
+Fetch data using `api.analytics.analyticsControllerGetRevenue` and `api.analytics.analyticsControllerGetDashboardData`.
+Ensure role-based visibility (Secretaries don't see this page/component).
+
 ## Acceptance Criteria
 - [ ] Organization revenue (admin)
 - [ ] Doctor revenue (dentist/admin)

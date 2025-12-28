@@ -59,6 +59,25 @@ export class CreatePaymentDto {
 }
 ```
 
+```
+
+### Generate API Client
+
+Run the following command in the `frontend` directory:
+
+```bash
+cd frontend
+npm run generate:api
+```
+
+### Frontend Integration
+
+**File: `frontend/app/patients/[id]/payments/page.tsx`** or **`frontend/app/payments/page.tsx`** (update to use real API):
+
+Create or update payment list component to fetch payments using `api.payments.paymentsControllerFindAll`.
+Connect the "Record Payment" modal to `api.payments.paymentsControllerCreate`.
+Ensure patient total balance/paid amount is updated in the UI.
+
 ## Acceptance Criteria
 - [ ] Payment CRUD working
 - [ ] Link to patients

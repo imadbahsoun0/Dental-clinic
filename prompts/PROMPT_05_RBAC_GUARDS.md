@@ -496,6 +496,15 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
 export class AppModule {}
 ```
 
+### 12. Generate API Client
+
+Run the following command in the `frontend` directory to update the API client with the new endpoints:
+
+```bash
+cd frontend
+npm run generate:api
+```
+
 ## Acceptance Criteria
 
 - [ ] Roles guard created and working

@@ -110,6 +110,24 @@ async getWalletHistory(doctorId: string, orgId: string) {
 }
 ```
 
+```
+
+### Generate API Client
+
+Run the following command in the `frontend` directory:
+
+```bash
+cd frontend
+npm run generate:api
+```
+
+### Frontend Integration
+
+**File: `frontend/app/wallet/page.tsx`** (update to use real API):
+
+Create wallet dashboard for dentists to view their balance and history using `api.wallet.walletControllerGetMyWallet`.
+For Admins (`frontend/app/admin/wallets/page.tsx`), list all doctor wallets using `api.wallet.walletControllerGetAllWallets` and implement "Pay Doctor" modal using `api.wallet.walletControllerPayDoctor`.
+
 ## Acceptance Criteria
 - [ ] Get own wallet (dentist)
 - [ ] Get all wallets (admin)

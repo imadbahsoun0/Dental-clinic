@@ -208,6 +208,23 @@ import { Appointment, Patient, TreatmentType, User } from '../../common/entities
 export class AppointmentsModule {}
 ```
 
+### 5. Generate API Client
+
+Run the following command in the `frontend` directory:
+
+```bash
+cd frontend
+npm run generate:api
+```
+
+### 6. Frontend Integration
+
+**File: `frontend/app/dashboard/page.tsx`** and **`frontend/app/appointments/page.tsx`** (update to use real API):
+
+Create or update `AppointmentScheduler` component to fetch appointments using `api.appointments.appointmentsControllerFindAll` or `api.appointments.appointmentsControllerFindByDate`.
+Connect the "New Appointment" modal to `api.appointments.appointmentsControllerCreate`.
+Ensure role-based visibility is handled in the UI (e.g. Dentists only see their calendar).
+
 ## Acceptance Criteria
 
 - [ ] Appointments module created

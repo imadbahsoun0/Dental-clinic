@@ -63,6 +63,25 @@ export class SettingsController {
 }
 ```
 
+```
+
+### Generate API Client
+
+Run the following command in the `frontend` directory:
+
+```bash
+cd frontend
+npm run generate:api
+```
+
+### Frontend Integration
+
+**File: `frontend/app/settings/page.tsx`** (update to use real API):
+
+Create management tabs for "Appointment Types", "Treatment Categories", and "Medical History".
+Fetch data using `api.settings.settingsControllerGetAppointmentTypes` (etc).
+Implement Create/Update forms connecting to the respective API endpoints.
+
 ## Acceptance Criteria
 - [ ] Appointment types CRUD
 - [ ] Treatment categories CRUD

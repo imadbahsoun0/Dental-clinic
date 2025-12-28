@@ -499,8 +499,21 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
     },
   ],
 })
-export class AppModule {}
+### 6. Generate API Client
+
+Run the following command in the `frontend` directory to update the API client with the new endpoints:
+
+```bash
+cd frontend
+npm run generate:api
 ```
+
+### 7. Frontend Integration
+
+**File: `frontend/app/users/page.tsx`** (update to use real API):
+
+Create a new file `frontend/features/users/UserList.tsx` or update existing page component to fetch users from `api.users.usersControllerFindAll`.
+Connect the "Add User" and "Edit User" forms to `api.users.usersControllerCreate` and `api.users.usersControllerUpdate`.
 
 ## Acceptance Criteria
 

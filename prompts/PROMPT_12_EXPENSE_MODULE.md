@@ -89,6 +89,24 @@ export class CreateExpenseDto {
 }
 ```
 
+```
+
+### Generate API Client
+
+Run the following command in the `frontend` directory:
+
+```bash
+cd frontend
+npm run generate:api
+```
+
+### Frontend Integration
+
+**File: `frontend/app/expenses/page.tsx`** (update to use real API):
+
+Create or update expense list component to fetch expenses using `api.expenses.expensesControllerFindAll`.
+Implement date range filters and "Add Expense" modal connecting to `api.expenses.expensesControllerCreate`.
+
 ## Acceptance Criteria
 - [ ] Expense CRUD working
 - [ ] Invoice file upload support (via Attachment ID)
