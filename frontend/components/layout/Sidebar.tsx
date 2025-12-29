@@ -4,11 +4,12 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import { useAppointmentStore } from '@/store/appointmentStore';
 import styles from './Sidebar.module.css';
 
 const mainNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/appointments', label: 'Appointments', icon: '📅', badge: '8' },
+    { href: '/appointments', label: 'Appointments', icon: '📅' }, // Removed static badge
     { href: '/patients', label: 'Patients', icon: '👥' },
     { href: '/expenses', label: 'Expenses', icon: '💰' },
     { href: '/doctors-payments', label: 'Doctor Payments', icon: '💳' },
@@ -24,6 +25,17 @@ export const Sidebar: React.FC = () => {
     const currentUser = useAuthStore((state) => state.currentUser);
     const currentOrg = useAuthStore((state) => state.currentOrg);
     const logout = useAuthStore((state) => state.logout);
+
+    // Dynamic Appointment Badge
+    const todayCount = useAppointmentStore((state) => state.todayCount);
+    const fetchTodayStats = useAppointmentStore((state) => state.fetchTodayStats);
+
+    React.useEffect(() => {
+        fetchTodayStats();
+        // Poll every minute to keep the count fresh
+        const interval = setInterval(fetchTodayStats, 60000);
+        return () => clearInterval(interval);
+    }, [fetchTodayStats]);
 
     const handleLogout = () => {
         logout();
@@ -45,8 +57,8 @@ export const Sidebar: React.FC = () => {
                 <Link href="/dashboard" className={styles.logo}>
                     <div className={styles.logoIcon}>🦷</div>
                     <div>
-                        <div className={styles.logoText}>DentaCare</div>
-                        <div className={styles.logoSubtitle}>Pro</div>
+                        <div className={styles.logoText}>DentiFlow</div>
+                        <div className={styles.logoSubtitle}></div>
                     </div>
                 </Link>
             </div>
@@ -56,6 +68,12 @@ export const Sidebar: React.FC = () => {
                 <div className={styles.navLabel}>Main Menu</div>
                 {mainNavItems.map((item) => {
                     const isActive = pathname?.startsWith(item.href);
+                    // Determine badge content
+                    let badge = null;
+                    if (item.label === 'Appointments' && todayCount > 0) {
+                        badge = String(todayCount);
+                    }
+
                     return (
                         <Link
                             key={item.href}
@@ -64,7 +82,7 @@ export const Sidebar: React.FC = () => {
                         >
                             <span className={styles.navItemIcon}>{item.icon}</span>
                             <span>{item.label}</span>
-                            {item.badge && <span className={styles.navBadge}>{item.badge}</span>}
+                            {badge && <span className={styles.navBadge}>{badge}</span>}
                         </Link>
                     );
                 })}

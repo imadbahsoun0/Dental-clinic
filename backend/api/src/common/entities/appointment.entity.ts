@@ -18,8 +18,8 @@ export class Appointment extends BaseEntity {
     @ManyToOne(() => Patient)
     patient!: Patient;
 
-    @ManyToOne(() => TreatmentType)
-    treatmentType!: TreatmentType;
+    @ManyToOne(() => TreatmentType, { nullable: true })
+    treatmentType?: TreatmentType;
 
     @Property({ type: 'date' })
     date!: Date;

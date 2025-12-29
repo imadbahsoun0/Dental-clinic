@@ -15,6 +15,7 @@ import { TestModule } from './modules/test/test.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { FilesModule } from './modules/files/files.module';
 import { PatientsModule } from './modules/patients/patients.module';
+import { AppointmentsModule } from './modules/appointments/appointments.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { PatientsModule } from './modules/patients/patients.module';
     OrganizationsModule,
     FilesModule,
     PatientsModule,
+    AppointmentsModule,
     TestModule,
   ],
   providers: [

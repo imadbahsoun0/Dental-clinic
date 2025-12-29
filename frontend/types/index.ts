@@ -30,25 +30,33 @@ export interface PriceVariant {
   isDefault?: boolean; // If true, this is the default price when no tooth-specific match
 }
 
-export interface AppointmentType {
+export interface TreatmentType {
   id: string;
-  categoryId?: string; // Optional for backward compatibility
   name: string;
-  priceVariants: PriceVariant[]; // Flexible pricing based on tooth numbers
-  duration: number; // in minutes
-  color: string; // hex color code
+  categoryId?: string;
+  priceVariants: PriceVariant[];
+  duration: number;
+  color: string;
 }
 
 export interface Appointment {
   id: string;
   patientId: string;
-  patient?: Patient;
-  appointmentTypeId: string;
-  appointmentType?: AppointmentType;
+  patient?: { id: string; firstName: string; lastName: string };
+  treatmentTypeId?: string;
+  treatmentType?: TreatmentType;
+  // Legacy support/alias
+  appointmentTypeId?: string;
+  appointmentType?: TreatmentType;
+
   date: string; // ISO date string
   time: string; // HH:mm format
   status: 'confirmed' | 'pending' | 'cancelled';
-  drName?: string; // Doctor name
+
+  doctorId?: string;
+  doctor?: { id: string; name: string };
+  drName?: string; // Legacy
+
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -61,7 +69,7 @@ export interface Treatment {
   toothNumbers?: number[]; // New: support multiple teeth
   toothName?: string; // Optional: descriptive tooth name
   appointmentTypeId: string;
-  appointmentType?: AppointmentType;
+  appointmentType?: TreatmentType;
   appointmentId?: string; // Link to appointment (for non-planned treatments)
   totalPrice: number; // Total price for all teeth
   amountPaid: number;
@@ -128,7 +136,7 @@ export interface MedicalHistorySubmission {
 
 export interface Settings {
   doctorLogo?: string; // base64 or URL
-  appointmentTypes: AppointmentType[];
+  appointmentTypes: TreatmentType[];
   medicalHistoryQuestions: MedicalHistoryQuestion[];
   doctors?: string[]; // List of doctor names
 }

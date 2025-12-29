@@ -241,6 +241,40 @@ export interface UpdatePatientDto {
   documentIds?: string[];
 }
 
+export interface CreateAppointmentDto {
+  /** @example "patient-uuid-here" */
+  patientId: string;
+  /** @example "treatment-type-uuid-here" */
+  treatmentTypeId?: string;
+  /** @example "2024-01-15" */
+  date: string;
+  /** @example "14:30" */
+  time: string;
+  /** @default "pending" */
+  status?: "confirmed" | "pending" | "cancelled";
+  /** @example "doctor-uuid-here" */
+  doctorId?: string;
+  /** @example "Patient requested morning slot" */
+  notes?: string;
+}
+
+export interface UpdateAppointmentDto {
+  /** @example "patient-uuid-here" */
+  patientId?: string;
+  /** @example "treatment-type-uuid-here" */
+  treatmentTypeId?: string;
+  /** @example "2024-01-15" */
+  date?: string;
+  /** @example "14:30" */
+  time?: string;
+  /** @default "pending" */
+  status?: "confirmed" | "pending" | "cancelled";
+  /** @example "doctor-uuid-here" */
+  doctorId?: string;
+  /** @example "Patient requested morning slot" */
+  notes?: string;
+}
+
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -618,7 +652,7 @@ export class Api<
         page?: number;
         /**
          * @min 1
-         * @max 100
+         * @max 1000
          * @default 10
          */
         limit?: number;
@@ -887,7 +921,7 @@ export class Api<
         page?: number;
         /**
          * @min 1
-         * @max 100
+         * @max 1000
          * @default 10
          */
         limit?: number;
@@ -1011,6 +1045,203 @@ export class Api<
         ErrorResponse
       >({
         path: `/api/v1/patients/${id}`,
+        method: "DELETE",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Appointments
+     * @name AppointmentsControllerCreate
+     * @summary Create a new appointment
+     * @request POST:/api/v1/appointments
+     * @secure
+     */
+    appointmentsControllerCreate: (
+      data: CreateAppointmentDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/appointments`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Appointments
+     * @name AppointmentsControllerFindAll
+     * @summary List all appointments with role-based filtering
+     * @request GET:/api/v1/appointments
+     * @secure
+     */
+    appointmentsControllerFindAll: (
+      query?: {
+        /**
+         * @min 1
+         * @default 1
+         */
+        page?: number;
+        /**
+         * @min 1
+         * @max 1000
+         * @default 10
+         */
+        limit?: number;
+        /** Filter by specific date (YYYY-MM-DD) */
+        date?: string;
+        /** Start date for range filtering */
+        startDate?: string;
+        /** End date for range filtering */
+        endDate?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/appointments`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Appointments
+     * @name AppointmentsControllerGetTodayStats
+     * @summary Get today's appointment statistics
+     * @request GET:/api/v1/appointments/stats/today
+     * @secure
+     */
+    appointmentsControllerGetTodayStats: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/appointments/stats/today`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Appointments
+     * @name AppointmentsControllerFindByDate
+     * @summary Get appointments by specific date
+     * @request GET:/api/v1/appointments/by-date/{date}
+     * @secure
+     */
+    appointmentsControllerFindByDate: (
+      date: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/appointments/by-date/${date}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Appointments
+     * @name AppointmentsControllerFindOne
+     * @summary Get appointment by ID
+     * @request GET:/api/v1/appointments/{id}
+     * @secure
+     */
+    appointmentsControllerFindOne: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/appointments/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Appointments
+     * @name AppointmentsControllerUpdate
+     * @summary Update appointment
+     * @request PATCH:/api/v1/appointments/{id}
+     * @secure
+     */
+    appointmentsControllerUpdate: (
+      id: string,
+      data: UpdateAppointmentDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/appointments/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Appointments
+     * @name AppointmentsControllerRemove
+     * @summary Delete appointment
+     * @request DELETE:/api/v1/appointments/{id}
+     * @secure
+     */
+    appointmentsControllerRemove: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/appointments/${id}`,
         method: "DELETE",
         secure: true,
         format: "json",

@@ -31,9 +31,6 @@ export class UserOrganization extends BaseEntity {
     @Property({ type: 'integer', nullable: true })
     percentage?: number; // Commission percentage for dentists - per organization
 
-    @Property({ nullable: true })
-    deletedAt?: Date;
-
     constructor(user: User, orgId: string, role: UserRole) {
         super();
         this.user = user;
