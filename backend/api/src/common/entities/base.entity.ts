@@ -19,4 +19,10 @@ export abstract class BaseEntity extends MikroBaseEntity {
 
     @Property({ type: 'uuid' })
     orgId!: string; // Multi-tenancy: All entities belong to an organization
+
+    @Property({ type: 'timestamp', nullable: true })
+    deletedAt?: Date;
+
+    @Property({ type: 'uuid', nullable: true })
+    deletedBy?: string;
 }

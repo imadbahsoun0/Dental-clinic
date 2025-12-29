@@ -14,6 +14,7 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
 import { TestModule } from './modules/test/test.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { FilesModule } from './modules/files/files.module';
+import { PatientsModule } from './modules/patients/patients.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { FilesModule } from './modules/files/files.module';
     EmailModule,
     OrganizationsModule,
     FilesModule,
+    PatientsModule,
     TestModule,
   ],
   providers: [
