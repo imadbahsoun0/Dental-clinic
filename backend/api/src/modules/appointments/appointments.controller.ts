@@ -43,7 +43,8 @@ export class AppointmentsController {
             query,
             query.date,
             query.startDate,
-            query.endDate
+            query.endDate,
+            query.patientId
         );
         return new StandardResponse({ data: result.data, meta: result.meta }, 'Appointments retrieved successfully');
     }

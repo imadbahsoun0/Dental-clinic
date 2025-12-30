@@ -4,6 +4,7 @@ import React from 'react';
 import { Treatment } from '@/types';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAppointmentStore } from '@/store/appointmentStore';
+import { formatToothNumbers } from '@/constants/teeth';
 import styles from './TreatmentsTable.module.css';
 
 interface TreatmentsTableProps {
@@ -23,26 +24,36 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
     onDelete,
     onStatusChange,
 }) => {
-    const appointmentTypes = useSettingsStore((state) => state.appointmentTypes);
+    const treatmentTypes = useSettingsStore((state) => state.treatmentTypes);
     const appointments = useAppointmentStore((state) => state.appointments);
 
-    const getAppointmentTypeName = (appointmentTypeId: string) => {
-        const type = appointmentTypes.find((t) => t.id === appointmentTypeId);
+    const getTreatmentTypeName = (treatmentTypeId: string) => {
+        const type = treatmentTypes.find((t) => t.id === treatmentTypeId);
         return type?.name || 'Unknown';
     };
 
     // Helper to get date and doctor from linked appointment
     const getAppointmentDetails = (treatment: Treatment) => {
+        // 1. Check for populated appointment object (from backend)
+        if (treatment.appointment) {
+            return {
+                date: new Date(treatment.appointment.date).toLocaleDateString(),
+                doctor: treatment.appointment.doctor?.name || treatment.appointment.drName || '-'
+            };
+        }
+
+        // 2. Fallback to store lookup using ID
         if (treatment.appointmentId) {
             const appointment = appointments.find(apt => apt.id === treatment.appointmentId);
             if (appointment) {
                 return {
                     date: new Date(appointment.date).toLocaleDateString(),
-                    doctor: appointment.drName || '-'
+                    doctor: appointment.doctor?.name || appointment.drName || '-'
                 };
             }
         }
-        // Fallback to treatment's own data
+
+        // 3. Fallback to treatment's own legacy data
         return {
             date: new Date(treatment.date).toLocaleDateString(),
             doctor: treatment.drName || '-'
@@ -59,19 +70,6 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
                 return styles.statusCancelled;
             default:
                 return styles.statusPlanned;
-        }
-    };
-
-    const formatStatus = (status?: string) => {
-        switch (status) {
-            case 'in-progress':
-                return 'In Progress';
-            case 'completed':
-                return 'Completed';
-            case 'cancelled':
-                return 'Cancelled';
-            default:
-                return 'Planned';
         }
     };
 
@@ -146,9 +144,12 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
                                         />
                                     </td>
                                 )}
-                                <td>{getAppointmentTypeName(treatment.appointmentTypeId)}</td>
+                                <td>{getTreatmentTypeName(treatment.treatmentTypeId)}</td>
                                 <td>
-                                    {treatment.toothName || `#${treatment.toothNumber}`}
+                                    {treatment.toothName ||
+                                        (treatment.toothNumbers?.length
+                                            ? formatToothNumbers(treatment.toothNumbers)
+                                            : `#${treatment.toothNumber}`)}
                                 </td>
                                 <td className={styles.currency}>${treatment.totalPrice.toFixed(2)}</td>
                                 <td className={styles.currency}>${treatment.discount.toFixed(2)}</td>

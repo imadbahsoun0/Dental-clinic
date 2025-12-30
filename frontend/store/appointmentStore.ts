@@ -9,7 +9,7 @@ interface AppointmentStore {
     error: string | null;
     total: number;
     todayCount: number;
-    fetchAppointments: (page?: number, limit?: number, date?: string, startDate?: string, endDate?: string) => Promise<void>;
+    fetchAppointments: (page?: number, limit?: number, date?: string, startDate?: string, endDate?: string, patientId?: string) => Promise<void>;
     fetchTodayStats: () => Promise<void>;
     fetchAppointmentsByDate: (date: string) => Promise<Appointment[]>;
     addAppointment: (appointment: { patientId: string; treatmentTypeId?: string; date: string; time: string; status?: 'pending' | 'confirmed' | 'cancelled'; doctorId?: string; notes?: string }) => Promise<void>;
@@ -38,13 +38,14 @@ export const useAppointmentStore = create<AppointmentStore>()((set, get) => ({
         }
     },
 
-    fetchAppointments: async (page = 1, limit = 100, date?: string, startDate?: string, endDate?: string) => {
+    fetchAppointments: async (page = 1, limit = 100, date?: string, startDate?: string, endDate?: string, patientId?: string) => {
         set({ loading: true, error: null });
         try {
             const params: any = { page, limit };
             if (date) params.date = date;
             if (startDate) params.startDate = startDate;
             if (endDate) params.endDate = endDate;
+            if (patientId) params.patientId = patientId;
 
             const response = await api.api.appointmentsControllerFindAll(params);
 

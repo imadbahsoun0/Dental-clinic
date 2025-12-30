@@ -6,6 +6,7 @@ import { Modal } from '@/components/common/Modal';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 import { useSettingsStore } from '@/store/settingsStore';
+import { formatToothNumbers } from '@/constants/teeth';
 import styles from './BulkDiscountModal.module.css';
 
 interface BulkDiscountModalProps {
@@ -21,7 +22,7 @@ export const BulkDiscountModal: React.FC<BulkDiscountModalProps> = ({
     onApply,
     onClose,
 }) => {
-    const appointmentTypes = useSettingsStore((state) => state.appointmentTypes);
+    const treatmentTypes = useSettingsStore((state) => state.treatmentTypes);
     const [discountPercent, setDiscountPercent] = useState('0');
 
     // Reset discount when modal opens
@@ -62,12 +63,16 @@ export const BulkDiscountModal: React.FC<BulkDiscountModalProps> = ({
                 <div className={styles.treatmentsList}>
                     <h4 className={styles.sectionTitle}>Selected Treatments:</h4>
                     {treatments.map((treatment) => {
-                        const aptType = appointmentTypes.find(t => t.id === treatment.appointmentTypeId);
+                        const type = treatmentTypes.find(t => t.id === treatment.treatmentTypeId);
+                        const teethDisplay = treatment.toothNumbers && treatment.toothNumbers.length > 0
+                            ? formatToothNumbers(treatment.toothNumbers)
+                            : `#${treatment.toothNumber}`;
+
                         return (
                             <div key={treatment.id} className={styles.treatmentItem}>
                                 <div className={styles.treatmentInfo}>
                                     <span className={styles.treatmentName}>
-                                        {aptType?.name || 'Unknown'} - Tooth #{treatment.toothNumber}
+                                        {type?.name || 'Unknown'} - Tooth {teethDisplay}
                                     </span>
                                     <span className={styles.treatmentPrice}>
                                         ${treatment.totalPrice.toFixed(2)}

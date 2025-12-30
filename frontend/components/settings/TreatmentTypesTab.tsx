@@ -9,24 +9,24 @@ import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
 import { MultiSelect } from '@/components/common/MultiSelect';
 import { useSettingsStore } from '@/store/settingsStore';
-import { TreatmentCategory, AppointmentType, PriceVariant } from '@/types';
+import { TreatmentCategory, TreatmentType, PriceVariant } from '@/types';
 import { ALL_TEETH, formatToothNumbers } from '@/constants/teeth';
 import styles from './settings-tabs.module.css';
 
 export const TreatmentTypesTab: React.FC = () => {
     const treatmentCategories = useSettingsStore((state) => state.treatmentCategories);
-    const appointmentTypes = useSettingsStore((state) => state.appointmentTypes);
+    const treatmentTypes = useSettingsStore((state) => state.treatmentTypes);
     const addTreatmentCategory = useSettingsStore((state) => state.addTreatmentCategory);
     const updateTreatmentCategory = useSettingsStore((state) => state.updateTreatmentCategory);
     const deleteTreatmentCategory = useSettingsStore((state) => state.deleteTreatmentCategory);
-    const addAppointmentType = useSettingsStore((state) => state.addAppointmentType);
-    const updateAppointmentType = useSettingsStore((state) => state.updateAppointmentType);
-    const deleteAppointmentType = useSettingsStore((state) => state.deleteAppointmentType);
+    const addTreatmentType = useSettingsStore((state) => state.addTreatmentType);
+    const updateTreatmentType = useSettingsStore((state) => state.updateTreatmentType);
+    const deleteTreatmentType = useSettingsStore((state) => state.deleteTreatmentType);
 
     const [categoryModalOpen, setCategoryModalOpen] = useState(false);
     const [treatmentModalOpen, setTreatmentModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<TreatmentCategory | null>(null);
-    const [editingTreatment, setEditingTreatment] = useState<AppointmentType | null>(null);
+    const [editingTreatment, setEditingTreatment] = useState<TreatmentType | null>(null);
 
     const [categoryForm, setCategoryForm] = useState({ name: '', icon: '🦷', order: 1 });
     const [treatmentForm, setTreatmentForm] = useState({
@@ -89,7 +89,7 @@ export const TreatmentTypesTab: React.FC = () => {
         setTreatmentModalOpen(true);
     };
 
-    const handleEditTreatment = (treatment: AppointmentType) => {
+    const handleEditTreatment = (treatment: TreatmentType) => {
         setEditingTreatment(treatment);
         setTreatmentForm({
             categoryId: treatment.categoryId || '',
@@ -161,16 +161,16 @@ export const TreatmentTypesTab: React.FC = () => {
         }
 
         if (editingTreatment) {
-            updateAppointmentType(editingTreatment.id, treatmentForm);
+            updateTreatmentType(editingTreatment.id, treatmentForm);
         } else {
-            addAppointmentType(treatmentForm);
+            addTreatmentType(treatmentForm);
         }
         setTreatmentModalOpen(false);
     };
 
-    const handleDeleteTreatment = (treatment: AppointmentType) => {
+    const handleDeleteTreatment = (treatment: TreatmentType) => {
         if (confirm(`Are you sure you want to delete "${treatment.name}"?`)) {
-            deleteAppointmentType(treatment.id);
+            deleteTreatmentType(treatment.id);
         }
     };
 
@@ -181,7 +181,7 @@ export const TreatmentTypesTab: React.FC = () => {
         {
             key: 'count',
             label: 'Treatments',
-            render: (cat) => appointmentTypes.filter((t) => t.categoryId === cat.id).length,
+            render: (cat) => treatmentTypes.filter((t) => t.categoryId === cat.id).length,
         },
     ];
 
@@ -190,7 +190,7 @@ export const TreatmentTypesTab: React.FC = () => {
         { label: 'Delete', onClick: handleDeleteCategory, variant: 'danger' },
     ];
 
-    const treatmentColumns: TableColumn<AppointmentType>[] = [
+    const treatmentColumns: TableColumn<TreatmentType>[] = [
         {
             key: 'category',
             label: 'Category',
@@ -226,7 +226,7 @@ export const TreatmentTypesTab: React.FC = () => {
         },
     ];
 
-    const treatmentActions: TableAction<AppointmentType>[] = [
+    const treatmentActions: TableAction<TreatmentType>[] = [
         { label: 'Edit', onClick: handleEditTreatment, variant: 'secondary' },
         { label: 'Delete', onClick: handleDeleteTreatment, variant: 'danger' },
     ];
@@ -252,7 +252,7 @@ export const TreatmentTypesTab: React.FC = () => {
             >
                 <Table
                     columns={treatmentColumns}
-                    data={appointmentTypes}
+                    data={treatmentTypes}
                     actions={treatmentActions}
                     emptyMessage="No treatment types found. Add your first treatment type to get started."
                 />

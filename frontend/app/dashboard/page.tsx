@@ -25,14 +25,14 @@ export default function DashboardPage() {
     const treatments = useTreatmentStore((state) => state.treatments);
     const expenses = useExpenseStore((state) => state.expenses);
     const addExpense = useExpenseStore((state) => state.addExpense);
-    const appointmentTypes = useSettingsStore((state) => state.appointmentTypes);
+    const treatmentTypes = useSettingsStore((state) => state.treatmentTypes);
     const doctors = useSettingsStore((state) => state.doctors);
     const [today, setToday] = useState('');
     const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
     const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
     const [appointmentFormData, setAppointmentFormData] = useState({
         patientId: '',
-        appointmentTypeId: '',
+        treatmentTypeId: '',
         date: '',
         time: '',
         drName: '',
@@ -185,10 +185,10 @@ export default function DashboardPage() {
                                     {patientsWithPending.slice(0, 4).map(({ patient, treatments: patientTreatments }) => {
                                         if (!patient) return null;
 
-                                        const appointmentTypes = useSettingsStore.getState().appointmentTypes;
+                                        const treatmentTypes = useSettingsStore.getState().treatmentTypes;
                                         const treatmentNames = patientTreatments
                                             .map((t) => {
-                                                const type = appointmentTypes.find((at: { id: string }) => at.id === t.appointmentTypeId);
+                                                const type = treatmentTypes.find((at: { id: string }) => at.id === t.treatmentTypeId);
                                                 return type?.name || 'Unknown';
                                             })
                                             .slice(0, 2);
@@ -220,7 +220,7 @@ export default function DashboardPage() {
                                                             const firstTreatment = patientTreatments[0];
                                                             setAppointmentFormData({
                                                                 patientId: patient.id,
-                                                                appointmentTypeId: firstTreatment?.appointmentTypeId || '',
+                                                                treatmentTypeId: firstTreatment?.treatmentTypeId || '',
                                                                 date: '',
                                                                 time: '',
                                                                 drName: '',
@@ -280,7 +280,7 @@ export default function DashboardPage() {
                     setIsAppointmentModalOpen(false);
                     setAppointmentFormData({
                         patientId: '',
-                        appointmentTypeId: '',
+                        treatmentTypeId: '',
                         date: '',
                         time: '',
                         drName: '',
@@ -294,7 +294,7 @@ export default function DashboardPage() {
                             setIsAppointmentModalOpen(false);
                             setAppointmentFormData({
                                 patientId: '',
-                                appointmentTypeId: '',
+                                treatmentTypeId: '',
                                 date: '',
                                 time: '',
                                 drName: '',
@@ -302,7 +302,7 @@ export default function DashboardPage() {
                             });
                         }}>Cancel</Button>
                         <Button onClick={() => {
-                            if (appointmentFormData.patientId && appointmentFormData.appointmentTypeId && appointmentFormData.date && appointmentFormData.time) {
+                            if (appointmentFormData.patientId && appointmentFormData.treatmentTypeId && appointmentFormData.date && appointmentFormData.time) {
                                 addAppointment({
                                     ...appointmentFormData,
                                     status: 'pending',
@@ -310,7 +310,7 @@ export default function DashboardPage() {
                                 setIsAppointmentModalOpen(false);
                                 setAppointmentFormData({
                                     patientId: '',
-                                    appointmentTypeId: '',
+                                    treatmentTypeId: '',
                                     date: '',
                                     time: '',
                                     drName: '',

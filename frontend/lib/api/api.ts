@@ -275,6 +275,191 @@ export interface UpdateAppointmentDto {
   notes?: string;
 }
 
+export interface TreatmentResponseDto {
+  id: string;
+  patientId: string;
+  patient?: object;
+  treatmentTypeId: string;
+  treatmentType?: object;
+  toothNumbers: number[];
+  totalPrice: number;
+  discount: number;
+  status: "planned" | "in-progress" | "completed" | "cancelled";
+  appointmentId?: string;
+  appointment?: object;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTreatmentDto {
+  /** Patient ID */
+  patientId: string;
+  /** Treatment type ID */
+  treatmentTypeId: string;
+  /** Array of tooth numbers */
+  toothNumbers: number[];
+  /**
+   * Total price
+   * @example 100
+   */
+  totalPrice: number;
+  /**
+   * Discount amount
+   * @default 0
+   * @example 0
+   */
+  discount: number;
+  /**
+   * Treatment status
+   * @default "planned"
+   */
+  status: "planned" | "in-progress" | "completed" | "cancelled";
+  /** Appointment ID (required for non-planned treatments) */
+  appointmentId?: string;
+  /** Additional notes */
+  notes?: string;
+}
+
+export interface UpdateTreatmentDto {
+  /** Patient ID */
+  patientId?: string;
+  /** Treatment type ID */
+  treatmentTypeId?: string;
+  /** Array of tooth numbers */
+  toothNumbers?: number[];
+  /**
+   * Total price
+   * @example 100
+   */
+  totalPrice?: number;
+  /**
+   * Discount amount
+   * @default 0
+   * @example 0
+   */
+  discount?: number;
+  /**
+   * Treatment status
+   * @default "planned"
+   */
+  status?: "planned" | "in-progress" | "completed" | "cancelled";
+  /** Appointment ID (required for non-planned treatments) */
+  appointmentId?: string;
+  /** Additional notes */
+  notes?: string;
+}
+
+export interface TreatmentCategoryResponseDto {
+  id: string;
+  name: string;
+  icon?: string;
+  order?: number;
+  /** @format date-time */
+  createdAt: string;
+  /** @format date-time */
+  updatedAt: string;
+}
+
+export interface CreateTreatmentCategoryDto {
+  name: string;
+  icon?: string;
+  order?: number;
+}
+
+export interface UpdateTreatmentCategoryDto {
+  name?: string;
+  icon?: string;
+  order?: number;
+}
+
+export interface PriceVariantDto {
+  name: string;
+  price: number;
+  currency?: string;
+  toothNumbers?: string[];
+  isDefault?: boolean;
+}
+
+export interface TreatmentTypeResponseDto {
+  id: string;
+  name: string;
+  categoryId: string;
+  priceVariants: PriceVariantDto[];
+  duration: number;
+  color: string;
+  /** @format date-time */
+  createdAt: string;
+  /** @format date-time */
+  updatedAt: string;
+}
+
+export interface CreateTreatmentTypeDto {
+  name: string;
+  categoryId: string;
+  priceVariants: PriceVariantDto[];
+  duration: number;
+  color: string;
+}
+
+export interface UpdateTreatmentTypeDto {
+  name?: string;
+  categoryId?: string;
+  priceVariants?: PriceVariantDto[];
+  duration?: number;
+  color?: string;
+}
+
+export interface PaymentResponseDto {
+  id: string;
+  patientId: string;
+  patient?: object;
+  amount: number;
+  date: string;
+  paymentMethod: "cash" | "card" | "transfer" | "check" | "other";
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePaymentDto {
+  /** Patient ID */
+  patientId: string;
+  /**
+   * Payment amount
+   * @example 100
+   */
+  amount: number;
+  /**
+   * Payment date (ISO format)
+   * @example "2024-01-15"
+   */
+  date: string;
+  /** Payment method */
+  paymentMethod: "cash" | "card" | "transfer" | "check" | "other";
+  /** Additional notes */
+  notes?: string;
+}
+
+export interface UpdatePaymentDto {
+  /** Patient ID */
+  patientId?: string;
+  /**
+   * Payment amount
+   * @example 100
+   */
+  amount?: number;
+  /**
+   * Payment date (ISO format)
+   * @example "2024-01-15"
+   */
+  date?: string;
+  /** Payment method */
+  paymentMethod?: "cash" | "card" | "transfer" | "check" | "other";
+  /** Additional notes */
+  notes?: string;
+}
+
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -1242,6 +1427,554 @@ export class Api<
         ErrorResponse
       >({
         path: `/api/v1/appointments/${id}`,
+        method: "DELETE",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatments
+     * @name TreatmentsControllerCreate
+     * @summary Create a new treatment
+     * @request POST:/api/v1/treatments
+     * @secure
+     */
+    treatmentsControllerCreate: (
+      data: CreateTreatmentDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: TreatmentResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/treatments`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatments
+     * @name TreatmentsControllerFindAll
+     * @summary List all treatments with role-based filtering
+     * @request GET:/api/v1/treatments
+     * @secure
+     */
+    treatmentsControllerFindAll: (
+      query?: {
+        /**
+         * @min 1
+         * @default 1
+         */
+        page?: number;
+        /**
+         * @min 1
+         * @max 1000
+         * @default 10
+         */
+        limit?: number;
+        /** Filter by patient ID */
+        patientId?: string;
+        /** Filter by treatment status */
+        status?: "planned" | "in-progress" | "completed" | "cancelled";
+        /** Filter by treatment type ID */
+        treatmentTypeId?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: TreatmentResponseDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/treatments`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatments
+     * @name TreatmentsControllerGetPatientStats
+     * @summary Get treatment statistics for a patient
+     * @request GET:/api/v1/treatments/patient/{patientId}/stats
+     * @secure
+     */
+    treatmentsControllerGetPatientStats: (
+      patientId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/treatments/patient/${patientId}/stats`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatments
+     * @name TreatmentsControllerFindOne
+     * @summary Get treatment by ID
+     * @request GET:/api/v1/treatments/{id}
+     * @secure
+     */
+    treatmentsControllerFindOne: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: TreatmentResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/treatments/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatments
+     * @name TreatmentsControllerUpdate
+     * @summary Update treatment
+     * @request PATCH:/api/v1/treatments/{id}
+     * @secure
+     */
+    treatmentsControllerUpdate: (
+      id: string,
+      data: UpdateTreatmentDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: TreatmentResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/treatments/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatments
+     * @name TreatmentsControllerRemove
+     * @summary Delete treatment
+     * @request DELETE:/api/v1/treatments/{id}
+     * @secure
+     */
+    treatmentsControllerRemove: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/treatments/${id}`,
+        method: "DELETE",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatment Types
+     * @name TreatmentTypesControllerCreateCategory
+     * @summary Create a treatment category
+     * @request POST:/api/v1/treatment-types/categories
+     * @secure
+     */
+    treatmentTypesControllerCreateCategory: (
+      data: CreateTreatmentCategoryDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: TreatmentCategoryResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/treatment-types/categories`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatment Types
+     * @name TreatmentTypesControllerFindAllCategories
+     * @summary Get all treatment categories
+     * @request GET:/api/v1/treatment-types/categories
+     * @secure
+     */
+    treatmentTypesControllerFindAllCategories: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: TreatmentCategoryResponseDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/treatment-types/categories`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatment Types
+     * @name TreatmentTypesControllerUpdateCategory
+     * @summary Update a treatment category
+     * @request PATCH:/api/v1/treatment-types/categories/{id}
+     * @secure
+     */
+    treatmentTypesControllerUpdateCategory: (
+      id: string,
+      data: UpdateTreatmentCategoryDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: TreatmentCategoryResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/treatment-types/categories/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatment Types
+     * @name TreatmentTypesControllerRemoveCategory
+     * @summary Delete a treatment category
+     * @request DELETE:/api/v1/treatment-types/categories/{id}
+     * @secure
+     */
+    treatmentTypesControllerRemoveCategory: (
+      id: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/treatment-types/categories/${id}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatment Types
+     * @name TreatmentTypesControllerCreateType
+     * @summary Create a treatment type
+     * @request POST:/api/v1/treatment-types/types
+     * @secure
+     */
+    treatmentTypesControllerCreateType: (
+      data: CreateTreatmentTypeDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: TreatmentTypeResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/treatment-types/types`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatment Types
+     * @name TreatmentTypesControllerFindAllTypes
+     * @summary Get all treatment types
+     * @request GET:/api/v1/treatment-types/types
+     * @secure
+     */
+    treatmentTypesControllerFindAllTypes: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: TreatmentTypeResponseDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/treatment-types/types`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatment Types
+     * @name TreatmentTypesControllerUpdateType
+     * @summary Update a treatment type
+     * @request PATCH:/api/v1/treatment-types/types/{id}
+     * @secure
+     */
+    treatmentTypesControllerUpdateType: (
+      id: string,
+      data: UpdateTreatmentTypeDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: TreatmentTypeResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/treatment-types/types/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Treatment Types
+     * @name TreatmentTypesControllerRemoveType
+     * @summary Delete a treatment type
+     * @request DELETE:/api/v1/treatment-types/types/{id}
+     * @secure
+     */
+    treatmentTypesControllerRemoveType: (
+      id: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/treatment-types/types/${id}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Payments
+     * @name PaymentsControllerCreate
+     * @summary Create a new payment
+     * @request POST:/api/v1/payments
+     * @secure
+     */
+    paymentsControllerCreate: (
+      data: CreatePaymentDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: PaymentResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/payments`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Payments
+     * @name PaymentsControllerFindAll
+     * @summary List all payments with filtering
+     * @request GET:/api/v1/payments
+     * @secure
+     */
+    paymentsControllerFindAll: (
+      query?: {
+        /**
+         * @min 1
+         * @default 1
+         */
+        page?: number;
+        /**
+         * @min 1
+         * @max 1000
+         * @default 10
+         */
+        limit?: number;
+        /** Filter by patient ID */
+        patientId?: string;
+        /** Filter by start date (ISO format) */
+        startDate?: string;
+        /** Filter by end date (ISO format) */
+        endDate?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: PaymentResponseDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/payments`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Payments
+     * @name PaymentsControllerGetPatientStats
+     * @summary Get payment statistics for a patient
+     * @request GET:/api/v1/payments/patient/{patientId}/stats
+     * @secure
+     */
+    paymentsControllerGetPatientStats: (
+      patientId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/payments/patient/${patientId}/stats`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Payments
+     * @name PaymentsControllerFindOne
+     * @summary Get payment by ID
+     * @request GET:/api/v1/payments/{id}
+     * @secure
+     */
+    paymentsControllerFindOne: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: PaymentResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/payments/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Payments
+     * @name PaymentsControllerUpdate
+     * @summary Update payment
+     * @request PATCH:/api/v1/payments/{id}
+     * @secure
+     */
+    paymentsControllerUpdate: (
+      id: string,
+      data: UpdatePaymentDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: PaymentResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/payments/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Payments
+     * @name PaymentsControllerRemove
+     * @summary Delete payment
+     * @request DELETE:/api/v1/payments/{id}
+     * @secure
+     */
+    paymentsControllerRemove: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/payments/${id}`,
         method: "DELETE",
         secure: true,
         format: "json",

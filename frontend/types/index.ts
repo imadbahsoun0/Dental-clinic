@@ -22,11 +22,12 @@ export interface TreatmentCategory {
 }
 
 export interface PriceVariant {
-  id: string;
-  toothSpec: string; // e.g., "14", "1-8", "5,6,7", "Front teeth", or "Default"
+  id?: string; // Optional as backend JSON objects might not have IDs
+  name?: string; // Backend uses name
+  toothSpec?: string; // Legacy frontend field
   toothNumbers?: number[]; // Parsed tooth numbers for matching (empty for default)
   price: number;
-  label?: string; // Optional display label like "Front Teeth", "Molars"
+  label?: string; // Optional display label
   isDefault?: boolean; // If true, this is the default price when no tooth-specific match
 }
 
@@ -45,9 +46,6 @@ export interface Appointment {
   patient?: { id: string; firstName: string; lastName: string };
   treatmentTypeId?: string;
   treatmentType?: TreatmentType;
-  // Legacy support/alias
-  appointmentTypeId?: string;
-  appointmentType?: TreatmentType;
 
   date: string; // ISO date string
   time: string; // HH:mm format
@@ -68,9 +66,10 @@ export interface Treatment {
   toothNumber: number; // Legacy: single tooth (kept for backward compatibility)
   toothNumbers?: number[]; // New: support multiple teeth
   toothName?: string; // Optional: descriptive tooth name
-  appointmentTypeId: string;
-  appointmentType?: TreatmentType;
+  treatmentTypeId: string;
+  treatmentType?: TreatmentType;
   appointmentId?: string; // Link to appointment (for non-planned treatments)
+  appointment?: Appointment; // Populated appointment object
   totalPrice: number; // Total price for all teeth
   amountPaid: number;
   discount: number;
@@ -136,7 +135,7 @@ export interface MedicalHistorySubmission {
 
 export interface Settings {
   doctorLogo?: string; // base64 or URL
-  appointmentTypes: TreatmentType[];
+  treatmentTypes: TreatmentType[];
   medicalHistoryQuestions: MedicalHistoryQuestion[];
   doctors?: string[]; // List of doctor names
 }

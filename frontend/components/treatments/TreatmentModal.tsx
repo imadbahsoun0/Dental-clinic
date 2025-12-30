@@ -10,6 +10,7 @@ import { Select } from '@/components/common/Select';
 import { MultiSelect } from '@/components/common/MultiSelect';
 import { Button } from '@/components/common/Button';
 import { ALL_TEETH, formatToothNumbers } from '@/constants/teeth';
+import toast from 'react-hot-toast';
 import styles from './TreatmentModal.module.css';
 
 interface TreatmentModalProps {
@@ -27,13 +28,13 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
     onSave,
     onClose,
 }) => {
-    const appointmentTypes = useSettingsStore((state) => state.appointmentTypes);
+    const treatmentTypes = useSettingsStore((state) => state.treatmentTypes);
     const treatmentCategories = useSettingsStore((state) => state.treatmentCategories);
     const appointments = useAppointmentStore((state) => state.appointments);
     const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
     const [formData, setFormData] = useState({
-        appointmentTypeId: '',
+        treatmentTypeId: '',
         selectedTeeth: [] as number[],
         discountPercent: '0',
         appointmentId: '',
@@ -43,26 +44,29 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
     const [totalToPay, setTotalToPay] = useState(0);
 
     // Get patient's appointments for linking
-    const patientAppointments = appointments.filter(apt => apt.patientId === patientId);
+    // Handle both flat patientId and nested patient object structures
+    const patientAppointments = appointments.filter(apt =>
+        (apt.patientId === patientId) || (apt.patient?.id === patientId)
+    );
 
     // Helper function to find matching price variant for a tooth number
-    const findPriceForTooth = (appointmentTypeId: string, toothNum: number): number => {
-        const appointmentType = appointmentTypes.find(t => t.id === appointmentTypeId);
-        if (!appointmentType) return 0;
+    const findPriceForTooth = (treatmentTypeId: string, toothNum: number): number => {
+        const treatmentType = treatmentTypes.find(t => t.id === treatmentTypeId);
+        if (!treatmentType) return 0;
 
         // Find variant that includes this tooth number
-        const matchingVariant = appointmentType.priceVariants.find(variant =>
+        const matchingVariant = treatmentType.priceVariants.find(variant =>
             variant.toothNumbers?.includes(toothNum)
         );
 
         if (matchingVariant) return matchingVariant.price;
 
         // If no specific match, look for default variant
-        const defaultVariant = appointmentType.priceVariants.find(v => v.isDefault);
+        const defaultVariant = treatmentType.priceVariants.find(v => v.isDefault);
         if (defaultVariant) return defaultVariant.price;
 
         // Final fallback to first variant
-        return appointmentType.priceVariants[0]?.price || 0;
+        return treatmentType.priceVariants[0]?.price || 0;
     };
 
     // Reset form when modal opens/closes or treatment changes
@@ -77,14 +81,14 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
             const teeth = treatment.toothNumbers || [treatment.toothNumber];
 
             setFormData({
-                appointmentTypeId: treatment.appointmentTypeId,
+                treatmentTypeId: treatment.treatmentTypeId,
                 selectedTeeth: teeth,
                 discountPercent: discountPercent,
                 appointmentId: treatment.appointmentId || '',
                 status: treatment.status || 'planned',
             });
 
-            const selectedType = appointmentTypes.find(t => t.id === treatment.appointmentTypeId);
+            const selectedType = treatmentTypes.find(t => t.id === treatment.treatmentTypeId);
             if (selectedType?.categoryId) {
                 setSelectedCategoryId(selectedType.categoryId);
             }
@@ -92,7 +96,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
         } else if (isOpen) {
             // Adding new treatment
             setFormData({
-                appointmentTypeId: '',
+                treatmentTypeId: '',
                 selectedTeeth: [],
                 discountPercent: '0',
                 appointmentId: '',
@@ -101,16 +105,31 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
             setSelectedCategoryId('');
             setTotalToPay(0);
         }
-    }, [isOpen, treatment, appointmentTypes]);
+    }, [isOpen, treatment, treatmentTypes]);
 
-    // Auto-calculate total when appointment type, teeth, or discount changes
+    // Auto-select today's appointment for new treatments
     useEffect(() => {
-        if (formData.appointmentTypeId && formData.selectedTeeth.length > 0) {
+        if (isOpen && !treatment && !formData.appointmentId && patientAppointments.length > 0) {
+            const today = new Date().toISOString().split('T')[0];
+            // Match exactly or startsWith (to handle potential time components if ISO)
+            const todayAppointment = patientAppointments.find(apt =>
+                apt.date === today || apt.date.startsWith(today)
+            );
+
+            if (todayAppointment) {
+                setFormData(prev => ({ ...prev, appointmentId: todayAppointment.id }));
+            }
+        }
+    }, [isOpen, treatment, patientAppointments, formData.appointmentId]);
+
+    // Auto-calculate total when treatment type, teeth, or discount changes
+    useEffect(() => {
+        if (formData.treatmentTypeId && formData.selectedTeeth.length > 0) {
             // Calculate total price for all selected teeth
             let totalPrice = 0;
 
             for (const toothNum of formData.selectedTeeth) {
-                const price = findPriceForTooth(formData.appointmentTypeId, toothNum);
+                const price = findPriceForTooth(formData.treatmentTypeId, toothNum);
                 totalPrice += price;
             }
 
@@ -119,7 +138,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
             // Set total to be paid as price minus discount
             setTotalToPay(totalPrice - discountAmount);
         }
-    }, [formData.appointmentTypeId, formData.selectedTeeth, formData.discountPercent, appointmentTypes]);
+    }, [formData.treatmentTypeId, formData.selectedTeeth, formData.discountPercent, treatmentTypes]);
 
     const handleSubmit = () => {
         if (formData.selectedTeeth.length === 0) {
@@ -127,16 +146,18 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
             return;
         }
 
-        // If status is not planned, appointment is required
+        // Warn if status is not planned and no appointment is selected
         if (formData.status !== 'planned' && !formData.appointmentId) {
-            alert('Please select an appointment for non-planned treatments');
-            return;
+            toast('Warning: Treatment is not planned but no appointment is linked', {
+                icon: '⚠️',
+                duration: 4000,
+            });
         }
 
         // Calculate total price for all teeth
         let totalPrice = 0;
         for (const toothNum of formData.selectedTeeth) {
-            const price = findPriceForTooth(formData.appointmentTypeId, toothNum);
+            const price = findPriceForTooth(formData.treatmentTypeId, toothNum);
             totalPrice += price;
         }
 
@@ -156,7 +177,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
         }
 
         const treatmentData: Partial<Treatment> = {
-            appointmentTypeId: formData.appointmentTypeId,
+            treatmentTypeId: formData.treatmentTypeId,
             toothNumber: formData.selectedTeeth[0], // Legacy: use first tooth
             toothNumbers: formData.selectedTeeth, // New: all selected teeth
             appointmentId: formData.appointmentId || undefined,
@@ -172,23 +193,23 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
         onClose();
     };
 
-    const isValid = formData.appointmentTypeId && formData.selectedTeeth.length > 0;
+    const isValid = formData.treatmentTypeId && formData.selectedTeeth.length > 0;
 
     // Calculate total base price
     let totalBasePrice = 0;
     for (const toothNum of formData.selectedTeeth) {
-        totalBasePrice += findPriceForTooth(formData.appointmentTypeId, toothNum);
+        totalBasePrice += findPriceForTooth(formData.treatmentTypeId, toothNum);
     }
 
     const discountAmount = (totalBasePrice * (parseFloat(formData.discountPercent) || 0)) / 100;
 
     // Get price range for display in dropdown
-    const getPriceRangeDisplay = (appointmentType: any) => {
-        if (!appointmentType.priceVariants || appointmentType.priceVariants.length === 0) return '';
-        if (appointmentType.priceVariants.length === 1) {
-            return `$${appointmentType.priceVariants[0].price}`;
+    const getPriceRangeDisplay = (treatmentType: any) => {
+        if (!treatmentType.priceVariants || treatmentType.priceVariants.length === 0) return '';
+        if (treatmentType.priceVariants.length === 1) {
+            return `$${treatmentType.priceVariants[0].price}`;
         }
-        const prices = appointmentType.priceVariants.map((v: any) => v.price);
+        const prices = treatmentType.priceVariants.map((v: any) => v.price);
         const minPrice = Math.min(...prices);
         const maxPrice = Math.max(...prices);
         return minPrice === maxPrice ? `$${minPrice}` : `$${minPrice}-$${maxPrice}`;
@@ -221,7 +242,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                         value={selectedCategoryId}
                         onChange={(e) => {
                             setSelectedCategoryId(e.target.value);
-                            setFormData({ ...formData, appointmentTypeId: '' });
+                            setFormData({ ...formData, treatmentTypeId: '' });
                         }}
                         style={{
                             width: '100%',
@@ -252,8 +273,8 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                         </label>
                         <select
                             id="treatmentType"
-                            value={formData.appointmentTypeId}
-                            onChange={(e) => setFormData({ ...formData, appointmentTypeId: e.target.value })}
+                            value={formData.treatmentTypeId}
+                            onChange={(e) => setFormData({ ...formData, treatmentTypeId: e.target.value })}
                             style={{
                                 width: '100%',
                                 padding: '10px 14px',
@@ -265,7 +286,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                             }}
                         >
                             <option value="">Select a treatment...</option>
-                            {appointmentTypes
+                            {treatmentTypes
                                 .filter((t) => t.categoryId === selectedCategoryId)
                                 .map((t) => (
                                     <option key={t.id} value={t.id}>
@@ -301,14 +322,17 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                     onChange={(value) => setFormData({ ...formData, status: value as any })}
                 />
 
-                {/* Appointment Selection - only show if status is not planned */}
+                {/* Appointment Selection - optional for non-planned treatments */}
                 {formData.status !== 'planned' && (
                     <Select
-                        label="Link to Appointment *"
-                        options={patientAppointments.map(apt => ({
-                            value: apt.id,
-                            label: `${apt.date} at ${apt.time} - ${apt.appointmentType?.name || 'Appointment'}`
-                        }))}
+                        label="Link to Appointment (Optional)"
+                        options={[
+                            { value: '', label: 'Select an appointment...' },
+                            ...patientAppointments.map(apt => ({
+                                value: apt.id,
+                                label: `${apt.date} at ${apt.time} - ${apt.treatmentType?.name || 'Appointment'}`
+                            }))
+                        ]}
                         value={formData.appointmentId}
                         onChange={(value) => setFormData({ ...formData, appointmentId: value })}
                         placeholder="Select an appointment..."

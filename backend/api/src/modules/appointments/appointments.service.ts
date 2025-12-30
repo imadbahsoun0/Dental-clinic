@@ -37,6 +37,7 @@ export class AppointmentsService {
         date?: string,
         startDate?: string,
         endDate?: string,
+        patientId?: string,
     ) {
         const { page = 1, limit = 10 } = pagination;
         const offset = (page - 1) * limit;
@@ -46,6 +47,11 @@ export class AppointmentsService {
         // Dentists can only see their own appointments
         if (role === UserRole.DENTIST) {
             where.doctor = { id: userId };
+        }
+
+        // Filter by patient
+        if (patientId) {
+            where.patient = { id: patientId };
         }
 
         // Filter by date if provided (exact date takes precedence)

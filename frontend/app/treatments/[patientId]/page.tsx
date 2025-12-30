@@ -6,6 +6,7 @@ import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { usePatientStore } from '@/store/patientStore';
 import { useTreatmentStore } from '@/store/treatmentStore';
+import { useAppointmentStore } from '@/store/appointmentStore';
 import { CollapsibleSection } from '@/components/treatments/CollapsibleSection';
 import { PatientProfile } from '@/components/treatments/PatientProfile';
 import { TreatmentsTable } from '@/components/treatments/TreatmentsTable';
@@ -32,11 +33,17 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
     const patients = usePatientStore((state) => state.patients);
     const medicalHistoryQuestions = useSettingsStore((state) => state.medicalHistoryQuestions);
     const allTreatments = useTreatmentStore((state) => state.treatments);
+    const treatmentsLoading = useTreatmentStore((state) => state.loading);
+    const fetchTreatments = useTreatmentStore((state) => state.fetchTreatments);
     const addTreatment = useTreatmentStore((state) => state.addTreatment);
     const updateTreatment = useTreatmentStore((state) => state.updateTreatment);
     const deleteTreatment = useTreatmentStore((state) => state.deleteTreatment);
 
+    const fetchAppointments = useAppointmentStore((state) => state.fetchAppointments);
+
     const allPayments = usePaymentStore((state) => state.payments);
+    const paymentsLoading = usePaymentStore((state) => state.loading);
+    const fetchPayments = usePaymentStore((state) => state.fetchPayments);
     const addPayment = usePaymentStore((state) => state.addPayment);
     const updatePayment = usePaymentStore((state) => state.updatePayment);
     const deletePayment = usePaymentStore((state) => state.deletePayment);
@@ -49,6 +56,19 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
     const payments = useMemo(() => {
         return allPayments.filter((p) => p.patientId === patientId);
     }, [allPayments, patientId]);
+
+    const fetchTreatmentCategories = useSettingsStore((state) => state.fetchTreatmentCategories);
+    const fetchTreatmentTypes = useSettingsStore((state) => state.fetchTreatmentTypes);
+
+    // Fetch treatments, payments, appointments, and configuration on mount
+    React.useEffect(() => {
+        fetchTreatments(patientId);
+        fetchPayments(patientId);
+        fetchTreatmentCategories();
+        fetchTreatmentTypes();
+        // Fetch specific patient's appointments for linking
+        fetchAppointments(1, 1000, undefined, undefined, undefined, patientId);
+    }, [patientId, fetchTreatments, fetchPayments, fetchTreatmentCategories, fetchTreatmentTypes, fetchAppointments]);
 
     // Calculate totals
     const totalPrice = treatments.reduce((sum, t) => sum + (t.totalPrice - t.discount), 0);

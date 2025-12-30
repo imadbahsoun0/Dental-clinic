@@ -6,6 +6,8 @@ export interface PriceVariant {
     name: string;
     price: number;
     currency?: string;
+    toothNumbers?: number[]; // Array of tooth numbers this variant applies to
+    isDefault?: boolean;
 }
 
 @Entity({ tableName: 'treatment_types' })

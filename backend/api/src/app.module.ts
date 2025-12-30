@@ -16,6 +16,9 @@ import { OrganizationsModule } from './modules/organizations/organizations.modul
 import { FilesModule } from './modules/files/files.module';
 import { PatientsModule } from './modules/patients/patients.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
+import { TreatmentsModule } from './modules/treatments/treatments.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { TreatmentTypesModule } from './modules/treatment-types/treatment-types.module';
 
 @Module({
   imports: [
@@ -32,6 +35,9 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
     FilesModule,
     PatientsModule,
     AppointmentsModule,
+    TreatmentsModule,
+    TreatmentTypesModule,
+    PaymentsModule,
     TestModule,
   ],
   providers: [

@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsDateString } from 'class-validator';
+import { IsOptional, IsString, IsDateString, IsUUID } from 'class-validator';
 import { PaginationDto } from '../../../common/dto/pagination.dto';
 
 export class FindAppointmentsDto extends PaginationDto {
@@ -17,4 +17,9 @@ export class FindAppointmentsDto extends PaginationDto {
     @IsOptional()
     @IsDateString()
     endDate?: string;
+
+    @ApiPropertyOptional({ description: 'Filter by patient ID' })
+    @IsOptional()
+    @IsUUID()
+    patientId?: string;
 }

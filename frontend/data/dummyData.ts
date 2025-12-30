@@ -1,4 +1,4 @@
-import { Patient, Appointment, Treatment, AppointmentType, MedicalHistoryQuestion, Expense, User, ClinicBranding, NotificationSettings } from '@/types';
+import { Patient, Appointment, Treatment, TreatmentType, MedicalHistoryQuestion, Expense, User, ClinicBranding, NotificationSettings } from '@/types';
 
 // Doctors
 export const dummyDoctors: string[] = [
@@ -8,8 +8,8 @@ export const dummyDoctors: string[] = [
     'Dr. James Wilson',
 ];
 
-// Appointment Types
-export const dummyAppointmentTypes: AppointmentType[] = [
+// Treatment Types (formerly Appointment Types)
+export const dummyTreatmentTypes: TreatmentType[] = [
     {
         id: 'apt-1',
         name: 'Routine Cleaning',
@@ -130,7 +130,7 @@ export const dummyAppointments: Appointment[] = [
     {
         id: 'app-1',
         patientId: 'pt-001234',
-        appointmentTypeId: 'apt-1',
+        treatmentTypeId: 'apt-1',
         date: '2025-12-24',
         time: '09:00',
         status: 'confirmed',
@@ -142,7 +142,7 @@ export const dummyAppointments: Appointment[] = [
     {
         id: 'app-2',
         patientId: 'pt-001235',
-        appointmentTypeId: 'apt-3',
+        treatmentTypeId: 'apt-3',
         date: '2025-12-24',
         time: '10:30',
         status: 'pending',
@@ -154,7 +154,7 @@ export const dummyAppointments: Appointment[] = [
     {
         id: 'app-3',
         patientId: 'pt-001236',
-        appointmentTypeId: 'apt-2',
+        treatmentTypeId: 'apt-2',
         date: '2025-12-24',
         time: '13:00',
         status: 'confirmed',
@@ -166,7 +166,7 @@ export const dummyAppointments: Appointment[] = [
     {
         id: 'app-4',
         patientId: 'pt-001237',
-        appointmentTypeId: 'apt-4',
+        treatmentTypeId: 'apt-4',
         date: '2025-12-24',
         time: '15:30',
         status: 'cancelled',
@@ -178,7 +178,7 @@ export const dummyAppointments: Appointment[] = [
     {
         id: 'app-5',
         patientId: 'pt-001238',
-        appointmentTypeId: 'apt-2',
+        treatmentTypeId: 'apt-2',
         date: '2025-12-24',
         time: '10:00',
         status: 'confirmed',
@@ -190,7 +190,7 @@ export const dummyAppointments: Appointment[] = [
     {
         id: 'app-6',
         patientId: 'pt-001234',
-        appointmentTypeId: 'apt-1',
+        treatmentTypeId: 'apt-1',
         date: '2025-12-24',
         time: '09:00',
         status: 'confirmed',
@@ -207,7 +207,7 @@ export const dummyTreatments: Treatment[] = [
         id: 'tr-1',
         patientId: 'pt-001234',
         toothNumber: 14,
-        appointmentTypeId: 'apt-1',
+        treatmentTypeId: 'apt-1',
         totalPrice: 80,
         amountPaid: 80,
         discount: 0,
@@ -220,7 +220,7 @@ export const dummyTreatments: Treatment[] = [
         id: 'tr-2',
         patientId: 'pt-001234',
         toothNumber: 18,
-        appointmentTypeId: 'apt-6',
+        treatmentTypeId: 'apt-6',
         totalPrice: 1200,
         amountPaid: 600,
         discount: 100,
@@ -233,7 +233,7 @@ export const dummyTreatments: Treatment[] = [
         id: 'tr-3',
         patientId: 'pt-001235',
         toothNumber: 30,
-        appointmentTypeId: 'apt-3',
+        treatmentTypeId: 'apt-3',
         totalPrice: 800,
         amountPaid: 350,
         discount: 0,
@@ -246,7 +246,7 @@ export const dummyTreatments: Treatment[] = [
         id: 'tr-4',
         patientId: 'pt-001236',
         toothNumber: 8,
-        appointmentTypeId: 'apt-5',
+        treatmentTypeId: 'apt-5',
         totalPrice: 200,
         amountPaid: 200,
         discount: 0,
@@ -261,7 +261,7 @@ export const dummyTreatments: Treatment[] = [
         patientId: 'pt-001234',
         toothNumber: 12,
         toothNumbers: [12],
-        appointmentTypeId: 'apt-6',
+        treatmentTypeId: 'apt-6',
         totalPrice: 1200,
         amountPaid: 0,
         discount: 0,
@@ -276,7 +276,7 @@ export const dummyTreatments: Treatment[] = [
         patientId: 'pt-001234',
         toothNumber: 15,
         toothNumbers: [15],
-        appointmentTypeId: 'apt-3',
+        treatmentTypeId: 'apt-3',
         totalPrice: 700,
         amountPaid: 0,
         discount: 0,
@@ -291,7 +291,7 @@ export const dummyTreatments: Treatment[] = [
         patientId: 'pt-001235',
         toothNumber: 8,
         toothNumbers: [8],
-        appointmentTypeId: 'apt-4',
+        treatmentTypeId: 'apt-4',
         totalPrice: 350,
         amountPaid: 0,
         discount: 0,
@@ -306,7 +306,7 @@ export const dummyTreatments: Treatment[] = [
         patientId: 'pt-001237',
         toothNumber: 20,
         toothNumbers: [20],
-        appointmentTypeId: 'apt-5',
+        treatmentTypeId: 'apt-5',
         totalPrice: 250,
         amountPaid: 0,
         discount: 0,
@@ -683,4 +683,3 @@ export const dummyNotificationSettings: NotificationSettings = {
         messageTemplate: 'Hello {{patientName}}, you have an outstanding balance of ${{amountDue}}. Please contact us at {{clinicLocation}} to arrange payment. Thank you!',
     },
 };
-

@@ -1,19 +1,22 @@
 import { create } from 'zustand';
-import { AppointmentType, MedicalHistoryQuestion, TreatmentCategory, User, ClinicBranding, NotificationSettings } from '@/types';
-import { dummyMedicalHistoryQuestions, dummyDoctors, dummyUsers, dummyClinicBranding, dummyNotificationSettings, dummyAppointmentTypes } from '@/data/dummyData';
-import { treatmentCategories } from '@/data/categorizedTreatments';
+import { MedicalHistoryQuestion, TreatmentCategory, TreatmentType, User, ClinicBranding, NotificationSettings } from '@/types';
+import { dummyMedicalHistoryQuestions, dummyDoctors, dummyNotificationSettings } from '@/data/dummyData';
 import { api } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 interface SettingsStore {
     // Treatment Types & Categories
     treatmentCategories: TreatmentCategory[];
-    appointmentTypes: AppointmentType[];
-    addTreatmentCategory: (category: Omit<TreatmentCategory, 'id'>) => void;
-    updateTreatmentCategory: (id: string, category: Partial<TreatmentCategory>) => void;
-    deleteTreatmentCategory: (id: string) => void;
-    addAppointmentType: (type: Omit<AppointmentType, 'id'>) => void;
-    updateAppointmentType: (id: string, type: Partial<AppointmentType>) => void;
-    deleteAppointmentType: (id: string) => void;
+    fetchTreatmentCategories: () => Promise<void>;
+    addTreatmentCategory: (category: Omit<TreatmentCategory, 'id'>) => Promise<void>;
+    updateTreatmentCategory: (id: string, category: Partial<TreatmentCategory>) => Promise<void>;
+    deleteTreatmentCategory: (id: string) => Promise<void>;
+
+    treatmentTypes: TreatmentType[];
+    fetchTreatmentTypes: () => Promise<void>;
+    addTreatmentType: (type: Omit<TreatmentType, 'id'>) => Promise<void>;
+    updateTreatmentType: (id: string, type: Partial<TreatmentType>) => Promise<void>;
+    deleteTreatmentType: (id: string) => Promise<void>;
 
     // Medical History
     doctorLogo: string | null;
@@ -27,15 +30,15 @@ interface SettingsStore {
     // Users
     users: User[];
     fetchUsers: () => Promise<void>;
-    addUser: (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => void;
-    updateUser: (id: string, user: Partial<User>) => void;
-    deleteUser: (id: string) => void;
+    addUser: (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+    updateUser: (id: string, user: Partial<User>) => Promise<void>;
+    deleteUser: (id: string) => Promise<void>;
     getDentists: () => User[]; // Get all users with role 'dentist'
 
     // Clinic Branding
     clinicBranding: ClinicBranding;
     fetchClinicBranding: () => Promise<void>;
-    updateClinicBranding: (branding: Partial<ClinicBranding>) => void;
+    updateClinicBranding: (branding: Partial<ClinicBranding>) => Promise<void>;
     uploadLogo: (file: File) => Promise<{ id: string; url: string }>;
 
     // Notification Settings
@@ -48,55 +51,156 @@ interface SettingsStore {
 
 export const useSettingsStore = create<SettingsStore>()((set, get) => ({
     // Treatment Types & Categories
-    treatmentCategories: treatmentCategories,
-    appointmentTypes: dummyAppointmentTypes,
+    treatmentCategories: [],
 
-    addTreatmentCategory: (categoryData) => {
-        const newCategory: TreatmentCategory = {
-            ...categoryData,
-            id: `cat-${Date.now()}`,
-        };
-        set((state) => ({
-            treatmentCategories: [...state.treatmentCategories, newCategory]
-        }));
+    fetchTreatmentCategories: async () => {
+        try {
+            const response = await api.api.treatmentTypesControllerFindAllCategories();
+            const result = response as any; // StandardResponse
+            if (result.success && result.data) {
+                set({ treatmentCategories: result.data });
+            }
+        } catch (error) {
+            console.error('Failed to fetch treatment categories:', error);
+            toast.error('Failed to load treatment categories');
+        }
     },
 
-    updateTreatmentCategory: (id, categoryData) => {
-        set((state) => ({
-            treatmentCategories: state.treatmentCategories.map((c) =>
-                c.id === id ? { ...c, ...categoryData } : c
-            ),
-        }));
+    addTreatmentCategory: async (categoryData) => {
+        try {
+            const response = await api.api.treatmentTypesControllerCreateCategory({
+                name: categoryData.name,
+                icon: categoryData.icon,
+                order: categoryData.order,
+            });
+            const result = response as any;
+            if (result.success && result.data) {
+                set((state) => ({
+                    treatmentCategories: [...state.treatmentCategories, result.data]
+                }));
+                toast.success('Category added successfully');
+            }
+        } catch (error) {
+            console.error('Failed to add category:', error);
+            toast.error('Failed to add category');
+        }
     },
 
-    deleteTreatmentCategory: (id) => {
-        set((state) => ({
-            treatmentCategories: state.treatmentCategories.filter((c) => c.id !== id),
-            // Also remove all appointment types in this category
-            appointmentTypes: state.appointmentTypes.filter((t) => t.categoryId !== id),
-        }));
+    updateTreatmentCategory: async (id, categoryData) => {
+        try {
+            const response = await api.api.treatmentTypesControllerUpdateCategory(id, categoryData);
+            const result = response as any;
+            if (result.success && result.data) {
+                set((state) => ({
+                    treatmentCategories: state.treatmentCategories.map((c) =>
+                        c.id === id ? { ...c, ...result.data } : c
+                    ),
+                }));
+                toast.success('Category updated successfully');
+            }
+        } catch (error) {
+            console.error('Failed to update category:', error);
+            toast.error('Failed to update category');
+        }
     },
 
-    addAppointmentType: (typeData) => {
-        const newType: AppointmentType = {
-            ...typeData,
-            id: `apt-${Date.now()}`,
-        };
-        set((state) => ({ appointmentTypes: [...state.appointmentTypes, newType] }));
+    deleteTreatmentCategory: async (id) => {
+        try {
+            await api.api.treatmentTypesControllerRemoveCategory(id);
+            set((state) => ({
+                treatmentCategories: state.treatmentCategories.filter((c) => c.id !== id),
+                treatmentTypes: state.treatmentTypes.filter((t) => t.categoryId !== id),
+            }));
+            toast.success('Category deleted successfully');
+        } catch (error) {
+            console.error('Failed to delete category:', error);
+            toast.error('Failed to delete category');
+        }
     },
 
-    updateAppointmentType: (id, typeData) => {
-        set((state) => ({
-            appointmentTypes: state.appointmentTypes.map((t) =>
-                t.id === id ? { ...t, ...typeData } : t
-            ),
-        }));
+    treatmentTypes: [],
+
+    fetchTreatmentTypes: async () => {
+        try {
+            const response = await api.api.treatmentTypesControllerFindAllTypes();
+            const result = response as any;
+            if (result.success && result.data) {
+                set({ treatmentTypes: result.data });
+            }
+        } catch (error) {
+            console.error('Failed to fetch treatment types:', error);
+            toast.error('Failed to load treatment types');
+        }
     },
 
-    deleteAppointmentType: (id) => {
-        set((state) => ({
-            appointmentTypes: state.appointmentTypes.filter((t) => t.id !== id),
-        }));
+    addTreatmentType: async (typeData) => {
+        try {
+            const response = await api.api.treatmentTypesControllerCreateType({
+                name: typeData.name,
+                categoryId: typeData.categoryId!,
+                priceVariants: typeData.priceVariants.map(pv => ({
+                    name: pv.name || pv.label || 'Default',
+                    price: pv.price,
+                    currency: 'USD',
+                    toothNumbers: (pv.toothNumbers || []) as any,
+                    isDefault: pv.isDefault || false,
+                })),
+                duration: typeData.duration,
+                color: typeData.color,
+            });
+            const result = response as any;
+            if (result.success && result.data) {
+                set((state) => ({
+                    treatmentTypes: [...state.treatmentTypes, result.data]
+                }));
+                toast.success('Treatment type added successfully');
+            }
+        } catch (error) {
+            console.error('Failed to add treatment type:', error);
+            toast.error('Failed to add treatment type');
+        }
+    },
+
+    updateTreatmentType: async (id, typeData) => {
+        try {
+            const updatePayload: any = { ...typeData };
+            if (typeData.priceVariants) {
+                updatePayload.priceVariants = typeData.priceVariants.map(pv => ({
+                    name: pv.name || pv.label || 'Default',
+                    price: pv.price,
+                    currency: 'USD',
+                    toothNumbers: (pv.toothNumbers || []) as any,
+                    isDefault: pv.isDefault || false,
+                }));
+            }
+
+            const response = await api.api.treatmentTypesControllerUpdateType(id, updatePayload);
+            const result = response as any;
+            if (result.success && result.data) {
+                set((state) => ({
+                    treatmentTypes: state.treatmentTypes.map((t) =>
+                        t.id === id ? { ...t, ...result.data } : t
+                    ),
+                }));
+                toast.success('Treatment type updated successfully');
+            }
+        } catch (error) {
+            console.error('Failed to update treatment type:', error);
+            toast.error('Failed to update treatment type');
+        }
+    },
+
+    deleteTreatmentType: async (id) => {
+        try {
+            await api.api.treatmentTypesControllerRemoveType(id);
+            set((state) => ({
+                treatmentTypes: state.treatmentTypes.filter((t) => t.id !== id),
+            }));
+            toast.success('Treatment type deleted successfully');
+        } catch (error) {
+            console.error('Failed to delete treatment type:', error);
+            toast.error('Failed to delete treatment type');
+        }
     },
 
     // Medical History
@@ -132,21 +236,13 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
     },
 
     // Users
-    users: [], // Start empty, fetch on mount
+    users: [],
 
     fetchUsers: async () => {
         try {
             const response = await api.api.usersControllerFindAll({ limit: 100 });
-            const result = response.data as any; // Handle Paginated response mismatch
-            const usersData = result.data || [];
-
-            // Map to UIUser format (flatten org details)
-            // We assume the user belongs to the current org context of the request
-            // We pick the organization entry that matches the current context?
-            // Actually, the API returns users scoped to the org.
-            // But we don't know WHICH orgId from the response easily without checking AuthStore or assuming logic.
-            // For now, we take the *first* organization entry as the active one for this view,
-            // because `findAll` filters by OrgScope.
+            const result = response as any;
+            const usersData = result.data?.data || result.data || [];
 
             const mappedUsers = usersData.map((u: any) => {
                 const orgDetails = u.organizations?.[0] || {};
@@ -170,14 +266,13 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
             const response = await api.api.usersControllerCreate({
                 name: userData.name,
                 email: userData.email,
-                password: userData.password, // Let backend handle invitation if undefined
+                password: userData.password,
                 phone: userData.phone,
                 role: (userData as any).role,
                 percentage: (userData as any).percentage,
-            } as any); // Cast to any to avoid TS error if client expects required password
+            } as any);
             const newUserRaw = response.data as any;
 
-            // Map response
             const orgDetails = newUserRaw.organizations?.[0] || {};
             const newUser = {
                 ...newUserRaw,
@@ -188,15 +283,15 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
             };
 
             set((state) => ({ users: [...state.users, newUser] }));
+            toast.success('User added successfully');
         } catch (error) {
             console.error('Failed to create user:', error);
-            alert('Failed to create user');
+            toast.error('Failed to create user');
         }
     },
 
     updateUser: async (id, userData) => {
         try {
-            // map partial updates
             const updateDto: any = {};
             if (userData.name) updateDto.name = userData.name;
             if (userData.phone) updateDto.phone = userData.phone;
@@ -206,15 +301,15 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
             await api.api.usersControllerUpdate(id, updateDto);
 
-            // Refresh local state optimistically or fetch?
-            // Optimistic update
             set((state) => ({
                 users: state.users.map((u) =>
                     u.id === id ? { ...u, ...userData } : u
                 ),
             }));
+            toast.success('User updated successfully');
         } catch (error) {
             console.error('Failed to update user:', error);
+            toast.error('Failed to update user');
         }
     },
 
@@ -224,33 +319,32 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
             set((state) => ({
                 users: state.users.filter((u) => u.id !== id),
             }));
+            toast.success('User deleted successfully');
         } catch (error) {
             console.error('Failed to delete user:', error);
+            toast.error('Failed to delete user');
         }
     },
 
     getDentists: () => {
         const { users } = get();
-        // Check role property which we flattened
         return users.filter((u: any) => u.role === 'dentist');
     },
 
-    // Clinic Branding
     // Clinic Branding
     clinicBranding: {
         clinicName: '',
         location: '',
         phone: '',
         email: '',
-    }, // Initialize empty
+    },
 
     fetchClinicBranding: async () => {
         try {
             const response = await api.api.organizationsControllerGetCurrent();
-            const orgIndex = response.data as any; // Handle potential wrapper
-            const org = orgIndex.data || orgIndex; // Sometimes response is wrapped in data
+            const result = response as any;
+            const org = result.data || result;
 
-            // Map Organization response to ClinicBranding
             set({
                 clinicBranding: {
                     clinicName: org.name || '',
@@ -258,7 +352,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
                     phone: org.phone || '',
                     email: org.email || '',
                     website: org.website,
-                    logo: org.logo?.url || null, // Assuming logo attachment might have URL derived or need logic
+                    logo: org.logo?.url || null,
                 },
                 doctorLogo: org.logo?.url || null,
             });
@@ -269,13 +363,6 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
     updateClinicBranding: async (branding) => {
         try {
-            // Map ClinicBranding to UpdateOrganizationDto
-            // Note: Branding UI sends base64 logo string usually?
-            // If API expects logoId (UUID), we need to upload file first to get ID.
-            // But UpdateOrganizationDto has `logoId?: string`.
-            // If `branding.logo` is a base64 string, we can't send it to `logoId`.
-            // For now, we update text fields. Logo upload logic is separate or needs adjustment.
-
             const updateDto: any = {};
             if (branding.clinicName) updateDto.name = branding.clinicName;
             if (branding.location) updateDto.location = branding.location;
@@ -288,23 +375,20 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
             set((state) => ({
                 clinicBranding: { ...state.clinicBranding, ...branding },
-                // If logo was updated via logoId, we assume URL will be refreshed or handled separately.
-                // If branding has logo string (URL) passed?
                 doctorLogo: branding.logo || state.doctorLogo,
             }));
+            toast.success('Branding updated successfully');
         } catch (error) {
             console.error('Failed to update clinic branding:', error);
+            toast.error('Failed to update branding');
         }
     },
 
     uploadLogo: async (file) => {
         try {
             const response = await api.api.filesControllerUploadFile({ file: file as any }) as any;
-            const data = response.data || response; // Handle wrapped or unwrapped
-            // data.data should have { id, ... url }
-            const attachment = data.data || data; // StandardResponse.data or direct attachment if no standard response
-            // If StandardResponse: { success: true, data: { ... } }
-            // So attachment = data.data.
+            const result = response as any;
+            const attachment = result.data || result;
             return { id: attachment.id, url: attachment.url };
         } catch (error) {
             console.error('Failed to upload logo:', error);
@@ -321,6 +405,6 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
         }));
     },
 
-    // Doctors (legacy)
+    // Doctors (legacy component reliance)
     doctors: dummyDoctors,
 }));
