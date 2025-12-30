@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { CurrentUserData } from '../../common/decorators/current-user.decorator';
@@ -15,11 +16,11 @@ import { ParseUUIDPipe } from '../../common/pipes/parse-uuid.pipe';
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
 @Controller('users')
-@Roles(UserRole.ADMIN) // Only admins can manage users
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
     @Post()
+    @Roles(UserRole.ADMIN) // Only admins can create users
     @ApiOperation({ summary: 'Create a new user in the organization' })
     @ApiStandardResponse(UserResponseDto, false, 'created')
     async create(
@@ -35,6 +36,7 @@ export class UsersController {
     }
 
     @Get()
+    @Roles(UserRole.ADMIN) // Only admins can view all users
     @ApiOperation({ summary: 'Get all users in the organization' })
     @ApiStandardResponse(UserResponseDto, true)
     async findAll(
@@ -43,6 +45,25 @@ export class UsersController {
     ) {
         const result = await this.usersService.findAll(user.orgId, pagination);
         return new StandardResponse(result);
+    }
+
+    @Get('profile')
+    @ApiOperation({ summary: 'Get current user profile' })
+    @ApiStandardResponse(UserResponseDto)
+    async getProfile(@CurrentUser() user: CurrentUserData) {
+        const result = await this.usersService.findOne(user.id, user.orgId);
+        return new StandardResponse(result);
+    }
+
+    @Patch('profile')
+    @ApiOperation({ summary: 'Update current user profile' })
+    @ApiStandardResponse(UserResponseDto)
+    async updateProfile(
+        @CurrentUser() user: CurrentUserData,
+        @Body() updateProfileDto: UpdateProfileDto,
+    ) {
+        const result = await this.usersService.updateProfile(user.id, updateProfileDto);
+        return new StandardResponse(result, 'Profile updated successfully');
     }
 
     @Get('dentists')
@@ -55,6 +76,7 @@ export class UsersController {
     }
 
     @Get(':id')
+    @Roles(UserRole.ADMIN) // Only admins can view specific users
     @ApiOperation({ summary: 'Get a user by ID' })
     @ApiStandardResponse(UserResponseDto)
     async findOne(
@@ -66,6 +88,7 @@ export class UsersController {
     }
 
     @Patch(':id')
+    @Roles(UserRole.ADMIN) // Only admins can update users
     @ApiOperation({ summary: 'Update a user' })
     @ApiStandardResponse(UserResponseDto)
     async update(
@@ -83,6 +106,7 @@ export class UsersController {
     }
 
     @Delete(':id')
+    @Roles(UserRole.ADMIN) // Only admins can delete users
     @ApiOperation({ summary: 'Deactivate a user' })
     @ApiStandardResponse(Object)
     async remove(

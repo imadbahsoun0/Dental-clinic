@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Table, TableColumn, TableAction } from '@/components/common/Table';
@@ -9,10 +9,12 @@ import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
 import { useSettingsStore } from '@/store/settingsStore';
 import { MedicalHistoryQuestion } from '@/types';
+import toast from 'react-hot-toast';
 import styles from './settings-tabs.module.css';
 
 export const MedicalHistoryTab: React.FC = () => {
     const medicalHistoryQuestions = useSettingsStore((state) => state.medicalHistoryQuestions);
+    const fetchMedicalHistoryQuestions = useSettingsStore((state) => state.fetchMedicalHistoryQuestions);
     const addMedicalHistoryQuestion = useSettingsStore((state) => state.addMedicalHistoryQuestion);
     const updateMedicalHistoryQuestion = useSettingsStore((state) => state.updateMedicalHistoryQuestion);
     const deleteMedicalHistoryQuestion = useSettingsStore((state) => state.deleteMedicalHistoryQuestion);
@@ -27,6 +29,10 @@ export const MedicalHistoryTab: React.FC = () => {
         order: 1,
     });
     const [optionInput, setOptionInput] = useState('');
+
+    useEffect(() => {
+        fetchMedicalHistoryQuestions();
+    }, []);
 
     const handleAddQuestion = () => {
         setEditingQuestion(null);
@@ -54,28 +60,28 @@ export const MedicalHistoryTab: React.FC = () => {
         setModalOpen(true);
     };
 
-    const handleSaveQuestion = () => {
-        if (!questionForm.question) {
-            alert('Please enter a question');
+    const handleSaveQuestion = async () => {
+        if (!questionForm.question.trim()) {
+            toast.error('Please enter a question');
             return;
         }
 
         if ((questionForm.type === 'radio' || questionForm.type === 'checkbox') && questionForm.options.length === 0) {
-            alert('Please add at least one option for radio/checkbox questions');
+            toast.error('Please add at least one option for radio/checkbox questions');
             return;
         }
 
         if (editingQuestion) {
-            updateMedicalHistoryQuestion(editingQuestion.id, questionForm);
+            await updateMedicalHistoryQuestion(editingQuestion.id, questionForm);
         } else {
-            addMedicalHistoryQuestion(questionForm);
+            await addMedicalHistoryQuestion(questionForm);
         }
         setModalOpen(false);
     };
 
-    const handleDeleteQuestion = (question: MedicalHistoryQuestion) => {
+    const handleDeleteQuestion = async (question: MedicalHistoryQuestion) => {
         if (confirm(`Are you sure you want to delete this question?`)) {
-            deleteMedicalHistoryQuestion(question.id);
+            await deleteMedicalHistoryQuestion(question.id);
         }
     };
 

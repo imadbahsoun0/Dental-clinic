@@ -6,6 +6,7 @@ import { User, UserOrganization, UserStatus, Organization } from '../../common/e
 import { UserRole } from '../../common/decorators/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { EmailService } from '../email/email.service';
 
@@ -188,6 +189,35 @@ export class UsersService {
             wallet: userOrg.wallet,
             percentage: userOrg.percentage,
         }));
+    }
+
+    async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
+        const user = await this.em.findOne(User, { id: userId });
+
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        // Check if email is being changed and if it's already taken
+        if (updateProfileDto.email && updateProfileDto.email !== user.email) {
+            const existingUser = await this.em.findOne(User, { email: updateProfileDto.email });
+            if (existingUser) {
+                throw new ConflictException('Email already in use');
+            }
+            user.email = updateProfileDto.email;
+        }
+
+        if (updateProfileDto.name) user.name = updateProfileDto.name;
+        if (updateProfileDto.phone !== undefined) user.phone = updateProfileDto.phone;
+
+        await this.em.flush();
+
+        return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+        };
     }
 
     private mapToResponse(user: User, userOrgs: UserOrganization[]) {

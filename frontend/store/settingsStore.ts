@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { MedicalHistoryQuestion, TreatmentCategory, TreatmentType, User, ClinicBranding, NotificationSettings } from '@/types';
-import { dummyMedicalHistoryQuestions, dummyDoctors, dummyNotificationSettings } from '@/data/dummyData';
+import { dummyDoctors } from '@/data/dummyData';
 import { api } from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -23,9 +23,10 @@ interface SettingsStore {
     medicalHistoryQuestions: MedicalHistoryQuestion[];
     updateDoctorLogo: (logo: string) => void;
     updateMedicalHistoryQuestions: (questions: MedicalHistoryQuestion[]) => void;
-    addMedicalHistoryQuestion: (question: Omit<MedicalHistoryQuestion, 'id'>) => void;
-    updateMedicalHistoryQuestion: (id: string, question: Partial<MedicalHistoryQuestion>) => void;
-    deleteMedicalHistoryQuestion: (id: string) => void;
+    fetchMedicalHistoryQuestions: () => Promise<void>;
+    addMedicalHistoryQuestion: (question: Omit<MedicalHistoryQuestion, 'id'>) => Promise<void>;
+    updateMedicalHistoryQuestion: (id: string, question: Partial<MedicalHistoryQuestion>) => Promise<void>;
+    deleteMedicalHistoryQuestion: (id: string) => Promise<void>;
 
     // Users
     users: User[];
@@ -43,7 +44,8 @@ interface SettingsStore {
 
     // Notification Settings
     notificationSettings: NotificationSettings;
-    updateNotificationSettings: (settings: Partial<NotificationSettings>) => void;
+    fetchNotificationSettings: () => Promise<void>;
+    updateNotificationSettings: (settings: Partial<NotificationSettings>) => Promise<void>;
 
     // Doctors (legacy)
     doctors: string[];
@@ -205,34 +207,70 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
     // Medical History
     doctorLogo: null,
-    medicalHistoryQuestions: dummyMedicalHistoryQuestions,
+    medicalHistoryQuestions: [],
 
     updateDoctorLogo: (logo) => set({ doctorLogo: logo }),
 
     updateMedicalHistoryQuestions: (questions) => set({ medicalHistoryQuestions: questions }),
 
-    addMedicalHistoryQuestion: (questionData) => {
-        const newQuestion: MedicalHistoryQuestion = {
-            ...questionData,
-            id: `mhq-${Date.now()}`,
-        };
-        set((state) => ({
-            medicalHistoryQuestions: [...state.medicalHistoryQuestions, newQuestion]
-        }));
+    fetchMedicalHistoryQuestions: async () => {
+        try {
+            const response = await api.api.medicalHistoryControllerFindAll();
+            const result = response as any;
+            if (result.success && result.data) {
+                set({ medicalHistoryQuestions: result.data });
+            }
+        } catch (error) {
+            console.error('Failed to fetch medical history questions:', error);
+            toast.error('Failed to load medical history questions');
+        }
     },
 
-    updateMedicalHistoryQuestion: (id, questionData) => {
-        set((state) => ({
-            medicalHistoryQuestions: state.medicalHistoryQuestions.map((q) =>
-                q.id === id ? { ...q, ...questionData } : q
-            ),
-        }));
+    addMedicalHistoryQuestion: async (questionData) => {
+        try {
+            const response = await api.api.medicalHistoryControllerCreate(questionData as any);
+            const result = response as any;
+            if (result.success && result.data) {
+                set((state) => ({
+                    medicalHistoryQuestions: [...state.medicalHistoryQuestions, result.data]
+                }));
+                toast.success('Question added successfully');
+            }
+        } catch (error) {
+            console.error('Failed to add question:', error);
+            toast.error('Failed to add question');
+        }
     },
 
-    deleteMedicalHistoryQuestion: (id) => {
-        set((state) => ({
-            medicalHistoryQuestions: state.medicalHistoryQuestions.filter((q) => q.id !== id),
-        }));
+    updateMedicalHistoryQuestion: async (id, questionData) => {
+        try {
+            const response = await api.api.medicalHistoryControllerUpdate(id, questionData as any);
+            const result = response as any;
+            if (result.success && result.data) {
+                set((state) => ({
+                    medicalHistoryQuestions: state.medicalHistoryQuestions.map((q) =>
+                        q.id === id ? { ...q, ...result.data } : q
+                    ),
+                }));
+                toast.success('Question updated successfully');
+            }
+        } catch (error) {
+            console.error('Failed to update question:', error);
+            toast.error('Failed to update question');
+        }
+    },
+
+    deleteMedicalHistoryQuestion: async (id) => {
+        try {
+            await api.api.medicalHistoryControllerRemove(id);
+            set((state) => ({
+                medicalHistoryQuestions: state.medicalHistoryQuestions.filter((q) => q.id !== id),
+            }));
+            toast.success('Question deleted successfully');
+        } catch (error) {
+            console.error('Failed to delete question:', error);
+            toast.error('Failed to delete question');
+        }
     },
 
     // Users
@@ -397,12 +435,45 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
     },
 
     // Notification Settings
-    notificationSettings: dummyNotificationSettings,
+    notificationSettings: {
+        appointmentReminder: {
+            enabled: true,
+            timing: 24,
+            timingUnit: 'hours' as const,
+            messageTemplate: 'Hello {{patientName}}, reminder for your appointment on {{appointmentDate}} at {{appointmentTime}}.',
+        },
+        paymentReminder: {
+            enabled: true,
+            timing: 7,
+            timingUnit: 'days' as const,
+            messageTemplate: 'Hello {{patientName}}, you have an outstanding balance of {{amountDue}}.',
+        },
+    },
 
-    updateNotificationSettings: (settings) => {
-        set((state) => ({
-            notificationSettings: { ...state.notificationSettings, ...settings },
-        }));
+    fetchNotificationSettings: async () => {
+        try {
+            const response = await api.api.notificationSettingsControllerGet();
+            const result = response as any;
+            if (result.success && result.data) {
+                set({ notificationSettings: result.data });
+            }
+        } catch (error) {
+            console.error('Failed to fetch notification settings:', error);
+        }
+    },
+
+    updateNotificationSettings: async (settings) => {
+        try {
+            const response = await api.api.notificationSettingsControllerUpdate(settings as any);
+            const result = response as any;
+            if (result.success && result.data) {
+                set({ notificationSettings: result.data });
+                toast.success('Notification settings updated successfully');
+            }
+        } catch (error) {
+            console.error('Failed to update notification settings:', error);
+            toast.error('Failed to update notification settings');
+        }
     },
 
     // Doctors (legacy component reliance)

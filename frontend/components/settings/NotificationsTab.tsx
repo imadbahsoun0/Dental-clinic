@@ -1,23 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/common/Card';
 import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
 import { Button } from '@/components/common/Button';
 import { useSettingsStore } from '@/store/settingsStore';
+import toast from 'react-hot-toast';
 import styles from './settings-tabs.module.css';
 
 export const NotificationsTab: React.FC = () => {
     const notificationSettings = useSettingsStore((state) => state.notificationSettings);
     const updateNotificationSettings = useSettingsStore((state) => state.updateNotificationSettings);
+    const fetchNotificationSettings = useSettingsStore((state) => state.fetchNotificationSettings);
     const clinicBranding = useSettingsStore((state) => state.clinicBranding);
 
     const [settings, setSettings] = useState(notificationSettings);
+    const [loading, setLoading] = useState(false);
 
-    const handleSave = () => {
-        updateNotificationSettings(settings);
-        alert('Notification settings saved successfully!');
+    useEffect(() => {
+        fetchNotificationSettings();
+    }, []);
+
+    useEffect(() => {
+        setSettings(notificationSettings);
+    }, [notificationSettings]);
+
+    const handleSave = async () => {
+        if (!settings.appointmentReminder.messageTemplate.trim() || !settings.paymentReminder.messageTemplate.trim()) {
+            toast.error('Message templates cannot be empty');
+            return;
+        }
+
+        setLoading(true);
+        await updateNotificationSettings(settings);
+        setLoading(false);
     };
 
     const insertVariable = (field: 'appointmentReminder' | 'paymentReminder', variable: string) => {
@@ -238,7 +255,9 @@ export const NotificationsTab: React.FC = () => {
             </Card>
 
             <div className={styles.formActions}>
-                <Button onClick={handleSave}>Save Notification Settings</Button>
+                <Button onClick={handleSave} disabled={loading}>
+                    {loading ? 'Saving...' : 'Save Notification Settings'}
+                </Button>
             </div>
 
             <Card title="Current Clinic Location" className={styles.marginTop}>

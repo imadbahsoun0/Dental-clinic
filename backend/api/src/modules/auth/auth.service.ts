@@ -165,28 +165,6 @@ export class AuthService {
     }
 
     async resetPassword(token: string, newPassword: string) {
-        // We need to find the user. Since we hashed the token, strict lookup by token is hard unless we used a lookup ID + token secret.
-        // A common simple way: The token could be a plaintext random string. But looking it up is slow if hashed.
-        // Better: The token passed to user is `userId|randomString`. OR we don't hash it in DB for simplicity in this MVP 
-        // OR we iterate users with tokens (bad). 
-        // OR we store it plain text (less secure).
-        // OR we change the flow to send `userId` and `token` in the link.
-        // Given I already defined `resetPasswordToken` in `User` entity and typically for password reset tokens, 
-        // if they are short-lived, storing them plain text or just signed JWT is common.
-        // However, I committed to hashing it in `forgotPassword` above.
-        // To make it workable with hashing:
-        // 1. The token sent to email should be the *input* to the hash.
-        // 2. We need a way to find the user efficiently. 
-        //    => Use `email` + `token` in the reset body? 
-        //    => Or just store it plain text for now, as it is a random UUID and expires in 1 hour.
-
-        // Let's switch to storing plain text for `resetPasswordToken` to allow easy lookup,
-        // OR update the API to require email + token. 
-        // The `ResetPasswordDto` only has `token` and `newPassword`.
-        // So I will store the token as PLAIN TEXT in this implementation for simplicity and lookup speed,
-        // relying on the UUID v4 entropy and short expiration time.
-
-        // Find user by token
         const user = await this.em.findOne(User, {
             resetPasswordToken: token,
             resetPasswordExpires: { $gt: new Date() }
@@ -200,6 +178,30 @@ export class AuthService {
         user.password = hashedPassword;
         user.resetPasswordToken = null as any;
         user.resetPasswordExpires = null as any;
+
+        await this.em.flush();
+    }
+
+    async changePassword(userId: string, currentPassword: string, newPassword: string) {
+        const user = await this.em.findOne(User, { id: userId });
+
+        if (!user) {
+            throw new UnauthorizedException('User not found');
+        }
+
+        // Verify current password
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isPasswordValid) {
+            throw new UnauthorizedException('Current password is incorrect');
+        }
+
+        // Hash and save new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+
+        // Invalidate refresh token for security
+        user.refreshToken = undefined;
+        user.refreshTokenExpiresAt = undefined;
 
         await this.em.flush();
     }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Res, Req, HttpCode, HttpStatus, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Res, Req, HttpCode, HttpStatus, UseGuards, UnauthorizedException, Patch } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
@@ -6,6 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import { SelectOrganizationDto } from './dto/select-organization.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginResponseDto, SelectOrgResponseDto, RefreshResponseDto } from './dto/auth-response.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser, type CurrentUserData } from '../../common/decorators/current-user.decorator';
@@ -171,5 +172,28 @@ export class AuthController {
     async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
         await this.authService.resetPassword(resetPasswordDto.token, resetPasswordDto.newPassword);
         return new StandardResponse({ message: 'Password successfully reset' });
+    }
+
+    @Patch('change-password')
+    @HttpCode(HttpStatus.OK)
+    @ApiBearerAuth('JWT-auth')
+    @ApiOperation({ summary: 'Change password for authenticated user' })
+    @ApiStandardResponse(Object)
+    async changePassword(
+        @CurrentUser() user: CurrentUserData,
+        @Body() changePasswordDto: ChangePasswordDto,
+        @Res({ passthrough: true }) response: Response,
+    ) {
+        await this.authService.changePassword(
+            user.id,
+            changePasswordDto.currentPassword,
+            changePasswordDto.newPassword,
+        );
+
+        // Clear cookies to force re-login
+        response.clearCookie('refresh_token');
+        response.clearCookie('access_token');
+
+        return new StandardResponse({ message: 'Password changed successfully. Please login again.' });
     }
 }

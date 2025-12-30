@@ -19,6 +19,8 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { TreatmentsModule } from './modules/treatments/treatments.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { TreatmentTypesModule } from './modules/treatment-types/treatment-types.module';
+import { MedicalHistoryModule } from './modules/medical-history/medical-history.module';
+import { NotificationSettingsModule } from './modules/notification-settings/notification-settings.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { TreatmentTypesModule } from './modules/treatment-types/treatment-types.
     TreatmentsModule,
     TreatmentTypesModule,
     PaymentsModule,
+    MedicalHistoryModule,
+    NotificationSettingsModule,
     TestModule,
   ],
   providers: [

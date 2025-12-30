@@ -6,10 +6,12 @@ interface AuthStore {
     currentOrg: UserOrgDto | null;
     isAuthenticated: boolean;
     needsOrgSelection: boolean;
+    user: UserDto | null; // Alias for compatibility
     login: (data: LoginDto) => Promise<{ success: boolean; error?: string; needsOrgSelection?: boolean }>;
     selectOrganization: (orgId: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
     initializeAuth: () => void;
+    setUser: (user: UserDto) => void;
 }
 
 const AUTH_STORAGE_KEY = 'dentacare_auth_user';
@@ -21,6 +23,12 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     currentOrg: null,
     isAuthenticated: false,
     needsOrgSelection: false,
+    user: null, // Alias for compatibility
+
+    setUser: (user: UserDto) => {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+        set({ currentUser: user, user });
+    },
 
     login: async (data: LoginDto) => {
         try {
@@ -47,6 +55,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
                 set({
                     currentUser: user,
+                    user: user, // Sync alias
                     currentOrg: currentOrg,
                     isAuthenticated: true,
                     needsOrgSelection: needsOrgSelection
@@ -80,6 +89,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
                 set({
                     currentUser: updatedUser,
+                    user: updatedUser, // Sync alias
                     currentOrg: currentOrg,
                     isAuthenticated: true,
                     needsOrgSelection: false
@@ -104,6 +114,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
             localStorage.removeItem(ORG_STORAGE_KEY);
             set({
                 currentUser: null,
+                user: null, // Sync alias
                 currentOrg: null,
                 isAuthenticated: false,
                 needsOrgSelection: false
@@ -135,6 +146,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
                 set({
                     currentUser: user,
+                    user: user, // Sync alias
                     currentOrg: currentOrg,
                     isAuthenticated: true,
                     needsOrgSelection: !currentOrg && (user.organizations?.length || 0) > 1

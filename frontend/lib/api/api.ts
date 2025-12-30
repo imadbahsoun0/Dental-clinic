@@ -95,6 +95,16 @@ export interface ResetPasswordDto {
   newPassword: string;
 }
 
+export interface ChangePasswordDto {
+  /** @example "oldPassword123" */
+  currentPassword: string;
+  /**
+   * @minLength 8
+   * @example "newPassword123"
+   */
+  newPassword: string;
+}
+
 export interface UserOrgResponseDto {
   id: string;
   orgId: string;
@@ -135,6 +145,15 @@ export interface CreateUserDto {
    * @example 30
    */
   percentage?: number;
+}
+
+export interface UpdateProfileDto {
+  /** @example "Dr. John Doe" */
+  name?: string;
+  /** @example "+1234567890" */
+  phone?: string;
+  /** @example "john.doe@example.com" */
+  email?: string;
 }
 
 export interface UpdateUserDto {
@@ -458,6 +477,88 @@ export interface UpdatePaymentDto {
   paymentMethod?: "cash" | "card" | "transfer" | "check" | "other";
   /** Additional notes */
   notes?: string;
+}
+
+export interface MedicalHistoryQuestionResponseDto {
+  id: string;
+  question: string;
+  type: "text" | "radio" | "checkbox" | "textarea";
+  options?: string[];
+  required: boolean;
+  order: number;
+  /** @format date-time */
+  createdAt: string;
+  /** @format date-time */
+  updatedAt: string;
+}
+
+export interface CreateMedicalHistoryQuestionDto {
+  /** @example "Do you have any allergies?" */
+  question: string;
+  /** @example "text" */
+  type: "text" | "radio" | "checkbox" | "textarea";
+  /** @example ["Yes","No"] */
+  options?: string[];
+  /** @example true */
+  required: boolean;
+  /** @example 1 */
+  order: number;
+}
+
+export interface UpdateMedicalHistoryQuestionDto {
+  /** @example "Do you have any allergies?" */
+  question?: string;
+  /** @example "text" */
+  type?: "text" | "radio" | "checkbox" | "textarea";
+  /** @example ["Yes","No"] */
+  options?: string[];
+  /** @example true */
+  required?: boolean;
+  /** @example 1 */
+  order?: number;
+}
+
+export interface AppointmentReminderResponseDto {
+  enabled: boolean;
+  timing: number;
+  timingUnit: string;
+  messageTemplate: string;
+}
+
+export interface PaymentReminderResponseDto {
+  enabled: boolean;
+  timing: number;
+  timingUnit: string;
+  messageTemplate: string;
+}
+
+export interface NotificationSettingsResponseDto {
+  id: string;
+  appointmentReminder: AppointmentReminderResponseDto;
+  paymentReminder: PaymentReminderResponseDto;
+  /** @format date-time */
+  createdAt: string;
+  /** @format date-time */
+  updatedAt: string;
+}
+
+export interface AppointmentReminderDto {
+  enabled: boolean;
+  timing: number;
+  timingUnit: "hours" | "days";
+  messageTemplate: string;
+}
+
+export interface PaymentReminderDto {
+  enabled: boolean;
+  timing: number;
+  timingUnit: "hours" | "days";
+  messageTemplate: string;
+}
+
+export interface UpdateNotificationSettingsDto {
+  appointmentReminder: AppointmentReminderDto;
+  paymentReminder: PaymentReminderDto;
 }
 
 import type {
@@ -797,6 +898,34 @@ export class Api<
     /**
      * No description
      *
+     * @tags Authentication
+     * @name AuthControllerChangePassword
+     * @summary Change password for authenticated user
+     * @request PATCH:/api/v1/auth/change-password
+     * @secure
+     */
+    authControllerChangePassword: (
+      data: ChangePasswordDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/auth/change-password`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags Users
      * @name UsersControllerCreate
      * @summary Create a new user in the organization
@@ -854,6 +983,57 @@ export class Api<
         method: "GET",
         query: query,
         secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Users
+     * @name UsersControllerGetProfile
+     * @summary Get current user profile
+     * @request GET:/api/v1/users/profile
+     * @secure
+     */
+    usersControllerGetProfile: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: UserResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/users/profile`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Users
+     * @name UsersControllerUpdateProfile
+     * @summary Update current user profile
+     * @request PATCH:/api/v1/users/profile
+     * @secure
+     */
+    usersControllerUpdateProfile: (
+      data: UpdateProfileDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: UserResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/users/profile`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
@@ -1292,6 +1472,8 @@ export class Api<
         startDate?: string;
         /** End date for range filtering */
         endDate?: string;
+        /** Filter by patient ID */
+        patientId?: string;
       },
       params: RequestParams = {},
     ) =>
@@ -1977,6 +2159,183 @@ export class Api<
         path: `/api/v1/payments/${id}`,
         method: "DELETE",
         secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Medical History
+     * @name MedicalHistoryControllerCreate
+     * @summary Create a new medical history question
+     * @request POST:/api/v1/medical-history
+     * @secure
+     */
+    medicalHistoryControllerCreate: (
+      data: CreateMedicalHistoryQuestionDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: MedicalHistoryQuestionResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/medical-history`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Medical History
+     * @name MedicalHistoryControllerFindAll
+     * @summary Get all medical history questions
+     * @request GET:/api/v1/medical-history
+     * @secure
+     */
+    medicalHistoryControllerFindAll: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: MedicalHistoryQuestionResponseDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/medical-history`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Medical History
+     * @name MedicalHistoryControllerFindOne
+     * @summary Get a medical history question by ID
+     * @request GET:/api/v1/medical-history/{id}
+     * @secure
+     */
+    medicalHistoryControllerFindOne: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: MedicalHistoryQuestionResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/medical-history/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Medical History
+     * @name MedicalHistoryControllerUpdate
+     * @summary Update a medical history question
+     * @request PATCH:/api/v1/medical-history/{id}
+     * @secure
+     */
+    medicalHistoryControllerUpdate: (
+      id: string,
+      data: UpdateMedicalHistoryQuestionDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: MedicalHistoryQuestionResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/medical-history/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Medical History
+     * @name MedicalHistoryControllerRemove
+     * @summary Delete a medical history question
+     * @request DELETE:/api/v1/medical-history/{id}
+     * @secure
+     */
+    medicalHistoryControllerRemove: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/medical-history/${id}`,
+        method: "DELETE",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Notification Settings
+     * @name NotificationSettingsControllerGet
+     * @summary Get notification settings for the organization
+     * @request GET:/api/v1/notification-settings
+     * @secure
+     */
+    notificationSettingsControllerGet: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: NotificationSettingsResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/notification-settings`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Notification Settings
+     * @name NotificationSettingsControllerUpdate
+     * @summary Update notification settings
+     * @request PATCH:/api/v1/notification-settings
+     * @secure
+     */
+    notificationSettingsControllerUpdate: (
+      data: UpdateNotificationSettingsDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: NotificationSettingsResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/notification-settings`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
