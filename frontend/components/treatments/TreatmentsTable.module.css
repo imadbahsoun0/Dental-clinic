@@ -101,12 +101,23 @@
     transition: background-color 0.2s ease;
 }
 
-.editBtn:hover {
+.editBtn:hover:not(:disabled) {
     background: #e3f2fd;
 }
 
-.deleteBtn:hover {
+.deleteBtn:hover:not(:disabled) {
     background: #ffebee;
+}
+
+.editBtn:disabled,
+.deleteBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.statusSelect:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .emptyState {

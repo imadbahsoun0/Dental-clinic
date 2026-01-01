@@ -4,6 +4,15 @@
     gap: 16px;
 }
 
+.selectorWrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0 6px; /* small padding to prevent edge overflow in modal */
+}
+
 .row {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

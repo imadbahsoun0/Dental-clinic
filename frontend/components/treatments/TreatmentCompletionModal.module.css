@@ -1,0 +1,105 @@
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.warningSection {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.warningIcon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.warningText {
+    margin: 0;
+    color: #856404;
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.detailsSection,
+.commissionSection {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.sectionTitle {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detailRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.detailRow:not(:last-child) {
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.label {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.value {
+    font-size: 14px;
+    color: #111827;
+    font-weight: 600;
+}
+
+.value.highlight {
+    font-size: 16px;
+    color: #059669;
+}
+
+.commissionSection {
+    background-color: #f0fdf4;
+    border-color: #86efac;
+}
+
+.commissionCard {
+    background-color: white;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.commissionAmount {
+    font-size: 18px;
+    color: #059669;
+}
+
+.commissionNote {
+    margin: 0;
+    font-size: 13px;
+    color: #065f46;
+    font-style: italic;
+    text-align: center;
+}
+
+.footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #e5e7eb;
+}

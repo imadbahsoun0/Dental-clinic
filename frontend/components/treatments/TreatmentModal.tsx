@@ -7,9 +7,9 @@ import { useAppointmentStore } from '@/store/appointmentStore';
 import { Modal } from '@/components/common/Modal';
 import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
-import { MultiSelect } from '@/components/common/MultiSelect';
+import { ToothSelector } from '@/components/common/ToothSelector';
 import { Button } from '@/components/common/Button';
-import { ALL_TEETH, formatToothNumbers } from '@/constants/teeth';
+import { formatToothNumbers } from '@/constants/teeth';
 import toast from 'react-hot-toast';
 import styles from './TreatmentModal.module.css';
 
@@ -297,17 +297,14 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                     </div>
                 )}
 
-                {/* Multi-Select Teeth */}
-                <MultiSelect
-                    label="Select Teeth *"
-                    options={ALL_TEETH.map(tooth => ({
-                        value: tooth.value,
-                        label: tooth.label,
-                    }))}
-                    value={formData.selectedTeeth}
-                    onChange={(value) => setFormData({ ...formData, selectedTeeth: value as number[] })}
-                    placeholder="Select one or more teeth..."
-                />
+                {/* Visual Tooth Selector */}
+                <div className={styles.selectorWrapper}>
+                    <ToothSelector
+                        selectedTeeth={formData.selectedTeeth}
+                        onChange={(teeth) => setFormData({ ...formData, selectedTeeth: teeth })}
+                        label="Select Teeth *"
+                    />
+                </div>
 
                 {/* Status Selection */}
                 <Select

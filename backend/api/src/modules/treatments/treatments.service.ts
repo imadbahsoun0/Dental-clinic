@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
-import { Treatment, TreatmentStatus, Tooth } from '../../common/entities';
+import { Treatment, TreatmentStatus, Tooth, UserOrganization } from '../../common/entities';
 import { UserRole } from '../../common/decorators/roles.decorator';
 import { CreateTreatmentDto } from './dto/create-treatment.dto';
 import { UpdateTreatmentDto } from './dto/update-treatment.dto';
@@ -120,6 +120,11 @@ export class TreatmentsService {
             throw new NotFoundException('Treatment not found');
         }
 
+        // Prevent editing completed treatments
+        if (treatment.status === TreatmentStatus.COMPLETED) {
+            throw new BadRequestException('Completed treatments cannot be edited');
+        }
+
         // Dentists can only update their own treatments
         if (role === UserRole.DENTIST && treatment.appointment?.doctor?.id !== userId) {
             throw new BadRequestException('You can only update your own treatments');
@@ -131,6 +136,9 @@ export class TreatmentsService {
                 throw new BadRequestException('Appointment is required for non-planned treatments');
             }
         }
+
+        // Check if status is changing to COMPLETED
+        const isBeingCompleted = updateDto.status === TreatmentStatus.COMPLETED && treatment.status !== TreatmentStatus.COMPLETED;
 
         const { patientId, treatmentTypeId, appointmentId, toothNumbers, ...updateData } = updateDto;
 
@@ -164,6 +172,12 @@ export class TreatmentsService {
         }
 
         await this.em.flush();
+
+        // If treatment is being completed, update doctor's wallet
+        if (isBeingCompleted) {
+            await this.updateDoctorWallet(treatment, orgId);
+        }
+
         return this.findOne(id, orgId, userId, role);
     }
 
@@ -174,6 +188,11 @@ export class TreatmentsService {
 
         if (!treatment) {
             throw new NotFoundException('Treatment not found');
+        }
+
+        // Prevent deleting completed treatments
+        if (treatment.status === TreatmentStatus.COMPLETED) {
+            throw new BadRequestException('Completed treatments cannot be deleted');
         }
 
         // Dentists can only delete their own treatments
@@ -251,5 +270,42 @@ export class TreatmentsService {
             createdAt: treatment.createdAt.toISOString(),
             updatedAt: treatment.updatedAt.toISOString(),
         };
+    }
+
+    /**
+     * Update doctor's wallet when treatment is completed
+     * Adds commission based on doctor's percentage in the organization
+     */
+    private async updateDoctorWallet(treatment: Treatment, orgId: string) {
+        // Get the doctor from the appointment
+        if (!treatment.appointment?.doctor) {
+            // No doctor assigned, skip wallet update
+            return;
+        }
+
+        const doctorId = treatment.appointment.doctor.id;
+
+        // Get the doctor's user-organization record to access wallet and commission percentage
+        const userOrg = await this.em.findOne(UserOrganization, {
+            user: { id: doctorId },
+            orgId,
+            role: UserRole.DENTIST,
+        });
+
+        if (!userOrg) {
+            // Doctor not found in organization or not a dentist role
+            return;
+        }
+
+        // Calculate commission if percentage is set
+        if (userOrg.percentage && userOrg.percentage > 0) {
+            const netPrice = Number(treatment.totalPrice) - Number(treatment.discount);
+            const commission = (netPrice * userOrg.percentage) / 100;
+
+            // Update wallet balance
+            userOrg.wallet = (userOrg.wallet || 0) + commission;
+            
+            await this.em.flush();
+        }
     }
 }

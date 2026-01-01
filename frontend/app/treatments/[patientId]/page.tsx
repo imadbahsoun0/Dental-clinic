@@ -59,6 +59,7 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
 
     const fetchTreatmentCategories = useSettingsStore((state) => state.fetchTreatmentCategories);
     const fetchTreatmentTypes = useSettingsStore((state) => state.fetchTreatmentTypes);
+    const fetchUsers = useSettingsStore((state) => state.fetchUsers);
 
     // Fetch treatments, payments, appointments, and configuration on mount
     React.useEffect(() => {
@@ -66,9 +67,10 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
         fetchPayments(patientId);
         fetchTreatmentCategories();
         fetchTreatmentTypes();
+        fetchUsers(); // Fetch users to get doctor commission percentages
         // Fetch specific patient's appointments for linking
         fetchAppointments(1, 1000, undefined, undefined, undefined, patientId);
-    }, [patientId, fetchTreatments, fetchPayments, fetchTreatmentCategories, fetchTreatmentTypes, fetchAppointments]);
+    }, [patientId, fetchTreatments, fetchPayments, fetchTreatmentCategories, fetchTreatmentTypes, fetchUsers, fetchAppointments]);
 
     // Calculate totals
     const totalPrice = treatments.reduce((sum, t) => sum + (t.totalPrice - t.discount), 0);

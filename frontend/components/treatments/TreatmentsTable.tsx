@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Treatment } from '@/types';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAppointmentStore } from '@/store/appointmentStore';
 import { formatToothNumbers } from '@/constants/teeth';
+import { TreatmentCompletionModal } from './TreatmentCompletionModal';
 import styles from './TreatmentsTable.module.css';
 
 interface TreatmentsTableProps {
@@ -26,6 +27,12 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
 }) => {
     const treatmentTypes = useSettingsStore((state) => state.treatmentTypes);
     const appointments = useAppointmentStore((state) => state.appointments);
+    const users = useSettingsStore((state) => state.users);
+    const [completionModalState, setCompletionModalState] = useState<{
+        isOpen: boolean;
+        treatment: Treatment | null;
+    }>({ isOpen: false, treatment: null });
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const getTreatmentTypeName = (treatmentTypeId: string) => {
         const type = treatmentTypes.find((t) => t.id === treatmentTypeId);
@@ -91,6 +98,63 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
         }
     };
 
+    const handleStatusChange = (treatment: Treatment, newStatus: Treatment['status']) => {
+        // If changing to completed, show confirmation modal
+        if (newStatus === 'completed' && treatment.status !== 'completed') {
+            setCompletionModalState({ isOpen: true, treatment });
+        } else {
+            // For other status changes, proceed directly
+            onStatusChange(treatment.id, newStatus);
+        }
+    };
+
+    const handleConfirmCompletion = async () => {
+        if (!completionModalState.treatment) return;
+
+        setIsProcessing(true);
+        try {
+            await onStatusChange(completionModalState.treatment.id, 'completed');
+            setCompletionModalState({ isOpen: false, treatment: null });
+        } catch (error) {
+            console.error('Failed to complete treatment:', error);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleCloseModal = () => {
+        if (!isProcessing) {
+            setCompletionModalState({ isOpen: false, treatment: null });
+        }
+    };
+
+    // Helper to get doctor info for completion modal
+    const getDoctorInfo = (treatment: Treatment) => {
+        if (treatment.appointment?.doctor) {
+            return {
+                name: treatment.appointment.doctor.name,
+                id: treatment.appointment.doctor.id,
+            };
+        }
+        if (treatment.appointmentId) {
+            const appointment = appointments.find(apt => apt.id === treatment.appointmentId);
+            if (appointment?.doctor) {
+                return {
+                    name: appointment.doctor.name,
+                    id: appointment.doctor.id,
+                };
+            }
+        }
+        return null;
+    };
+
+    // Get doctor commission percentage from users store
+    const getDoctorCommissionPercent = (doctorId?: string): number | undefined => {
+        if (!doctorId) return undefined;
+        const doctor = users.find(u => u.id === doctorId);
+        return doctor?.percentage;
+    };
+
     if (treatments.length === 0) {
         return (
             <div className={styles.emptyState}>
@@ -103,6 +167,19 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
 
     return (
         <div className={styles.tableContainer}>
+            {completionModalState.treatment && (
+                <TreatmentCompletionModal
+                    isOpen={completionModalState.isOpen}
+                    onClose={handleCloseModal}
+                    onConfirm={handleConfirmCompletion}
+                    treatmentName={getTreatmentTypeName(completionModalState.treatment.treatmentTypeId)}
+                    totalPrice={completionModalState.treatment.totalPrice}
+                    discount={completionModalState.treatment.discount}
+                    doctorName={getDoctorInfo(completionModalState.treatment)?.name}
+                    doctorCommissionPercent={getDoctorCommissionPercent(getDoctorInfo(completionModalState.treatment)?.id)}
+                    isLoading={isProcessing}
+                />
+            )}
             <table className={styles.treatmentsTable}>
                 <thead>
                     <tr>
@@ -132,6 +209,7 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
                         const totalPrice = treatment.totalPrice - treatment.discount;
                         const isSelected = selectedTreatments.includes(treatment.id);
                         const appointmentDetails = getAppointmentDetails(treatment);
+                        const isCompleted = treatment.status === 'completed';
 
                         return (
                             <tr key={treatment.id} className={isSelected ? styles.selectedRow : ''}>
@@ -162,8 +240,9 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
                                     <select
                                         className={`${styles.statusSelect} ${getStatusBadgeClass(treatment.status)}`}
                                         value={treatment.status || 'planned'}
-                                        onChange={(e) => onStatusChange(treatment.id, e.target.value as Treatment['status'])}
-                                        title="Click to change status"
+                                        onChange={(e) => handleStatusChange(treatment, e.target.value as Treatment['status'])}
+                                        title={isCompleted ? "Completed treatments cannot be changed" : "Click to change status"}
+                                        disabled={isCompleted}
                                     >
                                         <option value="planned">Planned</option>
                                         <option value="in-progress">In Progress</option>
@@ -176,14 +255,16 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
                                         <button
                                             className={styles.editBtn}
                                             onClick={() => onEdit(treatment)}
-                                            title="Edit treatment"
+                                            title={isCompleted ? "Completed treatments cannot be edited" : "Edit treatment"}
+                                            disabled={isCompleted}
                                         >
                                             ✏️
                                         </button>
                                         <button
                                             className={styles.deleteBtn}
                                             onClick={() => onDelete(treatment.id)}
-                                            title="Delete treatment"
+                                            title={isCompleted ? "Completed treatments cannot be deleted" : "Delete treatment"}
+                                            disabled={isCompleted}
                                         >
                                             🗑️
                                         </button>
