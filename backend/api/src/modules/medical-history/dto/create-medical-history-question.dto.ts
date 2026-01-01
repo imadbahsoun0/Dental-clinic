@@ -17,6 +17,16 @@ export class CreateMedicalHistoryQuestionDto {
     @IsString({ each: true })
     options?: string[];
 
+    @ApiProperty({ example: 'Other', required: false, description: 'For radio_with_text: which option triggers text input' })
+    @IsOptional()
+    @IsString()
+    textTriggerOption?: string;
+
+    @ApiProperty({ example: 'Please specify', required: false, description: 'Label for the conditional text field' })
+    @IsOptional()
+    @IsString()
+    textFieldLabel?: string;
+
     @ApiProperty({ example: true })
     @IsBoolean()
     required!: boolean;

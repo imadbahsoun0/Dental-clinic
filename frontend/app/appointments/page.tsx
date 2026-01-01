@@ -287,9 +287,6 @@ export default function AppointmentsPage() {
                                                     <div style={{ fontWeight: '500', fontSize: '15px' }}>
                                                         {patient ? `${patient.firstName} ${patient.lastName}` : 'Loading...'}
                                                     </div>
-                                                    <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>
-                                                        {treatmentType?.name || 'Unknown Type'}
-                                                    </div>
                                                 </div>
                                                 <div style={{
                                                     fontSize: '14px',

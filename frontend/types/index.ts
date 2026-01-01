@@ -8,6 +8,8 @@ export interface Patient {
   email?: string;
   dateOfBirth?: string;
   address?: string;
+  emergencyContact?: string;
+  bloodType?: string;
   medicalHistory?: MedicalHistorySubmission;
   enablePaymentReminders?: boolean; // Enable/disable payment reminder notifications (default: true)
   createdAt: string;
@@ -117,8 +119,10 @@ export interface Expense {
 export interface MedicalHistoryQuestion {
   id: string;
   question: string;
-  type: 'text' | 'radio' | 'checkbox' | 'textarea';
-  options?: string[]; // for radio/checkbox
+  type: 'text' | 'radio' | 'checkbox' | 'textarea' | 'radio_with_text';
+  options?: string[]; // for radio/checkbox/radio_with_text
+  textTriggerOption?: string; // for radio_with_text: which option triggers text input
+  textFieldLabel?: string; // for radio_with_text: label for the text field
   required: boolean;
   order: number;
 }
@@ -134,9 +138,16 @@ export interface MedicalHistoryResponse {
 export interface MedicalHistorySubmission {
   patientId: string;
   dateOfBirth: string;
+  emergencyContact: string;
+  email?: string;
+  bloodType: string;
+  address: string;
   responses: {
     questionId: string;
+    questionText?: string; // Stored question text
+    questionType?: string; // Stored question type
     answer: string | string[];
+    answerText?: string;
   }[];
   signature: string; // base64 encoded signature image
   submittedAt: string;
@@ -226,6 +237,7 @@ export interface InputProps {
   required?: boolean;
   error?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export interface SelectOption {

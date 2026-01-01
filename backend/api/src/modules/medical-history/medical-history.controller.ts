@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { MedicalHistoryService } from './medical-history.service';
 import { CreateMedicalHistoryQuestionDto } from './dto/create-medical-history-question.dto';
@@ -10,6 +10,7 @@ import { Roles, UserRole } from '../../common/decorators/roles.decorator';
 import { ApiStandardResponse } from '../../common/decorators/api-standard-response.decorator';
 import { StandardResponse } from '../../common/dto/standard-response.dto';
 import { ParseUUIDPipe } from '../../common/pipes/parse-uuid.pipe';
+import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('Medical History')
 @ApiBearerAuth('JWT-auth')
@@ -35,6 +36,15 @@ export class MedicalHistoryController {
     @ApiStandardResponse(MedicalHistoryQuestionResponseDto, true)
     async findAll(@CurrentUser() user: CurrentUserData) {
         const result = await this.medicalHistoryService.findAll(user.orgId);
+        return new StandardResponse(result);
+    }
+
+    @Public()
+    @Get('public')
+    @ApiOperation({ summary: 'Get all medical history questions for public form (no auth required)' })
+    @ApiStandardResponse(MedicalHistoryQuestionResponseDto, true)
+    async findAllPublic(@Query('orgId') orgId: string) {
+        const result = await this.medicalHistoryService.findAll(orgId);
         return new StandardResponse(result);
     }
 

@@ -11,6 +11,7 @@ export const Input: React.FC<InputProps> = ({
     required = false,
     error,
     className = '',
+    disabled = false,
 }) => {
     return (
         <div className={styles.formGroup}>
@@ -27,6 +28,7 @@ export const Input: React.FC<InputProps> = ({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 required={required}
+                disabled={disabled}
             />
             {error && <span className={styles.errorMessage}>{error}</span>}
         </div>

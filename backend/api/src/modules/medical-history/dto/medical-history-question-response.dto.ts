@@ -14,6 +14,12 @@ export class MedicalHistoryQuestionResponseDto {
     @ApiProperty({ required: false })
     options?: string[];
 
+    @ApiProperty({ required: false })
+    textTriggerOption?: string;
+
+    @ApiProperty({ required: false })
+    textFieldLabel?: string;
+
     @ApiProperty()
     required!: boolean;
 

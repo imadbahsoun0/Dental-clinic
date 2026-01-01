@@ -5,9 +5,12 @@ import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { PatientResponseDto } from './dto/patient-response.dto';
 import { PatientQueryDto } from './dto/patient-query.dto';
+import { SubmitMedicalHistoryDto } from './dto/submit-medical-history.dto';
+import { MedicalHistorySubmissionResponseDto } from './dto/medical-history-submission-response.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { CurrentUserData } from '../../common/decorators/current-user.decorator';
 import { Roles, UserRole } from '../../common/decorators/roles.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { ApiStandardResponse } from '../../common/decorators/api-standard-response.decorator';
 import { StandardResponse } from '../../common/dto/standard-response.dto';
 
@@ -87,5 +90,39 @@ export class PatientsController {
     ) {
         await this.patientsService.remove(id, user.orgId, user.id);
         return new StandardResponse(null, 'Patient deleted successfully');
+    }
+
+    @Public()
+    @Post(':id/medical-history')
+    @ApiOperation({ summary: 'Submit medical history for a patient (public - no auth required)' })
+    @ApiStandardResponse(MedicalHistorySubmissionResponseDto, false, 'created')
+    async submitMedicalHistory(
+        @Param('id') id: string,
+        @Body() submitDto: SubmitMedicalHistoryDto,
+    ) {
+        const result = await this.patientsService.submitMedicalHistory(id, submitDto);
+        return new StandardResponse(result, 'Medical history submitted successfully');
+    }
+
+    @Public()
+    @Get(':id/medical-history')
+    @ApiOperation({ summary: 'Get medical history submission for a patient (public - no auth required)' })
+    @ApiStandardResponse(MedicalHistorySubmissionResponseDto)
+    async getMedicalHistory(
+        @Param('id') id: string,
+    ) {
+        const result = await this.patientsService.getMedicalHistory(id);
+        return new StandardResponse(result);
+    }
+
+    @Post('migrate/medical-history-question-text')
+    @Roles(UserRole.ADMIN)
+    @ApiOperation({ summary: 'Migrate existing medical history to include question text' })
+    @ApiStandardResponse(Object)
+    async migrateMedicalHistoryQuestionText(
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        const result = await this.patientsService.updateMedicalHistoryWithQuestionText(user.orgId);
+        return new StandardResponse(result, result.message);
     }
 }

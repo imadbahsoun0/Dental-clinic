@@ -23,8 +23,10 @@ export const MedicalHistoryTab: React.FC = () => {
     const [editingQuestion, setEditingQuestion] = useState<MedicalHistoryQuestion | null>(null);
     const [questionForm, setQuestionForm] = useState({
         question: '',
-        type: 'text' as 'text' | 'radio' | 'checkbox' | 'textarea',
+        type: 'text' as 'text' | 'radio' | 'checkbox' | 'textarea' | 'radio_with_text',
         options: [] as string[],
+        textTriggerOption: '',
+        textFieldLabel: '',
         required: true,
         order: 1,
     });
@@ -40,6 +42,8 @@ export const MedicalHistoryTab: React.FC = () => {
             question: '',
             type: 'text',
             options: [],
+            textTriggerOption: '',
+            textFieldLabel: '',
             required: true,
             order: medicalHistoryQuestions.length + 1,
         });
@@ -53,6 +57,8 @@ export const MedicalHistoryTab: React.FC = () => {
             question: question.question,
             type: question.type,
             options: question.options || [],
+            textTriggerOption: question.textTriggerOption || '',
+            textFieldLabel: question.textFieldLabel || '',
             required: question.required,
             order: question.order,
         });
@@ -66,15 +72,30 @@ export const MedicalHistoryTab: React.FC = () => {
             return;
         }
 
-        if ((questionForm.type === 'radio' || questionForm.type === 'checkbox') && questionForm.options.length === 0) {
+        if ((questionForm.type === 'radio' || questionForm.type === 'checkbox' || questionForm.type === 'radio_with_text') && questionForm.options.length === 0) {
             toast.error('Please add at least one option for radio/checkbox questions');
             return;
         }
 
+        if (questionForm.type === 'radio_with_text' && !questionForm.textTriggerOption) {
+            toast.error('Please select which option triggers the text input');
+            return;
+        }
+
+        const dataToSave = {
+            question: questionForm.question,
+            type: questionForm.type,
+            options: questionForm.options.length > 0 ? questionForm.options : undefined,
+            textTriggerOption: questionForm.type === 'radio_with_text' ? questionForm.textTriggerOption : undefined,
+            textFieldLabel: questionForm.type === 'radio_with_text' ? questionForm.textFieldLabel : undefined,
+            required: questionForm.required,
+            order: questionForm.order,
+        };
+
         if (editingQuestion) {
-            await updateMedicalHistoryQuestion(editingQuestion.id, questionForm);
+            await updateMedicalHistoryQuestion(editingQuestion.id, dataToSave);
         } else {
-            await addMedicalHistoryQuestion(questionForm);
+            await addMedicalHistoryQuestion(dataToSave);
         }
         setModalOpen(false);
     };
@@ -220,14 +241,21 @@ export const MedicalHistoryTab: React.FC = () => {
                             { value: 'textarea', label: 'Text Area' },
                             { value: 'radio', label: 'Radio Buttons (Single Choice)' },
                             { value: 'checkbox', label: 'Checkboxes (Multiple Choice)' },
+                            { value: 'radio_with_text', label: 'Radio with Text Field (Single Choice + Details)' },
                         ]}
                         value={questionForm.type}
                         onChange={(value) =>
-                            setQuestionForm({ ...questionForm, type: value as any, options: [] })
+                            setQuestionForm({ 
+                                ...questionForm, 
+                                type: value as any, 
+                                options: [],
+                                textTriggerOption: '',
+                                textFieldLabel: '',
+                            })
                         }
                     />
 
-                    {(questionForm.type === 'radio' || questionForm.type === 'checkbox') && (
+                    {(questionForm.type === 'radio' || questionForm.type === 'checkbox' || questionForm.type === 'radio_with_text') && (
                         <div>
                             <label className={styles.label}>Options *</label>
                             <div className={styles.optionsContainer}>
@@ -256,6 +284,30 @@ export const MedicalHistoryTab: React.FC = () => {
                                 </Button>
                             </div>
                         </div>
+                    )}
+
+                    {questionForm.type === 'radio_with_text' && questionForm.options.length > 0 && (
+                        <div>
+                            <Select
+                                label="Trigger Option (shows text field when selected) *"
+                                options={questionForm.options.map(opt => ({ value: opt, label: opt }))}
+                                value={questionForm.textTriggerOption}
+                                onChange={(value) => setQuestionForm({ ...questionForm, textTriggerOption: value })}
+                            />
+                            <p style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                                Select which option will reveal a text input field for additional details
+                            </p>
+                        </div>
+                    )}
+
+                    {questionForm.type === 'radio_with_text' && (
+                        <Input
+                            type="text"
+                            label="Text Field Label (optional)"
+                            value={questionForm.textFieldLabel}
+                            onChange={(value) => setQuestionForm({ ...questionForm, textFieldLabel: value })}
+                            placeholder="e.g., Please specify..."
+                        />
                     )}
 
                     <Input

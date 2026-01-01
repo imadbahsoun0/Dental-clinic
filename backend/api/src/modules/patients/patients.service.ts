@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
 import { Patient, Attachment } from '../../common/entities';
+import { MedicalHistoryQuestion } from '../../common/entities/medical-history-question.entity';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
+import { SubmitMedicalHistoryDto } from './dto/submit-medical-history.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { FilterDto } from '../../common/dto/filter.dto';
 import { FilesService } from '../files/files.service';
@@ -171,6 +173,149 @@ export class PatientsService {
             documents: docsWithUrls,
             createdAt: patient.createdAt,
             updatedAt: patient.updatedAt,
+        };
+    }
+
+    async submitMedicalHistory(patientId: string, submitDto: SubmitMedicalHistoryDto) {
+        const patient = await this.em.findOne(Patient, { id: patientId });
+        
+        if (!patient) {
+            throw new NotFoundException('Patient not found');
+        }
+
+        // Fetch all question details to store question text
+        const questionIds = submitDto.responses.map(r => r.questionId);
+        const questions = await this.em.find(MedicalHistoryQuestion, {
+            id: { $in: questionIds }
+        });
+
+        // Create a map for quick lookup
+        const questionMap = new Map(questions.map(q => [q.id, q]));
+
+        // Enhance responses with question text
+        const enhancedResponses = submitDto.responses.map(response => {
+            const question = questionMap.get(response.questionId);
+            return {
+                questionId: response.questionId,
+                questionText: question?.question || 'Question not found',
+                questionType: question?.type || 'TEXT',
+                answer: response.answer,
+                answerText: response.answerText,
+            };
+        });
+
+        // Update patient's date of birth if not set
+        if (!patient.dateOfBirth && submitDto.dateOfBirth) {
+            patient.dateOfBirth = new Date(submitDto.dateOfBirth);
+        }
+
+        // Update emergency contact if provided
+        if (submitDto.emergencyContact) {
+            patient.emergencyContact = submitDto.emergencyContact;
+        }
+
+        // Update email if provided
+        if (submitDto.email) {
+            patient.email = submitDto.email;
+        }
+
+        // Update blood type if provided
+        if (submitDto.bloodType) {
+            patient.bloodType = submitDto.bloodType;
+        }
+
+        // Update address if provided
+        if (submitDto.address) {
+            patient.address = submitDto.address;
+        }
+
+        // Store medical history in JSONB field with enhanced responses
+        const medicalHistory = {
+            dateOfBirth: submitDto.dateOfBirth,
+            emergencyContact: submitDto.emergencyContact,
+            email: submitDto.email,
+            bloodType: submitDto.bloodType,
+            address: submitDto.address,
+            responses: enhancedResponses,
+            signature: submitDto.signature,
+            submittedAt: new Date().toISOString(),
+        };
+
+        patient.medicalHistory = medicalHistory;
+        await this.em.flush();
+
+        return medicalHistory;
+    }
+
+    async getMedicalHistory(patientId: string) {
+        const patient = await this.em.findOne(Patient, { id: patientId });
+        
+        if (!patient) {
+            throw new NotFoundException('Patient not found');
+        }
+
+        if (!patient.medicalHistory) {
+            throw new NotFoundException('Medical history not found for this patient');
+        }
+
+        return patient.medicalHistory;
+    }
+
+    // Utility method to update existing medical history with question text
+    async updateMedicalHistoryWithQuestionText(orgId: string) {
+        const patients = await this.em.find(Patient, {
+            orgId,
+            medicalHistory: { $ne: null },
+        });
+
+        let updatedCount = 0;
+
+        for (const patient of patients) {
+            if (patient.medicalHistory && patient.medicalHistory.responses) {
+                const responses = patient.medicalHistory.responses as any[];
+                
+                // Check if responses already have questionText
+                const needsUpdate = responses.some(r => !r.questionText);
+                
+                if (needsUpdate) {
+                    const questionIds = responses.map((r: any) => r.questionId);
+                    const questions = await this.em.find(MedicalHistoryQuestion, {
+                        id: { $in: questionIds }
+                    });
+
+                    const questionMap = new Map(questions.map(q => [q.id, q]));
+
+                    // Enhance responses with question text
+                    const enhancedResponses = responses.map((response: any) => {
+                        if (response.questionText) {
+                            return response; // Already has questionText
+                        }
+                        
+                        const question = questionMap.get(response.questionId);
+                        return {
+                            ...response,
+                            questionText: question?.question || 'Question not found',
+                            questionType: question?.type || 'TEXT',
+                        };
+                    });
+
+                    patient.medicalHistory = {
+                        ...patient.medicalHistory,
+                        responses: enhancedResponses,
+                    };
+
+                    updatedCount++;
+                }
+            }
+        }
+
+        if (updatedCount > 0) {
+            await this.em.flush();
+        }
+
+        return {
+            message: `Updated ${updatedCount} patient medical histories with question text`,
+            updatedCount,
         };
     }
 }

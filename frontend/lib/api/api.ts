@@ -260,6 +260,71 @@ export interface UpdatePatientDto {
   documentIds?: string[];
 }
 
+export interface MedicalHistoryAnswerResponseDto {
+  /** @example "550e8400-e29b-41d4-a716-446655440000" */
+  questionId: string;
+  /** @example "Do you have any allergies?" */
+  questionText: string;
+  /** @example "TEXT" */
+  questionType: "TEXT" | "YES_NO" | "CHECKBOX" | "RADIO" | "RADIO_WITH_TEXT";
+  answer: string | string[];
+  /** @example "Penicillin allergy" */
+  answerText?: string;
+}
+
+export interface MedicalHistorySubmissionResponseDto {
+  /** @example "1990-01-15" */
+  dateOfBirth: string;
+  /** @example "+1234567890" */
+  emergencyContact: string;
+  /** @example "patient@example.com" */
+  email?: string;
+  /** @example "A+" */
+  bloodType: string;
+  /** @example "123 Main St, City, Country" */
+  address: string;
+  responses: MedicalHistoryAnswerResponseDto[];
+  /** @example "data:image/png;base64,..." */
+  signature: string;
+  /** @format date-time */
+  submittedAt: string;
+}
+
+export interface MedicalHistoryAnswerDto {
+  /** @example "550e8400-e29b-41d4-a716-446655440000" */
+  questionId: string;
+  /**
+   * Answer can be string or array of strings for checkbox questions
+   * @example "Yes"
+   */
+  answer: string | string[];
+  /**
+   * Additional text input for radio_with_text questions
+   * @example "Penicillin allergy"
+   */
+  answerText?: string;
+}
+
+export interface SubmitMedicalHistoryDto {
+  /** @example "1990-01-15" */
+  dateOfBirth: string;
+  /** @example "+1234567890" */
+  emergencyContact: string;
+  /** @example "patient@example.com" */
+  email?: string;
+  /** @example "A+" */
+  bloodType: string;
+  /** @example "123 Main St, City, Country" */
+  address: string;
+  /** Array of question answers */
+  responses: MedicalHistoryAnswerDto[];
+  /**
+   * Base64 encoded signature image
+   * @example "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA..."
+   */
+  signature: string;
+}
+
 export interface CreateAppointmentDto {
   /** @example "patient-uuid-here" */
   patientId: string;
@@ -486,8 +551,10 @@ export interface UpdatePaymentDto {
 export interface MedicalHistoryQuestionResponseDto {
   id: string;
   question: string;
-  type: "text" | "radio" | "checkbox" | "textarea";
+  type: "text" | "radio" | "checkbox" | "textarea" | "radio_with_text";
   options?: string[];
+  textTriggerOption?: string;
+  textFieldLabel?: string;
   required: boolean;
   order: number;
   /** @format date-time */
@@ -500,9 +567,19 @@ export interface CreateMedicalHistoryQuestionDto {
   /** @example "Do you have any allergies?" */
   question: string;
   /** @example "text" */
-  type: "text" | "radio" | "checkbox" | "textarea";
+  type: "text" | "radio" | "checkbox" | "textarea" | "radio_with_text";
   /** @example ["Yes","No"] */
   options?: string[];
+  /**
+   * For radio_with_text: which option triggers text input
+   * @example "Other"
+   */
+  textTriggerOption?: string;
+  /**
+   * Label for the conditional text field
+   * @example "Please specify"
+   */
+  textFieldLabel?: string;
   /** @example true */
   required: boolean;
   /** @example 1 */
@@ -513,9 +590,19 @@ export interface UpdateMedicalHistoryQuestionDto {
   /** @example "Do you have any allergies?" */
   question?: string;
   /** @example "text" */
-  type?: "text" | "radio" | "checkbox" | "textarea";
+  type?: "text" | "radio" | "checkbox" | "textarea" | "radio_with_text";
   /** @example ["Yes","No"] */
   options?: string[];
+  /**
+   * For radio_with_text: which option triggers text input
+   * @example "Other"
+   */
+  textTriggerOption?: string;
+  /**
+   * Label for the conditional text field
+   * @example "Please specify"
+   */
+  textFieldLabel?: string;
   /** @example true */
   required?: boolean;
   /** @example 1 */
@@ -1531,6 +1618,86 @@ export class Api<
     /**
      * No description
      *
+     * @tags Patients
+     * @name PatientsControllerSubmitMedicalHistory
+     * @summary Submit medical history for a patient (public - no auth required)
+     * @request POST:/api/v1/patients/{id}/medical-history
+     * @secure
+     */
+    patientsControllerSubmitMedicalHistory: (
+      id: string,
+      data: SubmitMedicalHistoryDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: MedicalHistorySubmissionResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/${id}/medical-history`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerGetMedicalHistory
+     * @summary Get medical history submission for a patient (public - no auth required)
+     * @request GET:/api/v1/patients/{id}/medical-history
+     * @secure
+     */
+    patientsControllerGetMedicalHistory: (
+      id: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: MedicalHistorySubmissionResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/${id}/medical-history`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerMigrateMedicalHistoryQuestionText
+     * @summary Migrate existing medical history to include question text
+     * @request POST:/api/v1/patients/migrate/medical-history-question-text
+     * @secure
+     */
+    patientsControllerMigrateMedicalHistoryQuestionText: (
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/migrate/medical-history-question-text`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags Appointments
      * @name AppointmentsControllerCreate
      * @summary Create a new appointment
@@ -2321,6 +2488,35 @@ export class Api<
       >({
         path: `/api/v1/medical-history`,
         method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Medical History
+     * @name MedicalHistoryControllerFindAllPublic
+     * @summary Get all medical history questions for public form (no auth required)
+     * @request GET:/api/v1/medical-history/public
+     * @secure
+     */
+    medicalHistoryControllerFindAllPublic: (
+      query: {
+        orgId: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: MedicalHistoryQuestionResponseDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/medical-history/public`,
+        method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,

@@ -6,6 +6,7 @@ export enum QuestionType {
     RADIO = 'radio',
     CHECKBOX = 'checkbox',
     TEXTAREA = 'textarea',
+    RADIO_WITH_TEXT = 'radio_with_text', // Radio button with conditional text input
 }
 
 @Entity({ tableName: 'medical_history_questions' })
@@ -19,6 +20,12 @@ export class MedicalHistoryQuestion extends BaseEntity {
 
     @Property({ type: 'jsonb', nullable: true })
     options?: string[]; // for radio/checkbox
+
+    @Property({ type: 'text', nullable: true })
+    textTriggerOption?: string; // For radio_with_text: which option triggers text input (e.g., "Other")
+
+    @Property({ type: 'text', nullable: true })
+    textFieldLabel?: string; // Label for the conditional text field (e.g., "Please specify")
 
     @Property({ default: false })
     required: boolean = false;

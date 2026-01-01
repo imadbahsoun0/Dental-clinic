@@ -21,25 +21,33 @@ export const MedicalHistoryDisplay: React.FC<MedicalHistoryDisplayProps> = ({
         );
     }
 
-    const getQuestionText = (questionId: string) => {
-        const question = questions.find(q => q.id === questionId);
-        return question?.question || 'Unknown Question';
+    const getQuestionText = (response: { questionId: string; questionText?: string }): string => {
+        // First, try to use the stored questionText
+        if (response.questionText) {
+            return response.questionText;
+        }
+        
+        // Fallback: try to find in current questions array
+        const question = questions.find(q => q.id === response.questionId);
+        if (question) {
+            return question.question;
+        }
+        
+        // Last resort: show a descriptive message
+        return `Question (ID: ${response.questionId.substring(0, 8)}...)`;
     };
 
-    const getAnswer = (questionId: string) => {
-        const response = medicalHistory.responses.find(r => r.questionId === questionId);
-        if (!response) return '-';
-
+    const formatAnswer = (answer: string | string[]): string => {
         // Handle array answers (checkboxes)
-        if (Array.isArray(response.answer)) {
-            return response.answer.join(', ');
+        if (Array.isArray(answer)) {
+            return answer.length > 0 ? answer.join(', ') : 'None selected';
         }
 
         // Handle boolean-like string answers
-        if (response.answer === 'true' || response.answer === 'Yes') return 'Yes';
-        if (response.answer === 'false' || response.answer === 'No') return 'No';
+        if (answer === 'true' || answer === 'Yes') return 'Yes';
+        if (answer === 'false' || answer === 'No') return 'No';
 
-        return response.answer || '-';
+        return answer || '-';
     };
 
     return (
@@ -47,17 +55,46 @@ export const MedicalHistoryDisplay: React.FC<MedicalHistoryDisplayProps> = ({
             <div className={styles.submissionInfo}>
                 <span className={styles.label}>Submitted:</span>
                 <span className={styles.value}>
-                    {new Date(medicalHistory.submittedAt).toLocaleDateString()}
+                    {new Date(medicalHistory.submittedAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}
                 </span>
             </div>
 
-            <div className={styles.questionsGrid}>
-                {questions.map((question) => (
-                    <div key={question.id} className={styles.questionItem}>
-                        <span className={styles.questionText}>{question.question}</span>
-                        <span className={styles.answerText}>{getAnswer(question.id)}</span>
-                    </div>
-                ))}
+            {/* Medical History Questions Section */}
+            <div className={styles.questionsSection}>
+                <h3 className={styles.sectionTitle}>Medical History Responses</h3>
+                <div className={styles.questionsGrid}>
+                    {!medicalHistory.responses || medicalHistory.responses.length === 0 ? (
+                        <p style={{ textAlign: 'center', color: 'var(--text-light)', padding: '20px' }}>
+                            No responses submitted
+                        </p>
+                    ) : (
+                        medicalHistory.responses.map((response, index) => {
+                            const questionText = getQuestionText(response);
+                            const answerDisplay = formatAnswer(response.answer);
+
+                            return (
+                                <div key={response.questionId || index} className={styles.questionItem}>
+                                    <div className={styles.questionContent}>
+                                        <span className={styles.questionText}>{questionText}</span>
+                                        <span className={styles.answerText}>{answerDisplay}</span>
+                                        {response.answerText && (
+                                            <div className={styles.additionalDetails}>
+                                                <span className={styles.detailsLabel}>Additional details:</span>
+                                                <span className={styles.detailsText}>{response.answerText}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
             </div>
         </div>
     );
