@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -14,10 +14,15 @@ import styles from './expenses.module.css';
 const ITEMS_PER_PAGE = 10;
 
 export default function ExpensesPage() {
-    const expenses = useExpenseStore((state) => state.expenses);
-    const addExpense = useExpenseStore((state) => state.addExpense);
-    const updateExpense = useExpenseStore((state) => state.updateExpense);
-    const deleteExpense = useExpenseStore((state) => state.deleteExpense);
+    const { 
+        expenses, 
+        loading, 
+        pagination, 
+        fetchExpenses, 
+        addExpense, 
+        updateExpense, 
+        deleteExpense 
+    } = useExpenseStore();
     const allUsers = useSettingsStore((state) => state.users);
 
     // Memoize users to prevent infinite re-renders
@@ -25,44 +30,29 @@ export default function ExpensesPage() {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-    const [currentPage, setCurrentPage] = useState(1);
     const [filters, setFilters] = useState({
         name: '',
         startDate: '',
         endDate: '',
     });
 
-    // Filter and sort expenses
+    // Fetch expenses on mount and when filters change
+    useEffect(() => {
+        fetchExpenses({
+            page: pagination.page,
+            limit: ITEMS_PER_PAGE,
+            startDate: filters.startDate || undefined,
+            endDate: filters.endDate || undefined,
+        });
+    }, [pagination.page, filters.startDate, filters.endDate]);
+
+    // Filter by name (client-side)
     const filteredExpenses = useMemo(() => {
-        let filtered = [...expenses];
-
-        // Filter by name
-        if (filters.name) {
-            filtered = filtered.filter((exp) =>
-                exp.name.toLowerCase().includes(filters.name.toLowerCase())
-            );
-        }
-
-        // Filter by date range
-        if (filters.startDate) {
-            filtered = filtered.filter((exp) => exp.date >= filters.startDate);
-        }
-        if (filters.endDate) {
-            filtered = filtered.filter((exp) => exp.date <= filters.endDate);
-        }
-
-        // Sort by date (newest first)
-        filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-        return filtered;
-    }, [expenses, filters]);
-
-    // Pagination
-    const totalPages = Math.ceil(filteredExpenses.length / ITEMS_PER_PAGE);
-    const paginatedExpenses = filteredExpenses.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
+        if (!filters.name) return expenses;
+        return expenses.filter((exp) =>
+            exp.name.toLowerCase().includes(filters.name.toLowerCase())
+        );
+    }, [expenses, filters.name]);
 
     const handleAddExpense = () => {
         setEditingExpense(null);
@@ -74,25 +64,41 @@ export default function ExpensesPage() {
         setIsModalOpen(true);
     };
 
-    const handleSaveExpense = (expenseData: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>) => {
-        if (editingExpense) {
-            updateExpense(editingExpense.id, expenseData);
-        } else {
-            addExpense(expenseData);
+    const handleSaveExpense = async (expenseData: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>) => {
+        try {
+            if (editingExpense) {
+                await updateExpense(editingExpense.id, expenseData);
+            } else {
+                await addExpense(expenseData);
+            }
+            setIsModalOpen(false);
+            setEditingExpense(null);
+        } catch (error) {
+            // Error already handled in store with toast
         }
-        setIsModalOpen(false);
-        setEditingExpense(null);
     };
 
-    const handleDeleteExpense = (id: string) => {
+    const handleDeleteExpense = async (id: string) => {
         if (confirm('Are you sure you want to delete this expense?')) {
-            deleteExpense(id);
+            try {
+                await deleteExpense(id);
+            } catch (error) {
+                // Error already handled in store with toast
+            }
         }
     };
 
     const handleFilterChange = (key: string, value: string) => {
         setFilters({ ...filters, [key]: value });
-        setCurrentPage(1); // Reset to first page when filtering
+    };
+
+    const handlePageChange = (page: number) => {
+        fetchExpenses({
+            page,
+            limit: ITEMS_PER_PAGE,
+            startDate: filters.startDate || undefined,
+            endDate: filters.endDate || undefined,
+        });
     };
 
     const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -150,6 +156,8 @@ export default function ExpensesPage() {
                         <input
                             type="date"
                             className={styles.filterInput}
+                            type="date"
+                            className={styles.filterInput}
                             value={filters.endDate}
                             onChange={(e) => handleFilterChange('endDate', e.target.value)}
                         />
@@ -159,7 +167,6 @@ export default function ExpensesPage() {
                             className={styles.clearFilters}
                             onClick={() => {
                                 setFilters({ name: '', startDate: '', endDate: '' });
-                                setCurrentPage(1);
                             }}
                         >
                             Clear Filters
@@ -170,7 +177,11 @@ export default function ExpensesPage() {
 
             {/* Expenses Table */}
             <Card>
-                {paginatedExpenses.length > 0 ? (
+                {loading ? (
+                    <div className={styles.emptyState}>
+                        <p>Loading expenses...</p>
+                    </div>
+                ) : filteredExpenses.length > 0 ? (
                     <>
                         <table className={styles.table}>
                             <thead>
@@ -186,7 +197,7 @@ export default function ExpensesPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {paginatedExpenses.map((expense) => (
+                                {filteredExpenses.map((expense) => (
                                     <tr key={expense.id}>
                                         <td>
                                             <div className={styles.expenseName}>
@@ -266,22 +277,22 @@ export default function ExpensesPage() {
                         </table>
 
                         {/* Pagination */}
-                        {totalPages > 1 && (
+                        {pagination.totalPages > 1 && (
                             <div className={styles.pagination}>
                                 <button
                                     className={styles.pageBtn}
-                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                    disabled={currentPage === 1}
+                                    onClick={() => handlePageChange(Math.max(1, pagination.page - 1))}
+                                    disabled={pagination.page === 1}
                                 >
                                     Previous
                                 </button>
                                 <span className={styles.pageInfo}>
-                                    Page {currentPage} of {totalPages}
+                                    Page {pagination.page} of {pagination.totalPages}
                                 </span>
                                 <button
                                     className={styles.pageBtn}
-                                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                    disabled={currentPage === totalPages}
+                                    onClick={() => handlePageChange(Math.min(pagination.totalPages, pagination.page + 1))}
+                                    disabled={pagination.page === pagination.totalPages}
                                 >
                                     Next
                                 </button>

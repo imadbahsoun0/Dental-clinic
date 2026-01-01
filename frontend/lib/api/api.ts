@@ -561,6 +561,114 @@ export interface UpdateNotificationSettingsDto {
   paymentReminder: PaymentReminderDto;
 }
 
+export interface CreateExpenseDto {
+  /**
+   * Expense name
+   * @example "Lab Equipment"
+   */
+  name: string;
+  /**
+   * Expense amount
+   * @example 500
+   */
+  amount: number;
+  /**
+   * Expense date
+   * @example "2024-01-15"
+   */
+  date: string;
+  /**
+   * Invoice attachment ID (optional)
+   * @example "uuid"
+   */
+  invoiceId?: string;
+  /**
+   * Additional notes
+   * @example "Payment for lab work"
+   */
+  notes?: string;
+  /**
+   * Doctor ID for doctor-related expenses
+   * @example "uuid"
+   */
+  doctorId?: string;
+  /**
+   * Type of expense
+   * @example "lab"
+   */
+  expenseType:
+    | "lab"
+    | "equipment"
+    | "utilities"
+    | "rent"
+    | "salary"
+    | "doctor_payment"
+    | "other";
+}
+
+export interface ProcessDoctorPaymentDto {
+  /**
+   * ID of the doctor to pay
+   * @example "550e8400-e29b-41d4-a716-446655440000"
+   */
+  doctorId: string;
+  /**
+   * Payment amount
+   * @example 1000
+   */
+  amount: number;
+  /**
+   * Payment notes
+   * @example "Commission payment for December 2025"
+   */
+  notes: string;
+}
+
+export interface UpdateExpenseDto {
+  /**
+   * Expense name
+   * @example "Lab Equipment"
+   */
+  name?: string;
+  /**
+   * Expense amount
+   * @example 500
+   */
+  amount?: number;
+  /**
+   * Expense date
+   * @example "2024-01-15"
+   */
+  date?: string;
+  /**
+   * Invoice attachment ID
+   * @example "uuid"
+   */
+  invoiceId?: string;
+  /**
+   * Additional notes
+   * @example "Payment for lab work"
+   */
+  notes?: string;
+  /**
+   * Doctor ID for doctor-related expenses
+   * @example "uuid"
+   */
+  doctorId?: string;
+  /**
+   * Type of expense
+   * @example "lab"
+   */
+  expenseType?:
+    | "lab"
+    | "equipment"
+    | "utilities"
+    | "rent"
+    | "salary"
+    | "doctor_payment"
+    | "other";
+}
+
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -2337,6 +2445,215 @@ export class Api<
         secure: true,
         type: ContentType.Json,
         format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Expenses
+     * @name ExpensesControllerCreate
+     * @summary Create a new expense
+     * @request POST:/api/v1/expenses
+     * @secure
+     */
+    expensesControllerCreate: (
+      data: CreateExpenseDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/expenses`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Expenses
+     * @name ExpensesControllerFindAll
+     * @summary Get all expenses with filtering and pagination
+     * @request GET:/api/v1/expenses
+     * @secure
+     */
+    expensesControllerFindAll: (
+      query?: {
+        /**
+         * Page number
+         * @example 1
+         */
+        page?: number;
+        /**
+         * Items per page
+         * @example 10
+         */
+        limit?: number;
+        /**
+         * Start date filter
+         * @example "2024-01-01"
+         */
+        startDate?: string;
+        /**
+         * End date filter
+         * @example "2024-12-31"
+         */
+        endDate?: string;
+        /**
+         * Filter by doctor ID
+         * @example "uuid"
+         */
+        doctorId?: string;
+        /**
+         * Filter by expense type
+         * @example "lab"
+         */
+        expenseType?:
+          | "lab"
+          | "equipment"
+          | "utilities"
+          | "rent"
+          | "salary"
+          | "doctor_payment"
+          | "other";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/expenses`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Expenses
+     * @name ExpensesControllerGetTotalByDateRange
+     * @summary Get total expenses by date range
+     * @request GET:/api/v1/expenses/total
+     * @secure
+     */
+    expensesControllerGetTotalByDateRange: (
+      query: {
+        startDate: string;
+        endDate: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/expenses/total`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Expenses
+     * @name ExpensesControllerGetTotalByDoctor
+     * @summary Get total expenses for a doctor
+     * @request GET:/api/v1/expenses/doctor/{doctorId}
+     * @secure
+     */
+    expensesControllerGetTotalByDoctor: (
+      doctorId: string,
+      query: {
+        startDate: string;
+        endDate: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/expenses/doctor/${doctorId}`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Expenses
+     * @name ExpensesControllerProcessDoctorPayment
+     * @summary Process doctor payment from wallet
+     * @request POST:/api/v1/expenses/doctor-payment
+     * @secure
+     */
+    expensesControllerProcessDoctorPayment: (
+      data: ProcessDoctorPaymentDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/expenses/doctor-payment`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Expenses
+     * @name ExpensesControllerFindOne
+     * @summary Get a single expense by ID
+     * @request GET:/api/v1/expenses/{id}
+     * @secure
+     */
+    expensesControllerFindOne: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/expenses/${id}`,
+        method: "GET",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Expenses
+     * @name ExpensesControllerUpdate
+     * @summary Update an expense
+     * @request PATCH:/api/v1/expenses/{id}
+     * @secure
+     */
+    expensesControllerUpdate: (
+      id: string,
+      data: UpdateExpenseDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/v1/expenses/${id}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Expenses
+     * @name ExpensesControllerRemove
+     * @summary Delete an expense (soft delete)
+     * @request DELETE:/api/v1/expenses/{id}
+     * @secure
+     */
+    expensesControllerRemove: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/expenses/${id}`,
+        method: "DELETE",
+        secure: true,
         ...params,
       }),
 

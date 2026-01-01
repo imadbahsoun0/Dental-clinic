@@ -21,6 +21,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { TreatmentTypesModule } from './modules/treatment-types/treatment-types.module';
 import { MedicalHistoryModule } from './modules/medical-history/medical-history.module';
 import { NotificationSettingsModule } from './modules/notification-settings/notification-settings.module';
+import { ExpensesModule } from './modules/expenses/expenses.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { NotificationSettingsModule } from './modules/notification-settings/noti
     PaymentsModule,
     MedicalHistoryModule,
     NotificationSettingsModule,
+    ExpensesModule,
     TestModule,
   ],
   providers: [

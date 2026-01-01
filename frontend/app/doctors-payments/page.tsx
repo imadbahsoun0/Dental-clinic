@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -8,43 +8,75 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useExpenseStore } from '@/store/expenseStore';
 import { User } from '@/types';
 import { DoctorPaymentModal } from '@/components/doctors/DoctorPaymentModal';
+import { api } from '@/lib/api';
+import { toast } from 'react-hot-toast';
 import styles from './doctors-payments.module.css';
 
+interface Dentist {
+    id: string;
+    name: string;
+    email: string;
+    wallet: number;
+    percentage: number;
+}
+
 export default function DoctorPaymentsPage() {
-    const getDentists = useSettingsStore((state) => state.getDentists);
-    const updateUser = useSettingsStore((state) => state.updateUser);
-    const addExpense = useExpenseStore((state) => state.addExpense);
-
+    const processDoctorPayment = useExpenseStore((state) => state.processDoctorPayment);
+    const [dentists, setDentists] = useState<Dentist[]>([]);
+    const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedDoctor, setSelectedDoctor] = useState<User | null>(null);
+    const [selectedDoctor, setSelectedDoctor] = useState<Dentist | null>(null);
 
-    const dentists = getDentists();
+    useEffect(() => {
+        fetchDentists();
+    }, []);
+
+    const fetchDentists = async () => {
+        setLoading(true);
+        try {
+            const response: any = await api.api.usersControllerGetDentists();
+            if (response.success && response.data) {
+                setDentists(response.data);
+            }
+        } catch (error: any) {
+            console.error('Failed to fetch dentists:', error);
+            toast.error(error.response?.data?.message || 'Failed to fetch dentists');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const totalPendingPayments = dentists.reduce((sum, doc) => sum + (doc.wallet || 0), 0);
 
-    const handlePayDoctor = (doctor: User) => {
+    const handlePayDoctor = (doctor: Dentist) => {
         setSelectedDoctor(doctor);
         setIsModalOpen(true);
     };
 
-    const handleProcessPayment = (paymentData: { amount: number; date: string; notes?: string }) => {
+    const handleProcessPayment = async (paymentData: { amount: number; date: string; notes?: string }) => {
         if (!selectedDoctor) return;
 
-        // Reduce doctor's wallet
-        const newWallet = (selectedDoctor.wallet || 0) - paymentData.amount;
-        updateUser(selectedDoctor.id, { wallet: newWallet });
+        try {
+            const result = await processDoctorPayment(
+                selectedDoctor.id,
+                paymentData.amount,
+                paymentData.notes || `Commission payment to ${selectedDoctor.name}`
+            );
 
-        // Create expense entry
-        addExpense({
-            name: 'Doctor Payment',
-            amount: paymentData.amount,
-            date: paymentData.date,
-            doctorId: selectedDoctor.id,
-            expenseType: 'Doctor Payment',
-            notes: paymentData.notes || `Commission payment to ${selectedDoctor.name}`,
-        });
+            // Update local state with new wallet balance
+            setDentists(prevDentists =>
+                prevDentists.map(d =>
+                    d.id === selectedDoctor.id
+                        ? { ...d, wallet: result.newWalletBalance }
+                        : d
+                )
+            );
 
-        setIsModalOpen(false);
-        setSelectedDoctor(null);
+            setIsModalOpen(false);
+            setSelectedDoctor(null);
+        } catch (error) {
+            // Error already handled in store with toast
+        }
     };
 
     return (
@@ -72,13 +104,18 @@ export default function DoctorPaymentsPage() {
 
             {/* Dentists Table */}
             <Card>
-                {dentists.length > 0 ? (
+                {loading ? (
+                    <div className={styles.emptyState}>
+                        <p>Loading dentists...</p>
+                    </div>
+                ) : dentists.length > 0 ? (
                     <table className={styles.table}>
                         <thead>
                             <tr>
                                 <th>Doctor Name</th>
+                                <th>Email</th>
+                                <th>Commission %</th>
                                 <th>Wallet Balance</th>
-                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -91,6 +128,8 @@ export default function DoctorPaymentsPage() {
                                             {doctor.name}
                                         </div>
                                     </td>
+                                    <td>{doctor.email}</td>
+                                    <td>{doctor.percentage || 0}%</td>
                                     <td>
                                         <span
                                             className={`${styles.wallet} ${(doctor.wallet || 0) > 0 ? styles.walletPositive : ''
@@ -100,19 +139,11 @@ export default function DoctorPaymentsPage() {
                                         </span>
                                     </td>
                                     <td>
-                                        <span
-                                            className={`${styles.statusBadge} ${doctor.status === 'active' ? styles.statusActive : styles.statusInactive
-                                                }`}
-                                        >
-                                            {doctor.status.charAt(0).toUpperCase() + doctor.status.slice(1)}
-                                        </span>
-                                    </td>
-                                    <td>
                                         <Button
                                             variant="primary"
                                             size="sm"
                                             onClick={() => handlePayDoctor(doctor)}
-                                            disabled={!doctor.wallet || doctor.wallet <= 0 || doctor.status !== 'active'}
+                                            disabled={!doctor.wallet || doctor.wallet <= 0}
                                         >
                                             Pay Doctor
                                         </Button>
@@ -140,7 +171,7 @@ export default function DoctorPaymentsPage() {
                         setSelectedDoctor(null);
                     }}
                     onSave={handleProcessPayment}
-                    doctor={selectedDoctor}
+                    doctor={selectedDoctor as any}
                 />
             )}
         </MainLayout>
