@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common/Button';
-import { Expense } from '@/types';
+import { Expense, ExpenseType } from '@/types';
 import { useSettingsStore } from '@/store/settingsStore';
 import { formatLocalDate } from '@/utils/dateUtils';
 import styles from './ExpenseModal.module.css';
@@ -15,16 +15,15 @@ interface ExpenseModalProps {
     expense?: Expense | null;
 }
 
-const EXPENSE_CATEGORIES = [
-    'Doctor Payment',
-    'Supplies',
-    'Equipment',
-    'Utilities',
-    'Rent',
-    'Salaries',
-    'Marketing',
-    'Maintenance',
-    'Other',
+// Map display names to backend expense types
+const EXPENSE_CATEGORIES: { label: string; value: ExpenseType }[] = [
+    { label: 'Doctor Payment', value: 'doctor_payment' },
+    { label: 'Lab', value: 'lab' },
+    { label: 'Equipment', value: 'equipment' },
+    { label: 'Utilities', value: 'utilities' },
+    { label: 'Rent', value: 'rent' },
+    { label: 'Salary', value: 'salary' },
+    { label: 'Other', value: 'other' },
 ];
 
 export const ExpenseModal: React.FC<ExpenseModalProps> = ({
@@ -41,25 +40,29 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
         invoiceFile: '',
         notes: '',
         doctorId: '',
+        expenseType: '' as ExpenseType | '',
     });
     const [fileName, setFileName] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Memoize dentists to prevent infinite re-renders
     const users = useSettingsStore((state) => state.users);
-    const dentists = React.useMemo(() => users.filter((u: any) => u.role === 'dentist'), [users]);
+    const dentists = React.useMemo(() => users.filter((u) => u.role === 'dentist'), [users]);
 
     useEffect(() => {
         if (expense) {
-            const isCustom = !EXPENSE_CATEGORIES.includes(expense.name);
+            const matchedCategory = EXPENSE_CATEGORIES.find(cat => cat.value === expense.expenseType);
+            const isOther = expense.expenseType === 'other';
+            
             setFormData({
-                name: isCustom ? 'Other' : expense.name,
-                customName: isCustom ? expense.name : '',
+                name: matchedCategory ? expense.name : '',
+                customName: isOther ? expense.name : '',
                 amount: expense.amount.toString(),
                 date: expense.date,
                 invoiceFile: expense.invoiceFile || '',
                 notes: expense.notes || '',
                 doctorId: expense.doctorId || '',
+                expenseType: expense.expenseType || 'other',
             });
             if (expense.invoiceFile) {
                 setFileName(expense.invoiceFile.split('/').pop() || '');
@@ -73,6 +76,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                 invoiceFile: '',
                 notes: '',
                 doctorId: '',
+                expenseType: '',
             });
             setFileName('');
         }
@@ -91,15 +95,15 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     const validate = () => {
         const newErrors: Record<string, string> = {};
 
-        if (!formData.name) {
-            newErrors.name = 'Expense category is required';
+        if (!formData.expenseType) {
+            newErrors.expenseType = 'Expense category is required';
         }
 
-        if (formData.name === 'Other' && !formData.customName.trim()) {
+        if (formData.expenseType === 'other' && !formData.customName.trim()) {
             newErrors.customName = 'Please specify the expense name';
         }
 
-        if (formData.name === 'Doctor Payment' && !formData.doctorId) {
+        if (formData.expenseType === 'doctor_payment' && !formData.doctorId) {
             newErrors.doctorId = 'Please select a doctor';
         }
 
@@ -111,33 +115,32 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
             newErrors.date = 'Date is required';
         }
 
+        if (formData.expenseType !== 'other' && !formData.name.trim()) {
+            newErrors.name = 'Expense name is required';
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = (e?: React.FormEvent) => {
+        e?.preventDefault();
 
         if (!validate()) return;
 
-        const expenseName = formData.name === 'Other' ? formData.customName : formData.name;
+        const expenseName = formData.expenseType === 'other' ? formData.customName : formData.name;
 
-        const expenseData: any = {
+        const expenseData: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'> = {
             name: expenseName,
             amount: parseFloat(formData.amount),
             date: formData.date,
             invoiceFile: formData.invoiceFile || undefined,
             notes: formData.notes || undefined,
+            expenseType: formData.expenseType as ExpenseType,
+            doctorId: formData.expenseType === 'doctor_payment' ? formData.doctorId : undefined,
         };
 
-        // Add doctor payment specific fields
-        if (formData.name === 'Doctor Payment' && formData.doctorId) {
-            expenseData.doctorId = formData.doctorId;
-            expenseData.expenseType = 'Doctor Payment';
-        }
-
         onSave(expenseData);
-
         onClose();
     };
 
@@ -146,7 +149,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
             <Button variant="secondary" onClick={onClose}>
                 Cancel
             </Button>
-            <Button variant="primary" onClick={() => handleSubmit({} as React.FormEvent)}>
+            <Button variant="primary" onClick={() => handleSubmit()}>
                 {expense ? 'Update' : 'Add'} Expense
             </Button>
         </div>
@@ -165,21 +168,37 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                         Expense Category <span className={styles.required}>*</span>
                     </label>
                     <select
-                        className={`${styles.select} ${errors.name ? styles.error : ''}`}
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className={`${styles.select} ${errors.expenseType ? styles.error : ''}`}
+                        value={formData.expenseType}
+                        onChange={(e) => setFormData({ ...formData, expenseType: e.target.value as ExpenseType })}
                     >
                         <option value="">Select category...</option>
                         {EXPENSE_CATEGORIES.map((category) => (
-                            <option key={category} value={category}>
-                                {category}
+                            <option key={category.value} value={category.value}>
+                                {category.label}
                             </option>
                         ))}
                     </select>
-                    {errors.name && <span className={styles.errorText}>{errors.name}</span>}
+                    {errors.expenseType && <span className={styles.errorText}>{errors.expenseType}</span>}
                 </div>
 
-                {formData.name === 'Other' && (
+                {formData.expenseType && formData.expenseType !== 'other' && (
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>
+                            Expense Name <span className={styles.required}>*</span>
+                        </label>
+                        <input
+                            type="text"
+                            className={`${styles.input} ${errors.name ? styles.error : ''}`}
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            placeholder="Enter expense name"
+                        />
+                        {errors.name && <span className={styles.errorText}>{errors.name}</span>}
+                    </div>
+                )}
+
+                {formData.expenseType === 'other' && (
                     <div className={styles.formGroup}>
                         <label className={styles.label}>
                             Specify Expense Name <span className={styles.required}>*</span>
@@ -195,7 +214,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                     </div>
                 )}
 
-                {formData.name === 'Doctor Payment' && (
+                {formData.expenseType === 'doctor_payment' && (
                     <div className={styles.formGroup}>
                         <label className={styles.label}>
                             Select Doctor <span className={styles.required}>*</span>

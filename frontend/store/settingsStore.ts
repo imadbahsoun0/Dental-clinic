@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { MedicalHistoryQuestion, TreatmentCategory, TreatmentType, User, ClinicBranding, NotificationSettings } from '@/types';
+import { MedicalHistoryQuestion, TreatmentCategory, TreatmentType, User, UserWithRole, ClinicBranding, NotificationSettings } from '@/types';
 import { dummyDoctors } from '@/data/dummyData';
 import { api } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -28,13 +28,13 @@ interface SettingsStore {
     updateMedicalHistoryQuestion: (id: string, question: Partial<MedicalHistoryQuestion>) => Promise<void>;
     deleteMedicalHistoryQuestion: (id: string) => Promise<void>;
 
-    // Users
-    users: User[];
+    // Users (with flattened role from current org)
+    users: UserWithRole[];
     fetchUsers: () => Promise<void>;
     addUser: (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
     updateUser: (id: string, user: Partial<User>) => Promise<void>;
     deleteUser: (id: string) => Promise<void>;
-    getDentists: () => User[]; // Get all users with role 'dentist'
+    getDentists: () => UserWithRole[]; // Get all users with role 'dentist'
 
     // Clinic Branding
     clinicBranding: ClinicBranding;
@@ -279,17 +279,17 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
     fetchUsers: async () => {
         try {
             const response = await api.api.usersControllerFindAll({ limit: 100 });
-            const result = response as any;
-            const usersData = result.data?.data || result.data || [];
+            const result = response as unknown as { data?: { data?: User[] } };
+            const usersData = result.data?.data || [];
 
-            const mappedUsers = usersData.map((u: any) => {
-                const orgDetails = u.organizations?.[0] || {};
+            const mappedUsers: UserWithRole[] = usersData.map((u) => {
+                const orgDetails = u.organizations?.[0];
                 return {
                     ...u,
-                    role: orgDetails.role,
-                    status: orgDetails.status,
-                    wallet: orgDetails.wallet,
-                    percentage: orgDetails.percentage,
+                    role: orgDetails?.role,
+                    status: orgDetails?.status,
+                    wallet: orgDetails?.wallet,
+                    percentage: orgDetails?.percentage,
                 };
             });
 
@@ -366,7 +366,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
     getDentists: () => {
         const { users } = get();
-        return users.filter((u: any) => u.role === 'dentist');
+        return users.filter((u) => u.role === 'dentist');
     },
 
     // Clinic Branding

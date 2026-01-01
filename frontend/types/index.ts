@@ -92,6 +92,15 @@ export interface Payment {
   updatedAt: string;
 }
 
+export type ExpenseType = 
+  | 'lab'
+  | 'equipment'
+  | 'utilities'
+  | 'rent'
+  | 'salary'
+  | 'doctor_payment'
+  | 'other';
+
 export interface Expense {
   id: string;
   name: string; // Selected from dropdown or custom "Other" value
@@ -100,7 +109,7 @@ export interface Expense {
   invoiceFile?: string; // Optional file path/URL
   notes?: string;
   doctorId?: string; // Link to doctor user for doctor payment expenses
-  expenseType?: string; // Type of expense (e.g., "Doctor Payment", "Supplies", etc.)
+  expenseType?: ExpenseType; // Type of expense
   createdAt: string;
   updatedAt: string;
 }
@@ -165,6 +174,14 @@ export interface User {
   organizations?: UserOrganization[];
   // Current active organization (set after login/org selection)
   currentOrg?: UserOrganization;
+}
+
+// Extended User type with flattened role for UI convenience
+export interface UserWithRole extends User {
+  role?: 'dentist' | 'secretary' | 'admin';
+  status?: 'active' | 'inactive';
+  wallet?: number;
+  percentage?: number;
 }
 
 export interface ClinicBranding {

@@ -1,17 +1,24 @@
 import { create } from 'zustand';
 import { Expense } from '@/types';
-import { api } from '@/lib/api';
+import { api, StandardResponse, CreateExpenseDto, UpdateExpenseDto } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+
+interface PaginationMeta {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
+interface ExpenseResponse {
+    data: Expense[];
+    meta: PaginationMeta;
+}
 
 interface ExpenseStore {
     expenses: Expense[];
     loading: boolean;
-    pagination: {
-        page: number;
-        limit: number;
-        total: number;
-        totalPages: number;
-    };
+    pagination: PaginationMeta;
     fetchExpenses: (params?: {
         page?: number;
         limit?: number;
@@ -44,24 +51,26 @@ export const useExpenseStore = create<ExpenseStore>()((set, get) => ({
     fetchExpenses: async (params) => {
         set({ loading: true });
         try {
-            const response: any = await api.api.expensesControllerFindAll({
+            const response = await api.api.expensesControllerFindAll({
                 page: params?.page,
                 limit: params?.limit,
                 startDate: params?.startDate,
                 endDate: params?.endDate,
                 doctorId: params?.doctorId,
-                expenseType: params?.expenseType as any,
-            });
+                expenseType: params?.expenseType as CreateExpenseDto['expenseType'],
+            }) as unknown as StandardResponse;
             
             if (response.success && response.data) {
+                const expenseData = response.data as ExpenseResponse;
                 set({
-                    expenses: response.data.data as any[],
-                    pagination: response.data.meta || get().pagination,
+                    expenses: expenseData.data,
+                    pagination: expenseData.meta,
                 });
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error('Failed to fetch expenses:', error);
-            toast.error(error.response?.data?.message || 'Failed to fetch expenses');
+            const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to fetch expenses';
+            toast.error(errorMessage);
         } finally {
             set({ loading: false });
         }
@@ -69,84 +78,93 @@ export const useExpenseStore = create<ExpenseStore>()((set, get) => ({
 
     addExpense: async (expenseData) => {
         try {
-            const response: any = await api.api.expensesControllerCreate({
+            const createDto: CreateExpenseDto = {
                 name: expenseData.name,
                 amount: expenseData.amount,
                 date: expenseData.date,
-                expenseType: expenseData.expenseType as any,
+                expenseType: expenseData.expenseType as CreateExpenseDto['expenseType'],
                 notes: expenseData.notes,
                 doctorId: expenseData.doctorId,
-            });
+            };
+
+            const response = await api.api.expensesControllerCreate(createDto) as unknown as StandardResponse;
 
             if (response.success) {
                 toast.success('Expense added successfully');
                 // Refresh expenses list
                 await get().fetchExpenses({ page: get().pagination.page });
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error('Failed to add expense:', error);
-            toast.error(error.response?.data?.message || 'Failed to add expense');
+            const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to add expense';
+            toast.error(errorMessage);
             throw error;
         }
     },
 
     updateExpense: async (id, expenseData) => {
         try {
-            const response: any = await api.api.expensesControllerUpdate(id, {
+            const updateDto: UpdateExpenseDto = {
                 name: expenseData.name,
                 amount: expenseData.amount,
                 date: expenseData.date,
-                expenseType: expenseData.expenseType as any,
+                expenseType: expenseData.expenseType as CreateExpenseDto['expenseType'],
                 notes: expenseData.notes,
                 doctorId: expenseData.doctorId,
-            });
+            };
+
+            const response = await api.api.expensesControllerUpdate(id, updateDto) as unknown as StandardResponse;
 
             if (response.success) {
                 toast.success('Expense updated successfully');
                 // Refresh expenses list
                 await get().fetchExpenses({ page: get().pagination.page });
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error('Failed to update expense:', error);
-            toast.error(error.response?.data?.message || 'Failed to update expense');
+            const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update expense';
+            toast.error(errorMessage);
             throw error;
         }
     },
 
     deleteExpense: async (id) => {
         try {
-            const response: any = await api.api.expensesControllerRemove(id);
+            const response = await api.api.expensesControllerRemove(id) as unknown as StandardResponse;
 
             if (response.success) {
                 toast.success('Expense deleted successfully');
                 // Refresh expenses list
                 await get().fetchExpenses({ page: get().pagination.page });
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error('Failed to delete expense:', error);
-            toast.error(error.response?.data?.message || 'Failed to delete expense');
+            const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to delete expense';
+            toast.error(errorMessage);
             throw error;
         }
     },
 
     processDoctorPayment: async (doctorId, amount, notes) => {
         try {
-            const response: any = await api.api.expensesControllerProcessDoctorPayment({
+            const response = await api.api.expensesControllerProcessDoctorPayment({
                 doctorId,
                 amount,
                 notes,
-            });
+            }) as unknown as StandardResponse;
 
             if (response.success && response.data) {
                 toast.success('Doctor payment processed successfully');
                 // Refresh expenses list
                 await get().fetchExpenses({ page: get().pagination.page });
-                return { newWalletBalance: response.data.newWalletBalance };
+                const resultData = response.data as { newWalletBalance: number };
+                return { newWalletBalance: resultData.newWalletBalance };
             }
             throw new Error('Invalid response');
-        } catch (error: any) {
+        } catch (error) {
             console.error('Failed to process doctor payment:', error);
-            toast.error(error.response?.data?.message || 'Failed to process doctor payment');
+            const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to process doctor payment';
+            toast.error(errorMessage);
             throw error;
         }
     },
@@ -177,7 +195,7 @@ export const useExpenseStore = create<ExpenseStore>()((set, get) => ({
     getTotalPaidToDoctor: (doctorId) => {
         const { expenses } = get();
         return expenses
-            .filter((e) => e.doctorId === doctorId && e.expenseType === 'Doctor Payment')
+            .filter((e) => e.doctorId === doctorId && e.expenseType === 'doctor_payment')
             .reduce((total, e) => total + e.amount, 0);
     },
 }));

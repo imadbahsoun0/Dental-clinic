@@ -211,7 +211,7 @@ export default function ExpensesPage() {
                                             {expense.expenseType ? (
                                                 <Badge variant="info">
                                                     <span className={styles.typeBadge}>
-                                                        {expense.expenseType}
+                                                        {expense.expenseType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                                     </span>
                                                 </Badge>
                                             ) : (

@@ -11,7 +11,6 @@ import { MultiSelect } from '@/components/common/MultiSelect';
 import { useSettingsStore } from '@/store/settingsStore';
 import { TreatmentCategory, TreatmentType, PriceVariant } from '@/types';
 import { ALL_TEETH, formatToothNumbers } from '@/constants/teeth';
-import toast from 'react-hot-toast';
 import styles from './settings-tabs.module.css';
 
 export const TreatmentTypesTab: React.FC = () => {
@@ -47,7 +46,7 @@ export const TreatmentTypesTab: React.FC = () => {
         isDefault: false,
     });
 
-    // Fetch data on mount
+    // Fetch data on component mount
     useEffect(() => {
         fetchTreatmentCategories();
         fetchTreatmentTypes();
@@ -65,23 +64,23 @@ export const TreatmentTypesTab: React.FC = () => {
         setCategoryModalOpen(true);
     };
 
-    const handleSaveCategory = async () => {
-        if (!categoryForm.name.trim()) {
-            toast.error('Please enter a category name');
+    const handleSaveCategory = () => {
+        if (!categoryForm.name) {
+            alert('Please enter a category name');
             return;
         }
 
         if (editingCategory) {
-            await updateTreatmentCategory(editingCategory.id, categoryForm);
+            updateTreatmentCategory(editingCategory.id, categoryForm);
         } else {
-            await addTreatmentCategory(categoryForm);
+            addTreatmentCategory(categoryForm);
         }
         setCategoryModalOpen(false);
     };
 
-    const handleDeleteCategory = async (category: TreatmentCategory) => {
+    const handleDeleteCategory = (category: TreatmentCategory) => {
         if (confirm(`Are you sure you want to delete "${category.name}"? This will also delete all treatments in this category.`)) {
-            await deleteTreatmentCategory(category.id);
+            deleteTreatmentCategory(category.id);
         }
     };
 
@@ -100,19 +99,10 @@ export const TreatmentTypesTab: React.FC = () => {
 
     const handleEditTreatment = (treatment: TreatmentType) => {
         setEditingTreatment(treatment);
-        // Ensure priceVariants have IDs for the variant list
-        const variantsWithIds = treatment.priceVariants.map((v, idx) => ({
-            ...v,
-            id: v.id || `var-${Date.now()}-${idx}`,
-            name: v.name || v.label || (v.isDefault ? 'Default' : formatToothNumbers(v.toothNumbers || [])),
-            label: v.label || v.name || (v.isDefault ? 'Default' : formatToothNumbers(v.toothNumbers || [])),
-            toothSpec: v.toothSpec || v.name || v.label || (v.isDefault ? 'Default' : formatToothNumbers(v.toothNumbers || [])),
-        }));
-        
         setTreatmentForm({
             categoryId: treatment.categoryId || '',
             name: treatment.name,
-            priceVariants: variantsWithIds,
+            priceVariants: [...treatment.priceVariants],
             duration: treatment.duration,
             color: treatment.color,
         });
@@ -122,26 +112,24 @@ export const TreatmentTypesTab: React.FC = () => {
 
     const handleAddVariant = () => {
         if (variantForm.price <= 0) {
-            toast.error('Please enter a valid price');
+            alert('Please enter a price');
             return;
         }
 
         if (!variantForm.isDefault && variantForm.selectedTeeth.length === 0) {
-            toast.error('Please select teeth or mark as default price');
+            alert('Please select teeth or mark as default price');
             return;
         }
 
         // Check if default already exists
         if (variantForm.isDefault && treatmentForm.priceVariants.some(v => v.isDefault)) {
-            toast.error('A default price already exists. Please remove it first.');
+            alert('A default price already exists. Please remove it first.');
             return;
         }
 
         const newVariant: PriceVariant = variantForm.isDefault
             ? {
                 id: `var-${Date.now()}`,
-                name: 'Default',
-                label: 'Default',
                 toothSpec: 'Default',
                 toothNumbers: [],
                 price: variantForm.price,
@@ -149,12 +137,9 @@ export const TreatmentTypesTab: React.FC = () => {
             }
             : {
                 id: `var-${Date.now()}`,
-                name: formatToothNumbers(variantForm.selectedTeeth),
-                label: formatToothNumbers(variantForm.selectedTeeth),
                 toothSpec: formatToothNumbers(variantForm.selectedTeeth),
                 toothNumbers: [...variantForm.selectedTeeth],
                 price: variantForm.price,
-                isDefault: false,
             };
 
         setTreatmentForm({
@@ -163,38 +148,38 @@ export const TreatmentTypesTab: React.FC = () => {
         });
 
         setVariantForm({ selectedTeeth: [], price: 0, isDefault: false });
-        toast.success('Price variant added');
     };
 
-    const handleDeleteVariant = (variantId: string) => {
+    const handleDeleteVariant = (variantId: string | undefined) => {
+        if (!variantId) return;
         setTreatmentForm({
             ...treatmentForm,
             priceVariants: treatmentForm.priceVariants.filter(v => v.id !== variantId),
         });
     };
 
-    const handleSaveTreatment = async () => {
-        if (!treatmentForm.name.trim() || !treatmentForm.categoryId) {
-            toast.error('Please fill in treatment name and category');
+    const handleSaveTreatment = () => {
+        if (!treatmentForm.name || !treatmentForm.categoryId) {
+            alert('Please fill in treatment name and category');
             return;
         }
 
         if (treatmentForm.priceVariants.length === 0) {
-            toast.error('Please add at least one price variant');
+            alert('Please add at least one price variant');
             return;
         }
 
         if (editingTreatment) {
-            await updateTreatmentType(editingTreatment.id, treatmentForm);
+            updateTreatmentType(editingTreatment.id, treatmentForm);
         } else {
-            await addTreatmentType(treatmentForm);
+            addTreatmentType(treatmentForm);
         }
         setTreatmentModalOpen(false);
     };
 
-    const handleDeleteTreatment = async (treatment: TreatmentType) => {
+    const handleDeleteTreatment = (treatment: TreatmentType) => {
         if (confirm(`Are you sure you want to delete "${treatment.name}"?`)) {
-            await deleteTreatmentType(treatment.id);
+            deleteTreatmentType(treatment.id);
         }
     };
 
@@ -292,7 +277,7 @@ export const TreatmentTypesTab: React.FC = () => {
                         <Button variant="secondary" onClick={() => setCategoryModalOpen(false)}>
                             Cancel
                         </Button>
-                        <Button onClick={handleSaveCategory}>
+                        <Button onClick={() => handleSaveCategory()}>
                             {editingCategory ? 'Update' : 'Add'} Category
                         </Button>
                     </>
@@ -332,7 +317,7 @@ export const TreatmentTypesTab: React.FC = () => {
                         <Button variant="secondary" onClick={() => setTreatmentModalOpen(false)}>
                             Cancel
                         </Button>
-                        <Button onClick={handleSaveTreatment}>
+                        <Button onClick={() => handleSaveTreatment()}>
                             {editingTreatment ? 'Update' : 'Add'} Treatment
                         </Button>
                     </>
@@ -402,10 +387,8 @@ export const TreatmentTypesTab: React.FC = () => {
                                     <tbody>
                                         {treatmentForm.priceVariants.map((variant) => (
                                             <tr key={variant.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                                <td style={{ padding: '12px' }}>
-                                                    {variant.isDefault ? 'Default' : (variant.toothSpec || variant.name || variant.label || formatToothNumbers(variant.toothNumbers || []))}
-                                                </td>
-                                                <td style={{ padding: '12px', color: 'var(--primary)', fontWeight: 500 }}>${variant.price.toFixed(2)}</td>
+                                                <td style={{ padding: '12px' }}>{variant.toothSpec}</td>
+                                                <td style={{ padding: '12px', color: 'var(--primary)', fontWeight: 500 }}>${variant.price}</td>
                                                 <td style={{ padding: '12px', textAlign: 'center' }}>
                                                     <button
                                                         onClick={() => handleDeleteVariant(variant.id)}
@@ -417,7 +400,6 @@ export const TreatmentTypesTab: React.FC = () => {
                                                             fontSize: '18px',
                                                             padding: '4px 8px',
                                                         }}
-                                                        title="Remove variant"
                                                     >
                                                         ✕
                                                     </button>
@@ -469,7 +451,7 @@ export const TreatmentTypesTab: React.FC = () => {
                                     onChange={(value) => setVariantForm({ ...variantForm, price: parseFloat(value) || 0 })}
                                     placeholder="0"
                                 />
-                                <Button onClick={handleAddVariant} variant="secondary">
+                                <Button onClick={() => handleAddVariant()} variant="secondary">
                                     Add Variant
                                 </Button>
                             </div>

@@ -57,8 +57,8 @@ export const DoctorPaymentModal: React.FC<DoctorPaymentModalProps> = ({
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = (e?: React.FormEvent) => {
+        e?.preventDefault();
 
         if (!validate()) return;
 
@@ -74,7 +74,7 @@ export const DoctorPaymentModal: React.FC<DoctorPaymentModalProps> = ({
             <Button variant="secondary" onClick={onClose}>
                 Cancel
             </Button>
-            <Button variant="primary" onClick={() => handleSubmit({} as React.FormEvent)}>
+            <Button variant="primary" onClick={() => handleSubmit()}>
                 Process Payment
             </Button>
         </div>
