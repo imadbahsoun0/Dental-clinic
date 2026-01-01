@@ -5,6 +5,7 @@ interface AuthStore {
     currentUser: UserDto | null;
     currentOrg: UserOrgDto | null;
     isAuthenticated: boolean;
+    isInitializing: boolean;
     needsOrgSelection: boolean;
     user: UserDto | null; // Alias for compatibility
     login: (data: LoginDto) => Promise<{ success: boolean; error?: string; needsOrgSelection?: boolean }>;
@@ -22,6 +23,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     currentUser: null,
     currentOrg: null,
     isAuthenticated: false,
+    isInitializing: true,
     needsOrgSelection: false,
     user: null, // Alias for compatibility
 
@@ -58,6 +60,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
                     user: user, // Sync alias
                     currentOrg: currentOrg,
                     isAuthenticated: true,
+                    isInitializing: false,
                     needsOrgSelection: needsOrgSelection
                 });
 
@@ -92,6 +95,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
                     user: updatedUser, // Sync alias
                     currentOrg: currentOrg,
                     isAuthenticated: true,
+                    isInitializing: false,
                     needsOrgSelection: false
                 });
 
@@ -117,6 +121,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
                 user: null, // Sync alias
                 currentOrg: null,
                 isAuthenticated: false,
+                isInitializing: false,
                 needsOrgSelection: false
             });
         }
@@ -149,12 +154,16 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
                     user: user, // Sync alias
                     currentOrg: currentOrg,
                     isAuthenticated: true,
+                    isInitializing: false,
                     needsOrgSelection: !currentOrg && (user.organizations?.length || 0) > 1
                 });
+            } else {
+                set({ isInitializing: false });
             }
         } catch (error) {
             console.error('Init auth error:', error);
             localStorage.clear();
+            set({ isInitializing: false });
         }
     }
 }));

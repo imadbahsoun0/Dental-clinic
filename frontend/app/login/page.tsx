@@ -12,6 +12,7 @@ export default function LoginPage() {
     const router = useRouter();
     const login = useAuthStore((state) => state.login);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const isInitializing = useAuthStore((state) => state.isInitializing);
     const needsOrgSelection = useAuthStore((state) => state.needsOrgSelection);
 
     const [email, setEmail] = useState('');
@@ -19,14 +20,16 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    // Redirect if already authenticated
+    // Redirect if already authenticated (only after initialization)
     useEffect(() => {
-        if (isAuthenticated) {
-            router.push('/dashboard');
-        } else if (needsOrgSelection) {
-            router.push('/select-organization');
+        if (!isInitializing) {
+            if (isAuthenticated) {
+                router.push('/dashboard');
+            } else if (needsOrgSelection) {
+                router.push('/select-organization');
+            }
         }
-    }, [isAuthenticated, needsOrgSelection, router]);
+    }, [isInitializing, isAuthenticated, needsOrgSelection, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

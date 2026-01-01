@@ -11,16 +11,18 @@ interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     const router = useRouter();
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const isInitializing = useAuthStore((state) => state.isInitializing);
     const currentUser = useAuthStore((state) => state.currentUser);
 
     useEffect(() => {
-        if (!isAuthenticated || !currentUser) {
+        // Only redirect if we're done initializing and not authenticated
+        if (!isInitializing && (!isAuthenticated || !currentUser)) {
             router.push('/login');
         }
-    }, [isAuthenticated, currentUser, router]);
+    }, [isInitializing, isAuthenticated, currentUser, router]);
 
-    // Show loading or nothing while checking auth
-    if (!isAuthenticated || !currentUser) {
+    // Show loading while initializing or checking auth
+    if (isInitializing || !isAuthenticated || !currentUser) {
         return null;
     }
 
