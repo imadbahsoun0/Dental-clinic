@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
-import { Appointment, AppointmentStatus } from '../../common/entities';
+import { Appointment, AppointmentStatus, Treatment, TreatmentStatus } from '../../common/entities';
 import { UserRole } from '../../common/decorators/roles.decorator';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
@@ -39,6 +39,23 @@ export class AppointmentsService {
         });
 
         await this.em.persistAndFlush(appointment);
+
+        // If treatmentId is provided, update the treatment status to IN_PROGRESS
+        if (createDto.treatmentId) {
+            const treatment = await this.em.findOne(Treatment, {
+                id: createDto.treatmentId,
+                orgId,
+                deletedAt: null,
+            });
+
+            if (treatment && treatment.status === TreatmentStatus.PLANNED) {
+                treatment.status = TreatmentStatus.IN_PROGRESS;
+                treatment.appointment = appointment as any;
+                treatment.updatedAt = new Date();
+                await this.em.flush();
+            }
+        }
+
         return this.findOne(appointment.id, orgId, createdBy, UserRole.ADMIN);
     }
 
@@ -140,7 +157,7 @@ export class AppointmentsService {
     async update(id: string, updateDto: UpdateAppointmentDto, orgId: string, userId: string, role: string, updatedBy: string) {
         const appointment = await this.findOne(id, orgId, userId, role);
 
-        const { patientId, treatmentTypeId, doctorId, ...updateData } = updateDto;
+        const { patientId, treatmentTypeId, doctorId, treatmentId, ...updateData } = updateDto;
 
         this.em.assign(appointment, {
             ...updateData,

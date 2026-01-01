@@ -16,6 +16,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 const createSchema = z.object({
     patientId: z.string().min(1, 'Patient is required'),
     treatmentTypeId: z.string().optional(),
+    treatmentId: z.string().optional(),
     date: z.string().min(1, 'Date is required'),
     time: z.string().min(1, 'Time is required'),
     doctorId: z.string().min(1, 'Doctor is required'),
@@ -43,6 +44,7 @@ interface AppointmentModalProps {
     appointmentId?: string | null;
     defaultDate?: string;
     defaultPatientId?: string;
+    defaultTreatmentId?: string;
 }
 
 export const AppointmentModal: React.FC<AppointmentModalProps> = ({
@@ -50,7 +52,8 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     onClose,
     appointmentId,
     defaultDate,
-    defaultPatientId
+    defaultPatientId,
+    defaultTreatmentId
 }) => {
     const addAppointment = useAppointmentStore(state => state.addAppointment);
     const updateAppointment = useAppointmentStore(state => state.updateAppointment);
@@ -120,6 +123,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                 reset({
                     patientId: defaultPatientId || '',
                     treatmentTypeId: '',
+                    treatmentId: defaultTreatmentId || '',
                     date: defaultDate || '',
                     time: '',
                     doctorId: '',
@@ -127,13 +131,14 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                 });
             }
         }
-    }, [isOpen, editingAppointment, reset, defaultDate, defaultPatientId, fetchUsers]);
+    }, [isOpen, editingAppointment, reset, defaultDate, defaultPatientId, defaultTreatmentId, fetchUsers]);
 
     const onSubmit = async (data: FormData) => {
         try {
             const payload: any = { ...data };
             if (!payload.notes) delete payload.notes;
             if (!payload.treatmentTypeId) delete payload.treatmentTypeId;
+            if (!payload.treatmentId) delete payload.treatmentId;
 
             // For create, don't send status (backend will set to pending)
             if (!isEditing) {

@@ -403,6 +403,27 @@
     transform: translateY(-1px);
 }
 
+.cancelBtn {
+    padding: 6px 10px;
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cancelBtn:hover {
+    background: var(--danger);
+    color: white;
+    transform: translateY(-1px);
+}
+
 /* Empty State */
 .emptyPendingState {
     text-align: center;

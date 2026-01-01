@@ -330,6 +330,11 @@ export interface CreateAppointmentDto {
   patientId: string;
   /** @example "treatment-type-uuid-here" */
   treatmentTypeId?: string;
+  /**
+   * If provided, the treatment status will be updated to IN_PROGRESS
+   * @example "treatment-uuid-here"
+   */
+  treatmentId?: string;
   /** @example "2024-01-15" */
   date: string;
   /** @example "14:30" */
@@ -348,6 +353,11 @@ export interface UpdateAppointmentDto {
   patientId?: string;
   /** @example "treatment-type-uuid-here" */
   treatmentTypeId?: string;
+  /**
+   * If provided, the treatment status will be updated to IN_PROGRESS
+   * @example "treatment-uuid-here"
+   */
+  treatmentId?: string;
   /** @example "2024-01-15" */
   date?: string;
   /** @example "14:30" */
@@ -758,6 +768,30 @@ export interface UpdateExpenseDto {
     | "salary"
     | "doctor_payment"
     | "other";
+}
+
+export interface DashboardStatsDto {
+  /** Count of today's appointments (not cancelled or deleted) */
+  todayAppointments: number;
+  /** Total number of active patients */
+  totalPatients: number;
+  /** Sum of all patient balances (treatment costs - payments) */
+  pendingPayments: number;
+  /** Today's total payments minus today's expenses */
+  dailyNetIncome: number;
+}
+
+export interface PendingTreatmentDto {
+  id: string;
+  patientId: string;
+  patientFirstName: string;
+  patientLastName: string;
+  treatmentTypeId: string;
+  treatmentTypeName: string;
+  totalPrice: number;
+  discount: number;
+  notes?: string;
+  createdAt: string;
 }
 
 import type {
@@ -2854,6 +2888,78 @@ export class Api<
         path: `/api/v1/expenses/${id}`,
         method: "DELETE",
         secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard
+     * @name DashboardControllerGetStats
+     * @summary Get dashboard statistics
+     * @request GET:/api/v1/dashboard/stats
+     * @secure
+     */
+    dashboardControllerGetStats: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: DashboardStatsDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/dashboard/stats`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard
+     * @name DashboardControllerGetPendingTreatments
+     * @summary Get all pending treatments
+     * @request GET:/api/v1/dashboard/pending-treatments
+     * @secure
+     */
+    dashboardControllerGetPendingTreatments: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: PendingTreatmentDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/dashboard/pending-treatments`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Dashboard
+     * @name DashboardControllerCancelPendingTreatment
+     * @summary Cancel a pending treatment
+     * @request PATCH:/api/v1/dashboard/pending-treatments/{id}/cancel
+     * @secure
+     */
+    dashboardControllerCancelPendingTreatment: (
+      id: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/dashboard/pending-treatments/${id}/cancel`,
+        method: "PATCH",
+        secure: true,
+        format: "json",
         ...params,
       }),
 

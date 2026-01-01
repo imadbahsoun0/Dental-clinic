@@ -108,9 +108,9 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
         }
     }, [isOpen, treatment, treatmentTypes]);
 
-    // Auto-select today's appointment for new treatments
+    // Auto-select today's appointment for new treatments (only if not planned)
     useEffect(() => {
-        if (isOpen && !treatment && !formData.appointmentId && patientAppointments.length > 0) {
+        if (isOpen && !treatment && !formData.appointmentId && patientAppointments.length > 0 && formData.status !== 'planned') {
             const today = formatLocalDate(new Date());
             // Match exactly or startsWith (to handle potential time components if ISO)
             const todayAppointment = patientAppointments.find(apt =>
@@ -121,7 +121,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                 setFormData(prev => ({ ...prev, appointmentId: todayAppointment.id }));
             }
         }
-    }, [isOpen, treatment, patientAppointments, formData.appointmentId]);
+    }, [isOpen, treatment, patientAppointments, formData.appointmentId, formData.status]);
 
     // Auto-calculate total when treatment type, teeth, or discount changes
     useEffect(() => {
@@ -181,7 +181,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
             treatmentTypeId: formData.treatmentTypeId,
             toothNumber: formData.selectedTeeth[0], // Legacy: use first tooth
             toothNumbers: formData.selectedTeeth, // New: all selected teeth
-            appointmentId: formData.appointmentId || undefined,
+            ...(formData.status !== 'planned' && formData.appointmentId ? { appointmentId: formData.appointmentId } : {}),
             totalPrice: totalPrice,
             amountPaid: 0,
             discount: discountAmount,

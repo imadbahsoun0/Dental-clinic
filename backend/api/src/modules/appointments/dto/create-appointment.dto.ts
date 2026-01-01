@@ -11,6 +11,11 @@ export class CreateAppointmentDto {
     @IsUUID()
     treatmentTypeId?: string;
 
+    @ApiProperty({ example: 'treatment-uuid-here', required: false, description: 'If provided, the treatment status will be updated to IN_PROGRESS' })
+    @IsOptional()
+    @IsUUID()
+    treatmentId?: string;
+
     @ApiProperty({ example: '2024-01-15' })
     @IsDateString()
     date!: string;

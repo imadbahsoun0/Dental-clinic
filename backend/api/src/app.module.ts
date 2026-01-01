@@ -22,6 +22,7 @@ import { TreatmentTypesModule } from './modules/treatment-types/treatment-types.
 import { MedicalHistoryModule } from './modules/medical-history/medical-history.module';
 import { NotificationSettingsModule } from './modules/notification-settings/notification-settings.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { ExpensesModule } from './modules/expenses/expenses.module';
     MedicalHistoryModule,
     NotificationSettingsModule,
     ExpensesModule,
+    DashboardModule,
     TestModule,
   ],
   providers: [

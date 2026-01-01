@@ -15,6 +15,7 @@ import { BulkDiscountModal } from '@/components/treatments/BulkDiscountModal';
 import { MedicalHistoryDisplay } from '@/components/treatments/MedicalHistoryDisplay';
 import { PaymentsTable } from '@/components/payments/PaymentsTable';
 import { PaymentModal } from '@/components/payments/PaymentModal';
+import { ConfirmationModal } from '@/components/common/ConfirmationModal';
 import { useSettingsStore } from '@/store/settingsStore';
 import { usePaymentStore } from '@/store/paymentStore';
 import { Treatment, Payment } from '@/types';
@@ -29,6 +30,7 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
     const [activeTab, setActiveTab] = useState<'treatments' | 'payments'>('treatments');
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+    const [treatmentToDelete, setTreatmentToDelete] = useState<string | null>(null);
 
     const patients = usePatientStore((state) => state.patients);
     const medicalHistoryQuestions = useSettingsStore((state) => state.medicalHistoryQuestions);
@@ -88,8 +90,13 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
     };
 
     const handleDeleteTreatment = (treatmentId: string) => {
-        if (confirm('Are you sure you want to delete this treatment?')) {
-            deleteTreatment(treatmentId);
+        setTreatmentToDelete(treatmentId);
+    };
+
+    const confirmDeleteTreatment = () => {
+        if (treatmentToDelete) {
+            deleteTreatment(treatmentToDelete);
+            setTreatmentToDelete(null);
         }
     };
 
@@ -280,6 +287,17 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
                         setIsPaymentModalOpen(false);
                         setSelectedPayment(null);
                     }}
+                />
+
+                {/* Delete Treatment Confirmation */}
+                <ConfirmationModal
+                    isOpen={treatmentToDelete !== null}
+                    onClose={() => setTreatmentToDelete(null)}
+                    onConfirm={confirmDeleteTreatment}
+                    title="Delete Treatment"
+                    message="Are you sure you want to delete this treatment? This action cannot be undone."
+                    confirmLabel="Delete"
+                    variant="danger"
                 />
             </div>
         </MainLayout>
