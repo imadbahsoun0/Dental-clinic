@@ -127,6 +127,33 @@ export class UsersService {
         return this.mapToResponse(user, userOrgs);
     }
 
+    async updateProfile(userId: string, updateProfileDto: { name?: string; phone?: string; email?: string }) {
+        const user = await this.em.findOne(User, { id: userId });
+
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        // Update profile fields
+        if (updateProfileDto.name) user.name = updateProfileDto.name;
+        if (updateProfileDto.phone !== undefined) user.phone = updateProfileDto.phone;
+        if (updateProfileDto.email) {
+            // Check if email is already taken by another user
+            const existingUser = await this.em.findOne(User, { email: updateProfileDto.email });
+            if (existingUser && existingUser.id !== userId) {
+                throw new ConflictException('Email already in use');
+            }
+            user.email = updateProfileDto.email;
+        }
+
+        user.updatedAt = new Date();
+        await this.em.flush();
+
+        // Return user with their organizations
+        const userOrgs = await this.em.find(UserOrganization, { user: { id: userId } });
+        return this.mapToResponse(user, userOrgs);
+    }
+
     async update(userId: string, orgId: string, updateUserDto: UpdateUserDto, updatedBy: string) {
         const user = await this.em.findOne(User, { id: userId });
 

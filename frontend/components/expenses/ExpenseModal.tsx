@@ -5,6 +5,7 @@ import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common/Button';
 import { Expense } from '@/types';
 import { useSettingsStore } from '@/store/settingsStore';
+import { formatLocalDate } from '@/utils/dateUtils';
 import styles from './ExpenseModal.module.css';
 
 interface ExpenseModalProps {
@@ -46,7 +47,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
     // Memoize dentists to prevent infinite re-renders
     const users = useSettingsStore((state) => state.users);
-    const dentists = React.useMemo(() => users.filter(u => u.role === 'dentist'), [users]);
+    const dentists = React.useMemo(() => users.filter((u: any) => u.role === 'dentist'), [users]);
 
     useEffect(() => {
         if (expense) {
@@ -68,7 +69,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                 name: '',
                 customName: '',
                 amount: '',
-                date: new Date().toISOString().split('T')[0],
+                date: formatLocalDate(new Date()),
                 invoiceFile: '',
                 notes: '',
                 doctorId: '',

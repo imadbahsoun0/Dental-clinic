@@ -10,17 +10,30 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 export class AppointmentsService {
     constructor(private em: EntityManager) { }
 
+    /**
+     * Parse date string to UTC date to avoid timezone issues
+     */
+    private parseDate(dateString: string): Date {
+        const dateParts = dateString.split('-');
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1; // months are 0-indexed
+        const day = parseInt(dateParts[2], 10);
+        return new Date(Date.UTC(year, month, day));
+    }
+
     async create(createDto: CreateAppointmentDto, orgId: string, createdBy: string) {
+        const appointmentDate = this.parseDate(createDto.date);
+
         const appointment = this.em.create(Appointment, {
-            date: new Date(createDto.date),
+            date: appointmentDate,
             time: createDto.time,
-            status: createDto.status || AppointmentStatus.PENDING,
+            status: AppointmentStatus.PENDING, // Always set to PENDING on creation
             ...(createDto.notes && { notes: createDto.notes }),
             orgId,
             createdBy,
             patient: this.em.getReference('Patient', createDto.patientId) as any,
             treatmentType: createDto.treatmentTypeId ? (this.em.getReference('TreatmentType', createDto.treatmentTypeId) as any) : undefined,
-            doctor: createDto.doctorId ? this.em.getReference('User', createDto.doctorId) as any : undefined,
+            doctor: this.em.getReference('User', createDto.doctorId) as any,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -56,11 +69,11 @@ export class AppointmentsService {
 
         // Filter by date if provided (exact date takes precedence)
         if (date) {
-            where.date = new Date(date);
+            where.date = this.parseDate(date);
         } else if (startDate && endDate) {
             where.date = {
-                $gte: new Date(startDate),
-                $lte: new Date(endDate),
+                $gte: this.parseDate(startDate),
+                $lte: this.parseDate(endDate),
             };
         }
 
@@ -82,7 +95,7 @@ export class AppointmentsService {
     }
 
     async findByDate(date: string, orgId: string, userId: string, role: string) {
-        const where: any = { orgId, date: new Date(date), deletedAt: null };
+        const where: any = { orgId, date: this.parseDate(date), deletedAt: null };
 
         if (role === UserRole.DENTIST) {
             where.doctor = { id: userId };
@@ -96,7 +109,7 @@ export class AppointmentsService {
 
     async getTodayStats(orgId: string, userId: string, role: string) {
         const todayStr = new Date().toISOString().split('T')[0];
-        const where: any = { orgId, date: new Date(todayStr), deletedAt: null };
+        const where: any = { orgId, date: this.parseDate(todayStr), deletedAt: null };
 
         if (role === UserRole.DENTIST) {
             where.doctor = { id: userId };
@@ -131,7 +144,7 @@ export class AppointmentsService {
 
         this.em.assign(appointment, {
             ...updateData,
-            date: updateDto.date ? new Date(updateDto.date) : appointment.date,
+            date: updateDto.date ? this.parseDate(updateDto.date) : appointment.date,
             updatedBy,
         });
 

@@ -12,6 +12,7 @@ import { useTreatmentTypeStore } from '@/store/treatmentTypeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import styles from './appointments.module.css';
 import toast from 'react-hot-toast';
+import { formatLocalDate } from '@/utils/dateUtils';
 import { useRouter } from 'next/navigation';
 
 
@@ -63,8 +64,8 @@ export default function AppointmentsPage() {
         const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + 41);
 
-        const startStr = startDate.toISOString().split('T')[0];
-        const endStr = endDate.toISOString().split('T')[0];
+        const startStr = formatLocalDate(startDate);
+        const endStr = formatLocalDate(endDate);
 
         // Fetch appointments for the calculated range
         fetchAppointments(1, 1000, undefined, startStr, endStr);
@@ -74,7 +75,7 @@ export default function AppointmentsPage() {
     useEffect(() => {
         const now = new Date();
         setCurrentMonth(now);
-        setToday(now.toISOString().split('T')[0]);
+        setToday(formatLocalDate(now));
 
         fetchPatients(1, 1000);
         fetchTreatmentTypes();
@@ -149,7 +150,7 @@ export default function AppointmentsPage() {
 
             days.push({
                 date: currentDate.getDate(),
-                fullDate: currentDate.toISOString().split('T')[0],
+                fullDate: formatLocalDate(currentDate),
                 isCurrentMonth: currentDate.getMonth() === month
             });
         }
@@ -434,7 +435,7 @@ export default function AppointmentsPage() {
                         startDate.setDate(startDate.getDate() - startDay);
                         const endDate = new Date(startDate);
                         endDate.setDate(endDate.getDate() + 41);
-                        fetchAppointments(1, 1000, undefined, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]);
+                        fetchAppointments(1, 1000, undefined, formatLocalDate(startDate), formatLocalDate(endDate));
                     } else {
                         fetchAppointments(1, 1000);
                     }

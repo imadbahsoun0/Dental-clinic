@@ -94,13 +94,13 @@ export interface Payment {
 
 export interface Expense {
   id: string;
-  name: string; // Display name for the expense
+  name: string; // Selected from dropdown or custom "Other" value
   amount: number;
   date: string; // ISO date string
   invoiceFile?: string; // Optional file path/URL
   notes?: string;
   doctorId?: string; // Link to doctor user for doctor payment expenses
-  expenseType: 'lab' | 'equipment' | 'utilities' | 'rent' | 'salary' | 'doctor_payment' | 'other'; // Type of expense from backend enum
+  expenseType?: string; // Type of expense (e.g., "Doctor Payment", "Supplies", etc.)
   createdAt: string;
   updatedAt: string;
 }

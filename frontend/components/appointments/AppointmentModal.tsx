@@ -7,22 +7,35 @@ import { Button } from '@/components/common/Button';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
+import { PatientSearchSelect } from '@/components/patients/PatientSearchSelect';
 import toast from 'react-hot-toast';
 import { useAppointmentStore } from '@/store/appointmentStore';
-import { usePatientStore } from '@/store/patientStore';
 import { useSettingsStore } from '@/store/settingsStore';
 
-const schema = z.object({
+// Schema for creating appointments (doctor is required)
+const createSchema = z.object({
     patientId: z.string().min(1, 'Patient is required'),
     treatmentTypeId: z.string().optional(),
     date: z.string().min(1, 'Date is required'),
     time: z.string().min(1, 'Time is required'),
-    status: z.enum(['pending', 'confirmed', 'cancelled']).optional(),
-    doctorId: z.string().optional(),
+    doctorId: z.string().min(1, 'Doctor is required'),
     notes: z.string().optional(),
 });
 
-type FormData = z.infer<typeof schema>;
+// Schema for editing appointments (includes status)
+const editSchema = z.object({
+    patientId: z.string().min(1, 'Patient is required'),
+    treatmentTypeId: z.string().optional(),
+    date: z.string().min(1, 'Date is required'),
+    time: z.string().min(1, 'Time is required'),
+    status: z.enum(['pending', 'confirmed', 'cancelled']),
+    doctorId: z.string().min(1, 'Doctor is required'),
+    notes: z.string().optional(),
+});
+
+type CreateFormData = z.infer<typeof createSchema>;
+type EditFormData = z.infer<typeof editSchema>;
+type FormData = CreateFormData | EditFormData;
 
 interface AppointmentModalProps {
     isOpen: boolean;
@@ -43,24 +56,23 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     const updateAppointment = useAppointmentStore(state => state.updateAppointment);
     const appointments = useAppointmentStore(state => state.appointments);
 
-    const patients = usePatientStore(state => state.patients);
-    const fetchPatients = usePatientStore(state => state.fetchPatients);
-
     const users = useSettingsStore(state => state.users);
     const fetchUsers = useSettingsStore(state => state.fetchUsers);
 
     const [loadingData, setLoadingData] = useState(false);
+    const [selectedPatient, setSelectedPatient] = useState<{ id: string; firstName: string; lastName: string; mobileNumber: string } | null>(null);
 
+    const isEditing = !!appointmentId;
     const editingAppointment = appointmentId ? appointments.find(a => a.id === appointmentId) : null;
 
-    const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
-        resolver: zodResolver(schema),
+    const { control, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
+        resolver: zodResolver(isEditing ? editSchema : createSchema),
         defaultValues: {
             patientId: defaultPatientId || '',
             treatmentTypeId: '',
             date: defaultDate || '',
             time: '',
-            status: 'pending',
+            ...(isEditing ? { status: 'pending' as const } : {}),
             doctorId: '',
             notes: '',
         }
@@ -72,10 +84,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             const loadData = async () => {
                 setLoadingData(true);
                 try {
-                    await Promise.all([
-                        fetchPatients(1, 100),
-                        fetchUsers(),
-                    ]);
+                    await fetchUsers();
                 } catch (error) {
                     console.error('Failed to load data:', error);
                     toast.error('Failed to load form data');
@@ -87,6 +96,16 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             loadData();
 
             if (editingAppointment) {
+                // Set selected patient for display in edit mode
+                if (editingAppointment.patient) {
+                    setSelectedPatient({
+                        id: editingAppointment.patient.id,
+                        firstName: editingAppointment.patient.firstName,
+                        lastName: editingAppointment.patient.lastName,
+                        mobileNumber: '', // Will be fetched by PatientSearchSelect if needed
+                    });
+                }
+
                 reset({
                     patientId: editingAppointment.patient?.id || '',
                     treatmentTypeId: editingAppointment.treatmentType?.id || '',
@@ -97,26 +116,29 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                     notes: editingAppointment.notes || '',
                 });
             } else {
+                setSelectedPatient(null);
                 reset({
                     patientId: defaultPatientId || '',
                     treatmentTypeId: '',
                     date: defaultDate || '',
                     time: '',
-                    status: 'pending',
                     doctorId: '',
                     notes: '',
                 });
             }
         }
-    }, [isOpen, editingAppointment, reset, defaultDate, defaultPatientId, fetchPatients, fetchUsers]);
+    }, [isOpen, editingAppointment, reset, defaultDate, defaultPatientId, fetchUsers]);
 
     const onSubmit = async (data: FormData) => {
         try {
             const payload: any = { ...data };
-            if (!payload.doctorId) delete payload.doctorId;
             if (!payload.notes) delete payload.notes;
-            if (!payload.status) payload.status = 'pending';
             if (!payload.treatmentTypeId) delete payload.treatmentTypeId;
+
+            // For create, don't send status (backend will set to pending)
+            if (!isEditing) {
+                delete payload.status;
+            }
 
             if (appointmentId) {
                 await updateAppointment(appointmentId, payload);
@@ -132,18 +154,13 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         }
     };
 
-    const patientOptions = patients.map(p => ({
-        value: p.id,
-        label: `${p.firstName} ${p.lastName}`,
-    }));
-
-    const doctorOptions = [
-        { value: '', label: 'No doctor assigned' },
-        ...users.filter((u: any) => u.role === 'dentist').map((u: any) => ({
+    // Doctor options: include both dentists and admins
+    const doctorOptions = users
+        .filter((u: any) => u.role === 'dentist' || u.role === 'admin')
+        .map((u: any) => ({
             value: u.id,
-            label: u.name,
-        })),
-    ];
+            label: `${u.name}${u.role === 'admin' ? ' (Admin)' : ''}`,
+        }));
 
     const statusOptions = [
         { value: 'pending', label: 'Pending' },
@@ -208,19 +225,17 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                             name="patientId"
                             control={control}
                             render={({ field }) => (
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
-                                        Patient <span style={{ color: 'red' }}>*</span>
-                                    </label>
-                                    <Select
-                                        options={patientOptions}
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                    />
-                                    {errors.patientId && (
-                                        <span style={{ color: 'red', fontSize: '14px' }}>{errors.patientId.message}</span>
-                                    )}
-                                </div>
+                                <PatientSearchSelect
+                                    value={field.value}
+                                    selectedPatient={selectedPatient}
+                                    onChange={(patientId, patient) => {
+                                        field.onChange(patientId);
+                                        setSelectedPatient(patient);
+                                    }}
+                                    error={errors.patientId?.message}
+                                    required
+                                    disabled={isEditing} // Disable patient change in edit mode
+                                />
                             )}
                         />
 
@@ -262,33 +277,42 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                             render={({ field }) => (
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
-                                        Doctor (Optional)
+                                        Doctor <span style={{ color: 'red' }}>*</span>
                                     </label>
                                     <Select
                                         options={doctorOptions}
                                         value={field.value || ''}
                                         onChange={field.onChange}
+                                        placeholder="Select a doctor..."
                                     />
+                                    {errors.doctorId && (
+                                        <span style={{ color: 'red', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                                            {errors.doctorId.message}
+                                        </span>
+                                    )}
                                 </div>
                             )}
                         />
 
-                        <Controller
-                            name="status"
-                            control={control}
-                            render={({ field }) => (
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
-                                        Status
-                                    </label>
-                                    <Select
-                                        options={statusOptions}
-                                        value={field.value || 'pending'}
-                                        onChange={field.onChange}
-                                    />
-                                </div>
-                            )}
-                        />
+                        {/* Status field - only show in edit mode */}
+                        {isEditing && (
+                            <Controller
+                                name="status"
+                                control={control}
+                                render={({ field }) => (
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+                                            Status
+                                        </label>
+                                        <Select
+                                            options={statusOptions}
+                                            value={(field.value as string) || 'pending'}
+                                            onChange={field.onChange}
+                                        />
+                                    </div>
+                                )}
+                            />
+                        )}
 
                         <Controller
                             name="notes"

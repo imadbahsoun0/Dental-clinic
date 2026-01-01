@@ -156,8 +156,6 @@ export default function ExpensesPage() {
                         <input
                             type="date"
                             className={styles.filterInput}
-                            type="date"
-                            className={styles.filterInput}
                             value={filters.endDate}
                             onChange={(e) => handleFilterChange('endDate', e.target.value)}
                         />

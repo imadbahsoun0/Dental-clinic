@@ -269,10 +269,11 @@ export interface CreateAppointmentDto {
   date: string;
   /** @example "14:30" */
   time: string;
-  /** @default "pending" */
-  status?: "confirmed" | "pending" | "cancelled";
-  /** @example "doctor-uuid-here" */
-  doctorId?: string;
+  /**
+   * Doctor ID is required
+   * @example "doctor-uuid-here"
+   */
+  doctorId: string;
   /** @example "Patient requested morning slot" */
   notes?: string;
 }
@@ -286,12 +287,15 @@ export interface UpdateAppointmentDto {
   date?: string;
   /** @example "14:30" */
   time?: string;
-  /** @default "pending" */
-  status?: "confirmed" | "pending" | "cancelled";
-  /** @example "doctor-uuid-here" */
+  /**
+   * Doctor ID is required
+   * @example "doctor-uuid-here"
+   */
   doctorId?: string;
   /** @example "Patient requested morning slot" */
   notes?: string;
+  /** Appointment status (only for updates) */
+  status?: "confirmed" | "pending" | "cancelled";
 }
 
 export interface TreatmentResponseDto {

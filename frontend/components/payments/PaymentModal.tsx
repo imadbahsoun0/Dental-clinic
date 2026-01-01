@@ -5,6 +5,7 @@ import { Payment } from '@/types';
 import { Modal } from '@/components/common/Modal';
 import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
+import { formatLocalDate, normalizeDate } from '@/utils/dateUtils';
 import { Button } from '@/components/common/Button';
 
 interface PaymentModalProps {
@@ -32,14 +33,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         if (isOpen && payment) {
             setFormData({
                 amount: payment.amount.toString(),
-                date: payment.date.split('T')[0],
+                date: normalizeDate(payment.date),
                 paymentMethod: payment.paymentMethod,
                 notes: payment.notes || '',
             });
         } else if (isOpen) {
             setFormData({
                 amount: '',
-                date: new Date().toISOString().split('T')[0],
+                date: formatLocalDate(new Date()),
                 paymentMethod: 'cash',
                 notes: '',
             });
@@ -49,7 +50,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     const handleSubmit = () => {
         const paymentData: Partial<Payment> = {
             amount: parseFloat(formData.amount) || 0,
-            date: new Date(formData.date).toISOString(),
+            date: formData.date, // Already in YYYY-MM-DD format
             paymentMethod: formData.paymentMethod,
             notes: formData.notes || undefined,
         };

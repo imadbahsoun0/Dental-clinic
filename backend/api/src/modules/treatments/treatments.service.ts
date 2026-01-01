@@ -120,6 +120,9 @@ export class TreatmentsService {
             throw new NotFoundException('Treatment not found');
         }
 
+        // Store current status before any narrowing checks
+        const currentStatus = treatment.status as TreatmentStatus;
+
         // Prevent editing completed treatments
         if (treatment.status === TreatmentStatus.COMPLETED) {
             throw new BadRequestException('Completed treatments cannot be edited');
@@ -138,7 +141,7 @@ export class TreatmentsService {
         }
 
         // Check if status is changing to COMPLETED
-        const isBeingCompleted = updateDto.status === TreatmentStatus.COMPLETED && treatment.status !== TreatmentStatus.COMPLETED;
+        const isBeingCompleted = updateDto.status === TreatmentStatus.COMPLETED && currentStatus !== TreatmentStatus.COMPLETED;
 
         const { patientId, treatmentTypeId, appointmentId, toothNumbers, ...updateData } = updateDto;
 

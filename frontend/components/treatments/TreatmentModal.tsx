@@ -11,6 +11,7 @@ import { ToothSelector } from '@/components/common/ToothSelector';
 import { Button } from '@/components/common/Button';
 import { formatToothNumbers } from '@/constants/teeth';
 import toast from 'react-hot-toast';
+import { formatLocalDate } from '@/utils/dateUtils';
 import styles from './TreatmentModal.module.css';
 
 interface TreatmentModalProps {
@@ -110,7 +111,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
     // Auto-select today's appointment for new treatments
     useEffect(() => {
         if (isOpen && !treatment && !formData.appointmentId && patientAppointments.length > 0) {
-            const today = new Date().toISOString().split('T')[0];
+            const today = formatLocalDate(new Date());
             // Match exactly or startsWith (to handle potential time components if ISO)
             const todayAppointment = patientAppointments.find(apt =>
                 apt.date === today || apt.date.startsWith(today)
@@ -165,7 +166,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
         const discountAmount = (totalPrice * (parseFloat(formData.discountPercent) || 0)) / 100;
 
         // Get date and doctor from appointment if linked
-        let date = new Date().toISOString();
+        let date = formatLocalDate(new Date());
         let drName = undefined;
 
         if (formData.appointmentId) {

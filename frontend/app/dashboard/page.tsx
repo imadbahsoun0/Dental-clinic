@@ -14,6 +14,7 @@ import { useTreatmentStore } from '@/store/treatmentStore';
 import { useExpenseStore } from '@/store/expenseStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { ExpenseModal } from '@/components/expenses/ExpenseModal';
+import { formatLocalDate } from '@/utils/dateUtils';
 import { useRouter } from 'next/navigation';
 import styles from './dashboard.module.css';
 
@@ -41,7 +42,7 @@ export default function DashboardPage() {
 
     // Get today's date on client side only to avoid hydration errors
     useEffect(() => {
-        setToday(new Date().toISOString().split('T')[0]);
+        setToday(formatLocalDate(new Date()));
     }, []);
 
     const todayAppointments = appointments.filter((apt) => apt.date === today);
@@ -304,8 +305,12 @@ export default function DashboardPage() {
                         <Button onClick={() => {
                             if (appointmentFormData.patientId && appointmentFormData.treatmentTypeId && appointmentFormData.date && appointmentFormData.time) {
                                 addAppointment({
-                                    ...appointmentFormData,
-                                    status: 'pending',
+                                    patientId: appointmentFormData.patientId,
+                                    treatmentTypeId: appointmentFormData.treatmentTypeId,
+                                    date: appointmentFormData.date,
+                                    time: appointmentFormData.time,
+                                    doctorId: appointmentFormData.drName, // Assuming drName is doctorId
+                                    notes: appointmentFormData.notes,
                                 });
                                 setIsAppointmentModalOpen(false);
                                 setAppointmentFormData({

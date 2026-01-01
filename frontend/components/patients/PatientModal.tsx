@@ -6,6 +6,7 @@ import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import toast from 'react-hot-toast';
+import { formatLocalDate } from '@/utils/dateUtils';
 import { usePatientStore } from '@/store/patientStore';
 
 const schema = z.object({
@@ -51,7 +52,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, pat
                 if (editingPatient.dateOfBirth) {
                     const d = new Date(editingPatient.dateOfBirth);
                     if (!isNaN(d.getTime())) {
-                        dob = d.toISOString().split('T')[0];
+                        dob = formatLocalDate(d);
                     }
                 }
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Appointment } from '@/types';
 import { api } from '@/lib/api';
+import { normalizeDate, formatLocalDate } from '@/utils/dateUtils';
 
 interface AppointmentStore {
     appointments: Appointment[];
@@ -12,7 +13,7 @@ interface AppointmentStore {
     fetchAppointments: (page?: number, limit?: number, date?: string, startDate?: string, endDate?: string, patientId?: string) => Promise<void>;
     fetchTodayStats: () => Promise<void>;
     fetchAppointmentsByDate: (date: string) => Promise<Appointment[]>;
-    addAppointment: (appointment: { patientId: string; treatmentTypeId?: string; date: string; time: string; status?: 'pending' | 'confirmed' | 'cancelled'; doctorId?: string; notes?: string }) => Promise<void>;
+    addAppointment: (appointment: { patientId: string; treatmentTypeId?: string; date: string; time: string; doctorId: string; notes?: string }) => Promise<void>;
     updateAppointment: (id: string, appointment: Partial<Appointment>) => Promise<void>;
     deleteAppointment: (id: string) => Promise<void>;
     getAppointmentsByDate: (date: string) => Appointment[];
@@ -55,7 +56,7 @@ export const useAppointmentStore = create<AppointmentStore>()((set, get) => ({
 
             const appointmentsList = rawAppointments.map((apt: any) => ({
                 ...apt,
-                date: typeof apt.date === 'string' ? apt.date.split('T')[0] : new Date(apt.date).toISOString().split('T')[0]
+                date: normalizeDate(apt.date)
             }));
 
             const meta = (responseData as { data?: { meta?: { total: number } } }).data?.meta ||
@@ -63,7 +64,7 @@ export const useAppointmentStore = create<AppointmentStore>()((set, get) => ({
                 { total: appointmentsList.length };
 
             // If we fetched specifically for today (exact date match), we can update the count too
-            if (date && date === new Date().toISOString().split('T')[0]) {
+            if (date && date === formatLocalDate(new Date())) {
                 set({ appointments: appointmentsList, total: meta.total, loading: false, todayCount: meta.total });
             } else {
                 set({ appointments: appointmentsList, total: meta.total, loading: false });
@@ -100,7 +101,7 @@ export const useAppointmentStore = create<AppointmentStore>()((set, get) => ({
 
             newAppointment = {
                 ...newAppointment,
-                date: typeof newAppointment.date === 'string' ? newAppointment.date.split('T')[0] : new Date(newAppointment.date).toISOString().split('T')[0]
+                date: normalizeDate(newAppointment.date)
             };
 
             set((state) => ({

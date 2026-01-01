@@ -1,0 +1,271 @@
+.container {
+    position: relative;
+    margin-bottom: 0;
+}
+
+.label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+}
+
+.required {
+    color: #ef4444;
+    margin-left: 2px;
+}
+
+.trigger {
+    width: 100%;
+    min-height: 48px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-white);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    gap: 8px;
+}
+
+.trigger:hover:not(.disabled) {
+    border-color: var(--primary);
+}
+
+.triggerError {
+    border-color: #ef4444 !important;
+}
+
+.disabled {
+    background: var(--bg-cream);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.selectedPatient {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    gap: 12px;
+}
+
+.patientInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.patientName {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.patientPhone {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.clearButton {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--text-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.clearButton:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #ef4444;
+}
+
+.placeholder {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+.arrow {
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+    color: var(--text-light);
+}
+
+.arrowOpen {
+    transform: rotate(180deg);
+}
+
+/* Dropdown */
+.dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.searchBox {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-cream);
+}
+
+.searchIcon {
+    color: var(--text-light);
+    flex-shrink: 0;
+}
+
+.searchInput {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    outline: none;
+    color: var(--text-dark);
+}
+
+.searchInput::placeholder {
+    color: var(--text-light);
+}
+
+/* Results */
+.results {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 30px;
+    color: var(--text-light);
+    font-size: 13px;
+}
+
+.spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.hint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 30px 20px;
+    color: var(--text-light);
+    font-size: 13px;
+    text-align: center;
+}
+
+.noResults {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 30px 20px;
+    color: var(--text-light);
+    text-align: center;
+}
+
+.noResultsHint {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+/* Patient list */
+.patientList {
+    padding: 8px 0;
+}
+
+.patientOption {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.patientOption:hover {
+    background: var(--bg-cream);
+}
+
+.patientOption.selected {
+    background: rgba(13, 110, 110, 0.08);
+}
+
+.patientAvatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.patientDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.patientOptionName {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.patientOptionPhone {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+/* Error */
+.error {
+    display: block;
+    font-size: 12px;
+    color: #ef4444;
+    margin-top: 6px;
+}
