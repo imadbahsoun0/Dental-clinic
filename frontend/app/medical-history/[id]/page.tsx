@@ -70,7 +70,7 @@ export default function MedicalHistoryPage() {
             const response = await api.api.organizationsControllerGetById(orgId!);
             if (response.success && response.data) {
                 setOrganizationName(response.data.name);
-                setOrganizationLogo(response.data.logo);
+                setOrganizationLogo(typeof response.data.logo === 'string' ? response.data.logo : null);
             }
         } catch (error) {
             console.error('Error fetching organization details:', error);
