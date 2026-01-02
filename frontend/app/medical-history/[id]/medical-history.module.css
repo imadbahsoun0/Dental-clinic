@@ -18,8 +18,11 @@
 
 .logoSection {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid var(--bg-cream);
 }
 
 .logo {
@@ -27,11 +30,43 @@
     height: auto;
 }
 
-.logoPlaceholder {
-    font-size: 24px;
-    font-weight: 600;
+.logoWithName {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.organizationLogo {
+    max-width: 180px;
+    max-height: 120px;
+    height: auto;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.clinicName {
+    font-size: 22px;
+    font-weight: 700;
     color: var(--primary);
     font-family: 'Fraunces', serif;
+    text-align: center;
+    letter-spacing: -0.02em;
+}
+
+.logoPlaceholder {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--primary);
+    font-family: 'Fraunces', serif;
+    padding: 20px 32px;
+    background: linear-gradient(135deg, var(--bg-cream) 0%, #f8f6f3 100%);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .title {

@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { OrganizationsService } from './organizations.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { OrganizationResponseDto } from './dto/organization-response.dto';
+import { OrganizationPublicResponseDto } from './dto/organization-public-response.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { CurrentUserData } from '../../common/decorators/current-user.decorator';
 import { Roles, UserRole } from '../../common/decorators/roles.decorator';
@@ -32,6 +33,15 @@ export class OrganizationsController {
     @ApiStandardResponse(OrganizationResponseDto)
     async getCurrent(@CurrentUser() user: CurrentUserData) {
         const result = await this.organizationsService.findOne(user.orgId);
+        return new StandardResponse(result);
+    }
+
+    @Public()
+    @Get(':id')
+    @ApiOperation({ summary: 'Get organization by ID (public, for medical history form - returns only name and logo)' })
+    @ApiStandardResponse(OrganizationPublicResponseDto)
+    async getById(@Param('id') id: string) {
+        const result = await this.organizationsService.findOnePublic(id);
         return new StandardResponse(result);
     }
 

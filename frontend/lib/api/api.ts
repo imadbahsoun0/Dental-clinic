@@ -195,6 +195,13 @@ export interface CreateOrganizationDto {
   website?: string;
 }
 
+export interface OrganizationPublicResponseDto {
+  /** Organization name */
+  name: string;
+  /** Logo URL (S3 signed URL) */
+  logo?: object | null;
+}
+
 export interface UpdateOrganizationDto {
   name?: string;
   location?: string;
@@ -1444,6 +1451,29 @@ export class Api<
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Organizations
+     * @name OrganizationsControllerGetById
+     * @summary Get organization by ID (public, for medical history form - returns only name and logo)
+     * @request GET:/api/v1/organizations/{id}
+     * @secure
+     */
+    organizationsControllerGetById: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: OrganizationPublicResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/organizations/${id}`,
+        method: "GET",
+        secure: true,
         format: "json",
         ...params,
       }),

@@ -36,6 +36,28 @@ export class OrganizationsService {
         return this.mapToResponse(organization);
     }
 
+    async findOnePublic(orgId: string) {
+        const organization = await this.em.findOne(Organization, { id: orgId }, { populate: ['logo'] });
+
+        if (!organization) {
+            throw new NotFoundException('Organization not found');
+        }
+
+        let logoUrl: string | null = null;
+        if (organization.logo) {
+            try {
+                logoUrl = await this.filesService.getSignedUrl(organization.logo);
+            } catch (e) {
+                console.error('Failed to generate logo URL', e);
+            }
+        }
+
+        return {
+            name: organization.name,
+            logo: logoUrl,
+        };
+    }
+
     async update(orgId: string, updateOrgDto: UpdateOrganizationDto, updatedBy: string) {
         const organization = await this.em.findOne(Organization, { id: orgId });
 

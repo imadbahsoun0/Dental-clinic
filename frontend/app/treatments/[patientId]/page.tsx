@@ -32,7 +32,9 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
     const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
     const [treatmentToDelete, setTreatmentToDelete] = useState<string | null>(null);
 
-    const patients = usePatientStore((state) => state.patients);
+    const selectedPatient = usePatientStore((state) => state.selectedPatient);
+    const fetchPatient = usePatientStore((state) => state.fetchPatient);
+    const setSelectedPatient = usePatientStore((state) => state.setSelectedPatient);
     const medicalHistoryQuestions = useSettingsStore((state) => state.medicalHistoryQuestions);
     const allTreatments = useTreatmentStore((state) => state.treatments);
     const treatmentsLoading = useTreatmentStore((state) => state.loading);
@@ -50,7 +52,7 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
     const updatePayment = usePaymentStore((state) => state.updatePayment);
     const deletePayment = usePaymentStore((state) => state.deletePayment);
 
-    const patient = patients.find((p) => p.id === patientId);
+    const patient = selectedPatient;
     const treatments = useMemo(() => {
         return allTreatments.filter((t) => t.patientId === patientId);
     }, [allTreatments, patientId]);
@@ -62,6 +64,17 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
     const fetchTreatmentCategories = useSettingsStore((state) => state.fetchTreatmentCategories);
     const fetchTreatmentTypes = useSettingsStore((state) => state.fetchTreatmentTypes);
     const fetchUsers = useSettingsStore((state) => state.fetchUsers);
+
+    // Fetch patient data on mount
+    React.useEffect(() => {
+        const loadPatient = async () => {
+            const patient = await fetchPatient(patientId);
+            if (patient) {
+                setSelectedPatient(patient);
+            }
+        };
+        loadPatient();
+    }, [patientId, fetchPatient, setSelectedPatient]);
 
     // Fetch treatments, payments, appointments, and configuration on mount
     React.useEffect(() => {
@@ -117,14 +130,38 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
         }
     };
 
-    const handleBulkDiscount = (discountPercent: number) => {
-        selectedTreatmentIds.forEach(treatmentId => {
-            const treatment = treatments.find(t => t.id === treatmentId);
-            if (treatment) {
-                const discountAmount = (treatment.totalPrice * discountPercent) / 100;
-                updateTreatment(treatmentId, { discount: discountAmount });
+    const handleBulkDiscount = (totalDiscountAmount: number) => {
+        // Get selected treatments
+        const selectedTreatments = treatments.filter(t => selectedTreatmentIds.includes(t.id));
+        
+        // Calculate total price of selected treatments
+        const totalPrice = selectedTreatments.reduce((sum, t) => sum + t.totalPrice, 0);
+        
+        if (totalPrice === 0) {
+            setSelectedTreatmentIds([]);
+            return;
+        }
+        
+        // Distribute discount proportionally based on each treatment's price
+        let remainingDiscount = totalDiscountAmount;
+        
+        selectedTreatments.forEach((treatment, index) => {
+            // Calculate proportional discount for this treatment
+            const proportion = treatment.totalPrice / totalPrice;
+            let treatmentDiscount: number;
+            
+            // For the last treatment, use remaining discount to avoid rounding errors
+            if (index === selectedTreatments.length - 1) {
+                treatmentDiscount = remainingDiscount;
+            } else {
+                treatmentDiscount = parseFloat((totalDiscountAmount * proportion).toFixed(2));
+                remainingDiscount -= treatmentDiscount;
             }
+            
+            // Update treatment with its proportional discount
+            updateTreatment(treatment.id, { discount: treatmentDiscount });
         });
+        
         setSelectedTreatmentIds([]);
     };
 

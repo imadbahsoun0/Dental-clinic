@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Treatment } from '@/types';
 import { Modal } from '@/components/common/Modal';
 import { Input } from '@/components/common/Input';
@@ -12,7 +12,7 @@ import styles from './BulkDiscountModal.module.css';
 interface BulkDiscountModalProps {
     isOpen: boolean;
     treatments: Treatment[];
-    onApply: (discountPercent: number) => void;
+    onApply: (discountAmount: number) => void;
     onClose: () => void;
 }
 
@@ -23,22 +23,34 @@ export const BulkDiscountModal: React.FC<BulkDiscountModalProps> = ({
     onClose,
 }) => {
     const treatmentTypes = useSettingsStore((state) => state.treatmentTypes);
-    const [discountPercent, setDiscountPercent] = useState('0');
+    const [discountAmount, setDiscountAmount] = useState('0');
+    const [totalToPayInput, setTotalToPayInput] = useState('');
+    const updateSourceRef = useRef<'discount' | 'total' | null>(null);
 
     // Reset discount when modal opens
     useEffect(() => {
         if (isOpen) {
-            setDiscountPercent('0');
+            setDiscountAmount('0');
+            setTotalToPayInput('');
         }
     }, [isOpen]);
 
     // Calculate totals
     const totalOriginalPrice = treatments.reduce((sum, t) => sum + t.totalPrice, 0);
-    const totalDiscountAmount = (totalOriginalPrice * (parseFloat(discountPercent) || 0)) / 100;
+    const totalDiscountAmount = parseFloat(discountAmount) || 0;
     const totalAfterDiscount = totalOriginalPrice - totalDiscountAmount;
 
+    // Update total to pay input when discount amount changes (only if not editing total)
+    useEffect(() => {
+        if (totalOriginalPrice > 0 && updateSourceRef.current !== 'total') {
+            setTotalToPayInput(totalAfterDiscount.toFixed(2));
+        }
+        // Reset source after update
+        updateSourceRef.current = null;
+    }, [discountAmount, totalOriginalPrice, totalAfterDiscount]);
+
     const handleApply = () => {
-        onApply(parseFloat(discountPercent) || 0);
+        onApply(parseFloat(discountAmount) || 0);
         onClose();
     };
 
@@ -85,13 +97,39 @@ export const BulkDiscountModal: React.FC<BulkDiscountModalProps> = ({
 
                 {/* Discount Input */}
                 <div className={styles.discountSection}>
-                    <Input
-                        type="number"
-                        label="Discount Percentage"
-                        value={discountPercent}
-                        onChange={(value) => setDiscountPercent(value)}
-                        placeholder="0-100"
-                    />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <Input
+                            type="number"
+                            label="Discount ($)"
+                            value={discountAmount}
+                            step="0.01"
+                            onChange={(value) => {
+                                updateSourceRef.current = 'discount';
+                                setDiscountAmount(value);
+                            }}
+                            placeholder="0.00"
+                        />
+                        <Input
+                            type="number"
+                            label="Total to be Paid ($)"
+                            value={totalToPayInput}
+                            step="1"
+                            onChange={(value) => {
+                                updateSourceRef.current = 'total';
+                                setTotalToPayInput(value);
+                                const inputTotal = parseFloat(value) || 0;
+                                
+                                // Calculate discount amount directly
+                                if (totalOriginalPrice > 0 && inputTotal <= totalOriginalPrice) {
+                                    const discount = totalOriginalPrice - inputTotal;
+                                    setDiscountAmount(discount.toFixed(2));
+                                } else if (inputTotal > totalOriginalPrice) {
+                                    setDiscountAmount('0');
+                                }
+                            }}
+                            placeholder="Enter total amount"
+                        />
+                    </div>
                 </div>
 
                 {/* Price Summary */}
@@ -100,9 +138,9 @@ export const BulkDiscountModal: React.FC<BulkDiscountModalProps> = ({
                         <span>Total Original Price:</span>
                         <strong>${totalOriginalPrice.toFixed(2)}</strong>
                     </div>
-                    {parseFloat(discountPercent) > 0 && (
+                    {parseFloat(discountAmount) > 0 && (
                         <div className={styles.priceRow}>
-                            <span>Discount ({discountPercent}%):</span>
+                            <span>Discount:</span>
                             <strong style={{ color: '#10b981' }}>-${totalDiscountAmount.toFixed(2)}</strong>
                         </div>
                     )}

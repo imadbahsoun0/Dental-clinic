@@ -5,6 +5,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { useExpenseStore } from '@/store/expenseStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { ExpenseModal } from '@/components/expenses/ExpenseModal';
@@ -30,6 +31,8 @@ export default function ExpensesPage() {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [expenseToDelete, setExpenseToDelete] = useState<{ id: string; name: string } | null>(null);
     const [filters, setFilters] = useState({
         name: '',
         startDate: '',
@@ -78,13 +81,20 @@ export default function ExpensesPage() {
         }
     };
 
-    const handleDeleteExpense = async (id: string) => {
-        if (confirm('Are you sure you want to delete this expense?')) {
-            try {
-                await deleteExpense(id);
-            } catch (error) {
-                // Error already handled in store with toast
-            }
+    const handleDeleteExpense = (id: string, name: string) => {
+        setExpenseToDelete({ id, name });
+        setDeleteConfirmOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!expenseToDelete) return;
+
+        try {
+            await deleteExpense(expenseToDelete.id);
+        } catch (error) {
+            // Error already handled in store with toast
+        } finally {
+            setExpenseToDelete(null);
         }
     };
 
@@ -259,7 +269,7 @@ export default function ExpensesPage() {
                                                 </button>
                                                 <button
                                                     className={`${styles.actionBtn} ${styles.delete}`}
-                                                    onClick={() => handleDeleteExpense(expense.id)}
+                                                    onClick={() => handleDeleteExpense(expense.id, expense.name)}
                                                     title="Delete"
                                                 >
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -323,6 +333,20 @@ export default function ExpensesPage() {
                 }}
                 onSave={handleSaveExpense}
                 expense={editingExpense}
+            />
+
+            <ConfirmDialog
+                isOpen={deleteConfirmOpen}
+                onClose={() => {
+                    setDeleteConfirmOpen(false);
+                    setExpenseToDelete(null);
+                }}
+                onConfirm={confirmDelete}
+                title="Delete Expense"
+                message={`Are you sure you want to delete "${expenseToDelete?.name}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                isDestructive={true}
             />
         </MainLayout>
     );

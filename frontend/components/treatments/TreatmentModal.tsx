@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Treatment, Appointment } from '@/types';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAppointmentStore } from '@/store/appointmentStore';
@@ -37,12 +37,14 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
     const [formData, setFormData] = useState({
         treatmentTypeId: '',
         selectedTeeth: [] as number[],
-        discountPercent: '0',
+        discountAmount: '0',
         appointmentId: '',
         status: 'planned' as 'planned' | 'in-progress' | 'completed' | 'cancelled',
     });
 
     const [totalToPay, setTotalToPay] = useState(0);
+    const [totalToPayInput, setTotalToPayInput] = useState('');
+    const updateSourceRef = useRef<'discount' | 'total' | null>(null);
 
     // Get patient's appointments for linking
     // Handle both flat patientId and nested patient object structures
@@ -73,18 +75,13 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
     // Reset form when modal opens/closes or treatment changes
     useEffect(() => {
         if (isOpen && treatment) {
-            // Editing existing treatment
-            const discountPercent = treatment.totalPrice > 0
-                ? ((treatment.discount / treatment.totalPrice) * 100).toFixed(2)
-                : '0';
-
-            // Support both old (single tooth) and new (multiple teeth) format
+            // Editing existing treatment - load discount as dollar amount
             const teeth = treatment.toothNumbers || [treatment.toothNumber];
 
             setFormData({
                 treatmentTypeId: treatment.treatmentTypeId,
                 selectedTeeth: teeth,
-                discountPercent: discountPercent,
+                discountAmount: treatment.discount.toFixed(2),
                 appointmentId: treatment.appointmentId || '',
                 status: treatment.status || 'planned',
             });
@@ -93,24 +90,28 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
             if (selectedType?.categoryId) {
                 setSelectedCategoryId(selectedType.categoryId);
             }
-            setTotalToPay(treatment.totalPrice);
+            // Calculate total after discount for display
+            const totalAfterDiscount = treatment.totalPrice - treatment.discount;
+            setTotalToPay(totalAfterDiscount);
+            setTotalToPayInput(totalAfterDiscount.toFixed(2));
         } else if (isOpen) {
             // Adding new treatment
             setFormData({
                 treatmentTypeId: '',
                 selectedTeeth: [],
-                discountPercent: '0',
+                discountAmount: '0',
                 appointmentId: '',
                 status: 'planned',
             });
             setSelectedCategoryId('');
             setTotalToPay(0);
+            setTotalToPayInput('');
         }
     }, [isOpen, treatment, treatmentTypes]);
 
-    // Auto-select today's appointment for new treatments (only if not planned)
+    // Auto-select today's appointment for new treatments
     useEffect(() => {
-        if (isOpen && !treatment && !formData.appointmentId && patientAppointments.length > 0 && formData.status !== 'planned') {
+        if (isOpen && !treatment && !formData.appointmentId && patientAppointments.length > 0) {
             const today = formatLocalDate(new Date());
             // Match exactly or startsWith (to handle potential time components if ISO)
             const todayAppointment = patientAppointments.find(apt =>
@@ -121,7 +122,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                 setFormData(prev => ({ ...prev, appointmentId: todayAppointment.id }));
             }
         }
-    }, [isOpen, treatment, patientAppointments, formData.appointmentId, formData.status]);
+    }, [isOpen, treatment, patientAppointments, formData.appointmentId]);
 
     // Auto-calculate total when treatment type, teeth, or discount changes
     useEffect(() => {
@@ -134,12 +135,17 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                 totalPrice += price;
             }
 
-            // Calculate discount amount from percentage
-            const discountAmount = (totalPrice * (parseFloat(formData.discountPercent) || 0)) / 100;
-            // Set total to be paid as price minus discount
-            setTotalToPay(totalPrice - discountAmount);
+            // Only recalculate if the change came from discount field, not from total input
+            if (updateSourceRef.current !== 'total') {
+                const discountAmount = parseFloat(formData.discountAmount) || 0;
+                const calculatedTotal = totalPrice - discountAmount;
+                setTotalToPay(calculatedTotal);
+                setTotalToPayInput(calculatedTotal.toFixed(2));
+            }
+            // Reset source after update
+            updateSourceRef.current = null;
         }
-    }, [formData.treatmentTypeId, formData.selectedTeeth, formData.discountPercent, treatmentTypes]);
+    }, [formData.treatmentTypeId, formData.selectedTeeth, formData.discountAmount, treatmentTypes]);
 
     const handleSubmit = () => {
         if (formData.selectedTeeth.length === 0) {
@@ -162,8 +168,8 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
             totalPrice += price;
         }
 
-        // Calculate actual discount amount from percentage
-        const discountAmount = (totalPrice * (parseFloat(formData.discountPercent) || 0)) / 100;
+        // Get discount as dollar amount
+        const discountAmount = parseFloat(formData.discountAmount) || 0;
 
         // Get date and doctor from appointment if linked
         let date = formatLocalDate(new Date());
@@ -181,10 +187,10 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
             treatmentTypeId: formData.treatmentTypeId,
             toothNumber: formData.selectedTeeth[0], // Legacy: use first tooth
             toothNumbers: formData.selectedTeeth, // New: all selected teeth
-            ...(formData.status !== 'planned' && formData.appointmentId ? { appointmentId: formData.appointmentId } : {}),
+            appointmentId: formData.appointmentId || undefined,
             totalPrice: totalPrice,
             amountPaid: 0,
-            discount: discountAmount,
+            discount: discountAmount, // Store as dollar amount
             date: date,
             drName: drName,
             status: formData.status,
@@ -202,7 +208,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
         totalBasePrice += findPriceForTooth(formData.treatmentTypeId, toothNum);
     }
 
-    const discountAmount = (totalBasePrice * (parseFloat(formData.discountPercent) || 0)) / 100;
+    const discountAmount = parseFloat(formData.discountAmount) || 0;
 
     // Get price range for display in dropdown
     const getPriceRangeDisplay = (treatmentType: any) => {
@@ -351,9 +357,9 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                             </div>
                         </>
                     )}
-                    {parseFloat(formData.discountPercent) > 0 && (
+                    {parseFloat(formData.discountAmount) > 0 && (
                         <div className={styles.priceRow}>
-                            <span>Discount ({formData.discountPercent}%):</span>
+                            <span>Discount:</span>
                             <strong style={{ color: '#10b981' }}>-${discountAmount.toFixed(2)}</strong>
                         </div>
                     )}
@@ -363,13 +369,42 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                     </div>
                 </div>
 
-                <Input
-                    type="number"
-                    label="Discount (%)"
-                    value={formData.discountPercent}
-                    onChange={(value) => setFormData({ ...formData, discountPercent: value })}
-                    placeholder="0-100"
-                />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <Input
+                        type="number"
+                        label="Discount ($)"
+                        value={formData.discountAmount}
+                        step="0.01"
+                        onChange={(value) => {
+                            updateSourceRef.current = 'discount';
+                            setFormData({ ...formData, discountAmount: value });
+                        }}
+                        placeholder="0.00"
+                    />
+                    <Input
+                        type="number"
+                        label="Total to be Paid ($)"
+                        value={totalToPayInput}
+                        step="1"
+                        onChange={(value) => {
+                            updateSourceRef.current = 'total';
+                            setTotalToPayInput(value);
+                            const inputTotal = parseFloat(value) || 0;
+                            
+                            // Set the display total directly from input
+                            setTotalToPay(inputTotal);
+                            
+                            // Calculate discount amount directly
+                            if (totalBasePrice > 0 && inputTotal <= totalBasePrice) {
+                                const discountAmount = totalBasePrice - inputTotal;
+                                setFormData({ ...formData, discountAmount: discountAmount.toFixed(2) });
+                            } else if (inputTotal > totalBasePrice) {
+                                setFormData({ ...formData, discountAmount: '0' });
+                            }
+                        }}
+                        placeholder="Enter total amount"
+                    />
+                </div>
             </div>
         </Modal>
     );

@@ -74,7 +74,7 @@ export interface Treatment {
   appointment?: Appointment; // Populated appointment object
   totalPrice: number; // Total price for all teeth
   amountPaid: number;
-  discount: number;
+  discount: number; // Discount amount in dollars
   date: string; // ISO date string (from appointment or manual for planned)
   drName?: string; // Doctor name (from appointment or manual for planned)
   status?: 'planned' | 'in-progress' | 'completed' | 'cancelled';
@@ -238,6 +238,7 @@ export interface InputProps {
   error?: string;
   className?: string;
   disabled?: boolean;
+  step?: string;
 }
 
 export interface SelectOption {

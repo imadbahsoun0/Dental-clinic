@@ -31,6 +31,8 @@ export default function MedicalHistoryPage() {
     const [submitting, setSubmitting] = useState(false);
     const [existingSubmission, setExistingSubmission] = useState<boolean>(false);
     const [patientName, setPatientName] = useState('');
+    const [organizationName, setOrganizationName] = useState('');
+    const [organizationLogo, setOrganizationLogo] = useState<string | null>(null);
     const [dateOfBirth, setDateOfBirth] = useState('');
     const [emergencyContact, setEmergencyContact] = useState('');
     const [email, setEmail] = useState('');
@@ -48,6 +50,7 @@ export default function MedicalHistoryPage() {
         }
         fetchQuestions();
         fetchPatientName();
+        fetchOrganizationDetails();
         checkExistingSubmission();
     }, [orgId, patientId]);
 
@@ -59,6 +62,18 @@ export default function MedicalHistoryPage() {
             }
         } catch (error) {
             console.error('Error fetching patient name:', error);
+        }
+    };
+
+    const fetchOrganizationDetails = async () => {
+        try {
+            const response = await api.api.organizationsControllerGetById(orgId!);
+            if (response.success && response.data) {
+                setOrganizationName(response.data.name);
+                setOrganizationLogo(response.data.logo);
+            }
+        } catch (error) {
+            console.error('Error fetching organization details:', error);
         }
     };
 
@@ -305,9 +320,22 @@ export default function MedicalHistoryPage() {
     return (
         <div className={styles.container}>
             <div className={styles.formCard}>
-                {/* Doctor Logo */}
+                {/* Doctor Logo & Clinic Name */}
                 <div className={styles.logoSection}>
-                    <div className={styles.logoPlaceholder}>🦷 DentaCare Pro</div>
+                    {organizationLogo ? (
+                        <div className={styles.logoWithName}>
+                            <img 
+                                src={organizationLogo} 
+                                alt={organizationName || 'Clinic Logo'} 
+                                className={styles.organizationLogo}
+                            />
+                            <div className={styles.clinicName}>{organizationName}</div>
+                        </div>
+                    ) : (
+                        <div className={styles.logoPlaceholder}>
+                            🦷 {organizationName || 'DentaCare Pro'}
+                        </div>
+                    )}
                 </div>
 
                 <h1 className={styles.title}>Medical History Form</h1>
