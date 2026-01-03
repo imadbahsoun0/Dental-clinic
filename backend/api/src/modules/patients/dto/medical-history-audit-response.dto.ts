@@ -10,16 +10,14 @@ export class MedicalHistoryAuditResponseDto {
     @ApiProperty({
         example: {
             id: 'uuid',
-            firstName: 'John',
-            lastName: 'Doe',
-            role: 'secretary',
+            name: 'John Doe',
+            email: 'john.doe@example.com',
         },
     })
     editedBy!: {
         id: string;
-        firstName: string;
-        lastName: string;
-        role: string;
+        name: string;
+        email: string;
     };
 
     @ApiProperty({

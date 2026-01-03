@@ -13,9 +13,11 @@ import { TreatmentsTable } from '@/components/treatments/TreatmentsTable';
 import { TreatmentModal } from '@/components/treatments/TreatmentModal';
 import { BulkDiscountModal } from '@/components/treatments/BulkDiscountModal';
 import { MedicalHistoryDisplay } from '@/components/treatments/MedicalHistoryDisplay';
+import { MedicalHistoryEditModal } from '@/components/treatments/MedicalHistoryEditModal';
 import { PaymentsTable } from '@/components/payments/PaymentsTable';
 import { PaymentModal } from '@/components/payments/PaymentModal';
 import { ConfirmationModal } from '@/components/common/ConfirmationModal';
+import { PatientModal } from '@/components/patients/PatientModal';
 import { useSettingsStore } from '@/store/settingsStore';
 import { usePaymentStore } from '@/store/paymentStore';
 import { Treatment, Payment, Message } from '@/types';
@@ -35,6 +37,8 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
     const [treatmentToDelete, setTreatmentToDelete] = useState<string | null>(null);
     const [reminders, setReminders] = useState<Message[]>([]);
     const [remindersLoading, setRemindersLoading] = useState(false);
+    const [isPatientEditModalOpen, setIsPatientEditModalOpen] = useState(false);
+    const [isMedicalHistoryEditModalOpen, setIsMedicalHistoryEditModalOpen] = useState(false);
 
     const selectedPatient = usePatientStore((state) => state.selectedPatient);
     const fetchPatient = usePatientStore((state) => state.fetchPatient);
@@ -68,6 +72,7 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
     const fetchTreatmentCategories = useSettingsStore((state) => state.fetchTreatmentCategories);
     const fetchTreatmentTypes = useSettingsStore((state) => state.fetchTreatmentTypes);
     const fetchUsers = useSettingsStore((state) => state.fetchUsers);
+    const fetchMedicalHistoryQuestions = useSettingsStore((state) => state.fetchMedicalHistoryQuestions);
 
     // Fetch patient data on mount
     React.useEffect(() => {
@@ -119,13 +124,14 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
         fetchTreatmentCategories();
         fetchTreatmentTypes();
         fetchUsers(); // Fetch users to get doctor commission percentages
+        fetchMedicalHistoryQuestions(); // Fetch medical history questions for the edit modal
         // Fetch specific patient's appointments for linking
         fetchAppointments(1, 1000, undefined, undefined, undefined, patientId);
         fetchReminders();
-    }, [patientId, fetchTreatments, fetchPayments, fetchTreatmentCategories, fetchTreatmentTypes, fetchUsers, fetchAppointments]);
+    }, [patientId, fetchTreatments, fetchPayments, fetchTreatmentCategories, fetchTreatmentTypes, fetchUsers, fetchMedicalHistoryQuestions, fetchAppointments]);
 
     // Calculate totals (excluding planned and cancelled treatments from balance)
-    const totalPrice = treatments.reduce((sum, t) => sum + (t.totalPrice - t.discount), 0);
+    const totalPrice = treatments.filter( t => t.status !== 'planned' && t.status !== 'cancelled').reduce((sum, t) => sum + (t.totalPrice - t.discount), 0);
     const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
     // Filter out planned and cancelled treatments when calculating balance
     const balanceTotalPrice = treatments
@@ -233,6 +239,45 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
         }
     };
 
+    const handleEditPatientProfile = () => {
+        setIsPatientEditModalOpen(true);
+    };
+
+    const handleEditMedicalHistory = () => {
+        setIsMedicalHistoryEditModalOpen(true);
+    };
+
+    const handleSaveMedicalHistory = async (data: {
+        dateOfBirth?: string;
+        emergencyContact?: string;
+        email?: string;
+        bloodType?: string;
+        address?: string;
+        responses: Array<{
+            questionId: string;
+            answer: string | string[];
+            answerText?: string;
+        }>;
+    }) => {
+        if (!patient) return;
+        
+        // Use existing signature from current medical history
+        const payload = {
+            dateOfBirth: data.dateOfBirth || '',
+            emergencyContact: data.emergencyContact || '',
+            email: data.email,
+            bloodType: data.bloodType || '',
+            address: data.address || '',
+            responses: data.responses,
+            signature: patient.medicalHistory?.signature || ''
+        };
+        await api.api.patientsControllerSubmitMedicalHistory(patientId, payload);
+        const updatedPatient = await fetchPatient(patientId);
+        if (updatedPatient) {
+            setSelectedPatient(updatedPatient);
+        }
+    };
+
     if (!patient) {
         return (
             <MainLayout title="Treatments">
@@ -248,7 +293,7 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
             <div className={styles.pageContainer}>
                 {/* Collapsible Patient Profile */}
                 <CollapsibleSection title="Patient Information" defaultCollapsed={true}>
-                    <PatientProfile patient={patient} />
+                    <PatientProfile patient={patient} onEdit={handleEditPatientProfile} />
                 </CollapsibleSection>
 
                 {/* Collapsible Medical History */}
@@ -256,6 +301,7 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
                     <MedicalHistoryDisplay
                         medicalHistory={patient.medicalHistory}
                         questions={medicalHistoryQuestions}
+                        onEdit={patient.medicalHistory ? handleEditMedicalHistory : undefined}
                     />
                 </CollapsibleSection>
 
@@ -438,6 +484,24 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
                     confirmLabel="Delete"
                     variant="danger"
                 />
+
+                {/* Patient Profile Edit Modal */}
+                <PatientModal
+                    isOpen={isPatientEditModalOpen}
+                    onClose={() => setIsPatientEditModalOpen(false)}
+                    patientId={patientId}
+                />
+
+                {/* Medical History Edit Modal */}
+                {patient.medicalHistory && (
+                    <MedicalHistoryEditModal
+                        isOpen={isMedicalHistoryEditModalOpen}
+                        onClose={() => setIsMedicalHistoryEditModalOpen(false)}
+                        medicalHistory={patient.medicalHistory}
+                        questions={medicalHistoryQuestions}
+                        onSave={handleSaveMedicalHistory}
+                    />
+                )}
             </div>
         </MainLayout>
     );

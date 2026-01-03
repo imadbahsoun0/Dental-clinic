@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEmail, IsOptional, IsUrl } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsUrl, Matches } from 'class-validator';
 
 export class CreateOrganizationDto {
     @ApiProperty({ example: 'DentaCare Pro Clinic' })
@@ -25,4 +25,10 @@ export class CreateOrganizationDto {
     @IsOptional()
     @IsUrl()
     website?: string;
+
+    @ApiProperty({ example: 'Africa/Casablanca', required: false, description: 'IANA timezone name (defaults to UTC)' })
+    @IsOptional()
+    @IsString()
+    @Matches(/^(UTC|[A-Za-z_]+(?:\/[A-Za-z_]+)+)$/)
+    timeZone?: string;
 }

@@ -2,16 +2,19 @@
 
 import React from 'react';
 import { MedicalHistorySubmission, MedicalHistoryQuestion } from '@/types';
+import { Button } from '@/components/common/Button';
 import styles from './MedicalHistory.module.css';
 
 interface MedicalHistoryDisplayProps {
     medicalHistory?: MedicalHistorySubmission;
     questions: MedicalHistoryQuestion[];
+    onEdit?: () => void;
 }
 
 export const MedicalHistoryDisplay: React.FC<MedicalHistoryDisplayProps> = ({
     medicalHistory,
     questions,
+    onEdit,
 }) => {
     if (!medicalHistory) {
         return (
@@ -52,6 +55,13 @@ export const MedicalHistoryDisplay: React.FC<MedicalHistoryDisplayProps> = ({
 
     return (
         <div className={styles.medicalHistory}>
+            {onEdit && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+                    <Button variant="secondary" onClick={onEdit}>
+                        Edit Medical History
+                    </Button>
+                </div>
+            )}
             <div className={styles.submissionInfo}>
                 <span className={styles.label}>Submitted:</span>
                 <span className={styles.value}>
@@ -77,13 +87,20 @@ export const MedicalHistoryDisplay: React.FC<MedicalHistoryDisplayProps> = ({
                         medicalHistory.responses.map((response, index) => {
                             const questionText = getQuestionText(response);
                             const answerDisplay = formatAnswer(response.answer);
+                            
+                            // Find the question to check if this is a radio_with_text type
+                            const question = questions.find(q => q.id === response.questionId);
+                            const shouldShowAnswerText = response.answerText && 
+                                question?.type === 'radio_with_text' && 
+                                question?.textTriggerOption && 
+                                response.answer === question.textTriggerOption;
 
                             return (
                                 <div key={response.questionId || index} className={styles.questionItem}>
                                     <div className={styles.questionContent}>
                                         <span className={styles.questionText}>{questionText}</span>
                                         <span className={styles.answerText}>{answerDisplay}</span>
-                                        {response.answerText && (
+                                        {shouldShowAnswerText && (
                                             <div className={styles.additionalDetails}>
                                                 <span className={styles.detailsLabel}>Additional details:</span>
                                                 <span className={styles.detailsText}>{response.answerText}</span>

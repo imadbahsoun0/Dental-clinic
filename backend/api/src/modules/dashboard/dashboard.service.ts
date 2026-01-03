@@ -35,7 +35,7 @@ export class DashboardService {
         // Get all treatments and payments for the organization
         const allTreatments = await this.em.find(Treatment, {
             orgId,
-            status: { $ne: TreatmentStatus.CANCELLED },
+            status: { $nin: [TreatmentStatus.CANCELLED, TreatmentStatus.PLANNED] },
             deletedAt: null,
         });
 

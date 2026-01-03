@@ -175,6 +175,7 @@ export interface OrganizationResponseDto {
   email?: string;
   website?: string;
   logo?: object;
+  timeZone: string;
   isActive: boolean;
   /** @format date-time */
   createdAt: string;
@@ -193,6 +194,11 @@ export interface CreateOrganizationDto {
   email?: string;
   /** @example "https://www.dentacarepro.com" */
   website?: string;
+  /**
+   * IANA timezone name (defaults to UTC)
+   * @example "Africa/Casablanca"
+   */
+  timeZone?: string;
 }
 
 export interface OrganizationPublicResponseDto {
@@ -211,6 +217,11 @@ export interface UpdateOrganizationDto {
   /** Attachment ID for the logo */
   logoId?: string;
   isActive?: boolean;
+  /**
+   * IANA timezone name (e.g. Africa/Casablanca) or UTC
+   * @example "Africa/Casablanca"
+   */
+  timeZone?: string;
 }
 
 export interface PatientResponseDto {
@@ -337,6 +348,58 @@ export interface SubmitMedicalHistoryDto {
    * @example "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA..."
    */
   signature: string;
+}
+
+export interface MedicalHistoryResponse {
+  /** @example "uuid-question-id" */
+  questionId: string;
+  /** @example "Do you have any allergies?" */
+  questionText: string;
+  /** @example "TEXT" */
+  questionType: string;
+  /** @example "Penicillin" */
+  answer: object;
+  /** @example "Penicillin and other antibiotics" */
+  answerText?: string;
+}
+
+export interface UpdatePatientMedicalHistoryDto {
+  /** @example "1990-01-01" */
+  dateOfBirth?: string;
+  /** @example "+212600000000" */
+  emergencyContact?: string;
+  /** @example "patient@example.com" */
+  email?: string;
+  /** @example "A+" */
+  bloodType?: string;
+  /** @example "123 Main St, City" */
+  address?: string;
+  responses: MedicalHistoryResponse[];
+  /** @example "Updated by secretary - patient called with new information" */
+  notes?: string;
+}
+
+export interface MedicalHistoryAuditResponseDto {
+  /** @example "uuid" */
+  id: string;
+  /** @example "uuid" */
+  patientId: string;
+  /** @example {"id":"uuid","name":"John Doe","email":"john.doe@example.com"} */
+  editedBy: object;
+  /** @example {"questionId-1":{"old":"No","new":"Yes"}} */
+  changes: object;
+  /** @example "Updated by secretary - patient called with new information" */
+  notes?: string;
+  /**
+   * @format date-time
+   * @example "2024-01-01T12:00:00.000Z"
+   */
+  createdAt: string;
+  /**
+   * @format date-time
+   * @example "2024-01-01T12:00:00.000Z"
+   */
+  updatedAt: string;
 }
 
 export type Message = object;
@@ -1805,6 +1868,35 @@ export class Api<
      * No description
      *
      * @tags Patients
+     * @name PatientsControllerUpdateMedicalHistory
+     * @summary Update patient medical history (with audit trail)
+     * @request PATCH:/api/v1/patients/{id}/medical-history
+     * @secure
+     */
+    patientsControllerUpdateMedicalHistory: (
+      id: string,
+      data: UpdatePatientMedicalHistoryDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: MedicalHistorySubmissionResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/${id}/medical-history`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
      * @name PatientsControllerMigrateMedicalHistoryQuestionText
      * @summary Migrate existing medical history to include question text
      * @request POST:/api/v1/patients/migrate/medical-history-question-text
@@ -1944,6 +2036,32 @@ export class Api<
       >({
         path: `/api/v1/patients/${id}/send-payment-overdue`,
         method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerGetMedicalHistoryAudit
+     * @summary Get medical history audit trail for a patient
+     * @request GET:/api/v1/patients/{id}/medical-history/audit
+     * @secure
+     */
+    patientsControllerGetMedicalHistoryAudit: (
+      id: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: MedicalHistoryAuditResponseDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/${id}/medical-history/audit`,
+        method: "GET",
         secure: true,
         format: "json",
         ...params,

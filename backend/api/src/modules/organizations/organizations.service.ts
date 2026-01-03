@@ -18,6 +18,7 @@ export class OrganizationsService {
         organization.phone = createOrgDto.phone;
         organization.email = createOrgDto.email;
         organization.website = createOrgDto.website;
+        if (createOrgDto.timeZone) organization.timeZone = createOrgDto.timeZone;
         organization.createdBy = createdBy;
 
         this.em.persist(organization);
@@ -71,6 +72,7 @@ export class OrganizationsService {
         if (updateOrgDto.phone !== undefined) organization.phone = updateOrgDto.phone;
         if (updateOrgDto.email !== undefined) organization.email = updateOrgDto.email;
         if (updateOrgDto.website !== undefined) organization.website = updateOrgDto.website;
+        if (updateOrgDto.timeZone !== undefined) organization.timeZone = updateOrgDto.timeZone;
         if (updateOrgDto.logoId) {
             organization.logo = this.em.getReference(Attachment, updateOrgDto.logoId);
         }
@@ -109,6 +111,7 @@ export class OrganizationsService {
             website: org.website,
             logo: org.logo ? { ...org.logo, url: logoUrl } : null,
             isActive: org.isActive,
+            timeZone: org.timeZone,
             createdAt: org.createdAt,
             updatedAt: org.updatedAt,
         };

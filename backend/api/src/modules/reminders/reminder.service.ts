@@ -169,9 +169,9 @@ export class ReminderService {
       const org = await this.em.findOneOrFail(Organization, { id: orgId });
 
       const appointmentDate = appointment.date.toISOString().split('T')[0];
-      const doctor = appointment.doctor as any;
+      const doctor = appointment.doctor
       const doctorName = doctor
-        ? `${doctor.firstName} ${doctor.lastName}`
+        ? `${doctor.name}`
         : 'the doctor';
 
       const variables = {

@@ -22,6 +22,9 @@ export class Organization extends BaseEntity {
     @OneToOne(() => Attachment, { nullable: true })
     logo?: Attachment;
 
+    @Property({ length: 64, default: 'UTC' })
+    timeZone: string = 'UTC';
+
     @Property({ default: true })
     isActive: boolean = true;
 

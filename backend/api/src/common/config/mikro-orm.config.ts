@@ -31,7 +31,7 @@ const config: Options = {
         emit: 'ts',
         fileName: (className: string) => className,
     },
-    debug: process.env.NODE_ENV !== 'production',
+    debug: false,
     allowGlobalContext: true,
 };
 

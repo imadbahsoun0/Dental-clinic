@@ -218,8 +218,13 @@ export class TreatmentsService {
             deletedAt: null,
         });
 
-        const totalPrice = treatments.reduce((sum, t) => sum + Number(t.totalPrice), 0);
-        const totalDiscount = treatments.reduce((sum, t) => sum + Number(t.discount), 0);
+        // Exclude cancelled and planned treatments from price calculations
+        const activeAndCompletedTreatments = treatments.filter(
+            t => t.status !== TreatmentStatus.CANCELLED && t.status !== TreatmentStatus.PLANNED
+        );
+
+        const totalPrice = activeAndCompletedTreatments.reduce((sum, t) => sum + Number(t.totalPrice), 0);
+        const totalDiscount = activeAndCompletedTreatments.reduce((sum, t) => sum + Number(t.discount), 0);
         const netTotal = totalPrice - totalDiscount;
 
         return {

@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "generate:client": "npm run generate:api",
     "generate:api": "swagger-typescript-api generate -p http://localhost:3000/api/docs-json -o ./lib/api -n api.ts --axios --unwrap-response-data"
   },
   "dependencies": {

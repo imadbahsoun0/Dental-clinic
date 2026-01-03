@@ -1,5 +1,22 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+export class OrganizationLogoDto {
+    @ApiProperty()
+    id!: string;
+
+    @ApiProperty()
+    filename!: string;
+
+    @ApiProperty()
+    mimeType!: string;
+
+    @ApiProperty()
+    size!: number;
+
+    @ApiProperty()
+    url!: string | null;
+}
+
 export class OrganizationResponseDto {
     @ApiProperty()
     id!: string;
@@ -20,7 +37,10 @@ export class OrganizationResponseDto {
     website?: string;
 
     @ApiProperty({ required: false })
-    logo?: any; // Attachment object
+    logo?: OrganizationLogoDto | null;
+
+    @ApiProperty()
+    timeZone!: string;
 
     @ApiProperty()
     isActive!: boolean;

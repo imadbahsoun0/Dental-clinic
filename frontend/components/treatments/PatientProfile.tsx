@@ -2,15 +2,24 @@
 
 import React from 'react';
 import { Patient } from '@/types';
+import { Button } from '@/components/common/Button';
 import styles from './PatientProfile.module.css';
 
 interface PatientProfileProps {
     patient: Patient;
+    onEdit?: () => void;
 }
 
-export const PatientProfile: React.FC<PatientProfileProps> = ({ patient }) => {
+export const PatientProfile: React.FC<PatientProfileProps> = ({ patient, onEdit }) => {
     return (
         <div className={styles.patientProfile}>
+            {onEdit && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+                    <Button variant="secondary" onClick={onEdit}>
+                        Edit Profile
+                    </Button>
+                </div>
+            )}
             <div className={styles.row}>
                 <div className={styles.field}>
                     <span className={styles.label}>Name:</span>

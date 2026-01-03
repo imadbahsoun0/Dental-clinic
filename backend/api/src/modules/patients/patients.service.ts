@@ -521,6 +521,29 @@ export class PatientsService {
         orgId: string,
         userId: string,
     ) {
+        type StoredMedicalHistoryResponse = {
+            questionId: string;
+            questionText: string;
+            questionType: string;
+            answer: unknown;
+            answerText?: string;
+        };
+
+        type StoredMedicalHistory = {
+            dateOfBirth?: string;
+            emergencyContact?: string;
+            email?: string;
+            bloodType?: string;
+            address?: string;
+            responses?: StoredMedicalHistoryResponse[];
+            lastUpdatedAt?: string;
+            lastUpdatedBy?: {
+                id: string;
+                name: string;
+                email: string;
+            };
+        };
+
         const patient = await this.em.findOne(Patient, { id: patientId, orgId });
         
         if (!patient) {
@@ -533,22 +556,21 @@ export class PatientsService {
         }
 
         // Get the previous medical history data
-        const previousData = patient.medicalHistory || {};
+        const previousData = (patient.medicalHistory ?? {}) as StoredMedicalHistory;
 
         // Prepare the new medical history data
         const newMedicalHistory = {
-            dateOfBirth: updateDto.dateOfBirth || (previousData as any).dateOfBirth,
-            emergencyContact: updateDto.emergencyContact || (previousData as any).emergencyContact,
-            email: updateDto.email || (previousData as any).email,
-            bloodType: updateDto.bloodType || (previousData as any).bloodType,
-            address: updateDto.address || (previousData as any).address,
+            dateOfBirth: updateDto.dateOfBirth || previousData.dateOfBirth,
+            emergencyContact: updateDto.emergencyContact || previousData.emergencyContact,
+            email: updateDto.email || previousData.email,
+            bloodType: updateDto.bloodType || previousData.bloodType,
+            address: updateDto.address || previousData.address,
             responses: updateDto.responses,
             lastUpdatedAt: new Date().toISOString(),
             lastUpdatedBy: {
                 id: userId,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                role: user.role,
+                name: user.name,
+                email: user.email,
             },
         };
 
@@ -556,11 +578,11 @@ export class PatientsService {
         const changes: Record<string, { old: unknown; new: unknown }> = {};
         
         // Compare responses
-        const oldResponses = ((previousData as any).responses || []) as Array<any>;
+        const oldResponses: StoredMedicalHistoryResponse[] = previousData.responses ?? [];
         const newResponses = updateDto.responses;
 
         for (const newResponse of newResponses) {
-            const oldResponse = oldResponses.find((r: any) => r.questionId === newResponse.questionId);
+            const oldResponse = oldResponses.find(r => r.questionId === newResponse.questionId);
             if (oldResponse) {
                 // Check if answer changed
                 if (JSON.stringify(oldResponse.answer) !== JSON.stringify(newResponse.answer) ||
@@ -592,33 +614,33 @@ export class PatientsService {
         }
 
         // Check for basic info changes
-        if ((previousData as any).dateOfBirth !== updateDto.dateOfBirth) {
+        if (previousData.dateOfBirth !== updateDto.dateOfBirth) {
             changes['dateOfBirth'] = {
-                old: (previousData as any).dateOfBirth,
+                old: previousData.dateOfBirth,
                 new: updateDto.dateOfBirth,
             };
         }
-        if ((previousData as any).emergencyContact !== updateDto.emergencyContact) {
+        if (previousData.emergencyContact !== updateDto.emergencyContact) {
             changes['emergencyContact'] = {
-                old: (previousData as any).emergencyContact,
+                old: previousData.emergencyContact,
                 new: updateDto.emergencyContact,
             };
         }
-        if ((previousData as any).email !== updateDto.email) {
+        if (previousData.email !== updateDto.email) {
             changes['email'] = {
-                old: (previousData as any).email,
+                old: previousData.email,
                 new: updateDto.email,
             };
         }
-        if ((previousData as any).bloodType !== updateDto.bloodType) {
+        if (previousData.bloodType !== updateDto.bloodType) {
             changes['bloodType'] = {
-                old: (previousData as any).bloodType,
+                old: previousData.bloodType,
                 new: updateDto.bloodType,
             };
         }
-        if ((previousData as any).address !== updateDto.address) {
+        if (previousData.address !== updateDto.address) {
             changes['address'] = {
-                old: (previousData as any).address,
+                old: previousData.address,
                 new: updateDto.address,
             };
         }
@@ -639,7 +661,7 @@ export class PatientsService {
         }
 
         // Update patient fields if provided
-        if (updateDto.dateOfBirth && updateDto.dateOfBirth !== (previousData as any).dateOfBirth) {
+        if (updateDto.dateOfBirth && updateDto.dateOfBirth !== previousData.dateOfBirth) {
             patient.dateOfBirth = new Date(updateDto.dateOfBirth);
         }
         if (updateDto.emergencyContact) {
@@ -686,9 +708,8 @@ export class PatientsService {
             patientId: audit.patient.id,
             editedBy: {
                 id: audit.editedBy.id,
-                firstName: audit.editedBy.firstName,
-                lastName: audit.editedBy.lastName,
-                role: audit.editedBy.role,
+                name: audit.editedBy.name,
+                email: audit.editedBy.email,
             },
             changes: audit.changes,
             notes: audit.notes,
@@ -696,5 +717,4 @@ export class PatientsService {
             updatedAt: audit.updatedAt,
         }));
     }
-}
 }

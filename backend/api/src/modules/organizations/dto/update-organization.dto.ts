@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEmail, IsOptional, IsUrl, IsBoolean, IsUUID } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsUrl, IsBoolean, IsUUID, Matches } from 'class-validator';
 
 export class UpdateOrganizationDto {
     @ApiProperty({ required: false })
@@ -36,4 +36,10 @@ export class UpdateOrganizationDto {
     @IsOptional()
     @IsBoolean()
     isActive?: boolean;
+
+    @ApiProperty({ required: false, example: 'Africa/Casablanca', description: 'IANA timezone name (e.g. Africa/Casablanca) or UTC' })
+    @IsOptional()
+    @IsString()
+    @Matches(/^(UTC|[A-Za-z_]+(?:\/[A-Za-z_]+)+)$/)
+    timeZone?: string;
 }
