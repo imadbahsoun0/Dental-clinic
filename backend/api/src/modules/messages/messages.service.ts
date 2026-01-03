@@ -28,29 +28,56 @@ export class MessagesService {
   }
 
   async findAll(filterDto: FilterMessageDto, orgId: string) {
+    console.log('[MessagesService.findAll] called', { filterDto, orgId });
+
     const { page = 1, limit = 20, patientId, type, status } = filterDto;
+    console.log('[MessagesService.findAll] pagination', { page, limit });
+    console.log('[MessagesService.findAll] filters', { patientId, type, status });
 
-    const where: any = { orgId };
+    // Use query builder for more control
+    const qb = this.em.createQueryBuilder(Message, 'm');
+    console.log('[MessagesService.findAll] created QueryBuilder');
+    console.log('[MessagesService.findAll] applying orgId filter', orgId);
+    qb.where({  orgId});
+    console.log('[MessagesService.findAll] applied orgId filter', orgId);
+    
     if (patientId) {
-      where.patient = { id: patientId };
+      // Use explicit join column filtering to avoid any relation issues
+      qb.andWhere({ patient: { id: patientId } });
+      console.log('[MessagesService.findAll] applied patientId filter', patientId);
     }
-    if (type) where.type = type;
-    if (status) where.status = status;
+    if (type) {
+      qb.andWhere({ type });
+      console.log('[MessagesService.findAll] applied type filter', type);
+    }
+    if (status) {
+      qb.andWhere({ status });
+      console.log('[MessagesService.findAll] applied status filter', status);
+    }
 
-    const [data, total] = await this.messageRepository.findAndCount(where, {
+    qb.orderBy({ createdAt: 'DESC' })
+      .limit(limit)
+      .offset((page - 1) * limit);
+
+    console.log('[MessagesService.findAll] executing query', {
+      orderBy: { createdAt: 'DESC' },
       limit,
       offset: (page - 1) * limit,
-      orderBy: { createdAt: 'DESC' },
-      populate: ['patient'],
     });
 
-    return {
+    const [data, total] = await qb.getResultAndCount();
+    console.log('[MessagesService.findAll] query result', { total, dataCount: data.length });
+
+    const result = {
       data,
       total,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
     };
+
+    console.log('[MessagesService.findAll] returning', { totalPages: result.totalPages });
+    return result;
   }
 
   async findOne(id: string, orgId: string): Promise<Message> {

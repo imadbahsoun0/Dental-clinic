@@ -10,6 +10,7 @@ export * from './treatment.entity';
 export * from './payment.entity';
 export * from './expense.entity';
 export * from './medical-history-question.entity';
+export * from './medical-history-audit.entity';
 export * from './notification-settings.entity';
 export * from './attachment.entity';
 export * from './tooth.entity';

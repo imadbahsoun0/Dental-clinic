@@ -62,21 +62,39 @@ export class SchedulerService {
         const windowStart = new Date(targetTime.getTime() - 30 * 60 * 1000); // 30 min before
         const windowEnd = new Date(targetTime.getTime() + 30 * 60 * 1000); // 30 min after
 
+        // Get the date range (we need to query a wider date range and filter by datetime later)
+        const startDate = new Date(windowStart);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(windowEnd);
+        endDate.setHours(23, 59, 59, 999);
+
         const appointments = await this.em.find(
           Appointment,
           {
             orgId,
             deletedAt: null,
             status: { $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED] },
-            date: { $gte: windowStart, $lte: windowEnd },
+            date: { $gte: startDate, $lte: endDate },
           },
           { populate: ['patient', 'doctor'] },
         );
 
-        // Filter appointments using JavaScript (since complex date+time query might not work in all cases)
+        // Filter appointments using JavaScript to check the full datetime (date + time)
         const appointmentsToRemind = appointments.filter(appt => {
-          const appointmentDateTime = new Date(`${appt.date.toISOString().split('T')[0]}T${appt.time}`);
-          return appointmentDateTime >= windowStart && appointmentDateTime <= windowEnd;
+          try {
+            // Combine date and time to get the full appointment datetime
+            // Important: Don't use 'Z' suffix to avoid UTC interpretation
+            const dateStr = appt.date.toISOString().split('T')[0];
+            const [hours, minutes] = appt.time.split(':');
+            const appointmentDateTime = new Date(appt.date);
+            appointmentDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            
+            // Check if appointment is within the reminder window
+            return appointmentDateTime >= windowStart && appointmentDateTime <= windowEnd;
+          } catch (error) {
+            this.logger.error(`Error parsing appointment datetime for ${appt.id}:`, error);
+            return false;
+          }
         });
 
         // Send reminders
@@ -89,7 +107,7 @@ export class SchedulerService {
             );
 
             if (!alreadySent) {
-              await this.reminderService.sendAppointmentReminder(appointment.id, orgId);
+              await this.reminderService.sendAppointmentReminder(appointment.id, orgId, reminder.timingInHours);
               this.logger.log(
                 `Sent ${reminder.timingInHours}h reminder for appointment ${appointment.id}`,
               );
@@ -112,15 +130,22 @@ export class SchedulerService {
    * This prevents duplicate reminders
    */
   private async wasReminderSent(appointmentId: string, timingInHours: number): Promise<boolean> {
+    // Check if a reminder was sent for this specific timing in the last 2 hours
+    // This gives some buffer to avoid duplicates while handling cron running multiple times
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    
     const messages = await this.em.find(Message, {
-      metadata: { $contains: { appointmentId } },
+      metadata: { 
+        $contains: { 
+          appointmentId,
+          timingInHours 
+        } 
+      },
       type: MessageType.APPOINTMENT_REMINDER,
       status: { $in: [MessageStatus.SENT, MessageStatus.PENDING] },
+      createdAt: { $gte: twoHoursAgo },
     });
 
-    // Check if any message was sent within the last hour
-    // This is a simple check - you might want to store timing metadata for more precise checking
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    return messages.some(msg => msg.createdAt > oneHourAgo);
+    return messages.length > 0;
   }
 }

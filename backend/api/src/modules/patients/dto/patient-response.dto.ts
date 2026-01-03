@@ -25,8 +25,14 @@ export class PatientResponseDto {
     @ApiProperty({ required: false })
     medicalHistory?: any;
 
-    @ApiProperty()
-    enablePaymentReminders!: boolean;
+    @ApiProperty({ required: false })
+    followUpDate?: Date;
+
+    @ApiProperty({ required: false })
+    followUpReason?: string;
+
+    @ApiProperty({ enum: ['pending', 'completed', 'cancelled'], required: false })
+    followUpStatus?: string;
 
     @ApiProperty({ type: [Object], required: false })
     documents?: any[]; // Attachments

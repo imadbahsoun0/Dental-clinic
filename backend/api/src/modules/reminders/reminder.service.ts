@@ -157,7 +157,7 @@ export class ReminderService {
   /**
    * Send appointment reminder
    */
-  async sendAppointmentReminder(appointmentId: string, orgId: string): Promise<void> {
+  async sendAppointmentReminder(appointmentId: string, orgId: string, timingInHours?: number): Promise<void> {
     try {
       const appointment = await this.em.findOneOrFail(
         Appointment,
@@ -194,7 +194,12 @@ export class ReminderService {
           patientId: appointment.patient.id,
           type: MessageType.APPOINTMENT_REMINDER,
           content,
-          metadata: { appointmentId, appointmentDate, appointmentTime: appointment.time },
+          metadata: { 
+            appointmentId, 
+            appointmentDate, 
+            appointmentTime: appointment.time,
+            timingInHours 
+          },
         },
         orgId,
       );

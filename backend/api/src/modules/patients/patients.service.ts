@@ -1,12 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
-import { Patient, Attachment, Treatment, Payment } from '../../common/entities';
+import { Patient, Attachment, Treatment, Payment, User } from '../../common/entities';
 import { MedicalHistoryQuestion } from '../../common/entities/medical-history-question.entity';
+import { MedicalHistoryAudit } from '../../common/entities/medical-history-audit.entity';
 import { TreatmentStatus } from '../../common/entities/treatment.entity';
 import { FollowUpStatus } from '../../common/entities/patient.entity';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { SubmitMedicalHistoryDto } from './dto/submit-medical-history.dto';
+import { UpdatePatientMedicalHistoryDto } from './dto/update-patient-medical-history.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { FilterDto } from '../../common/dto/filter.dto';
 import { FilesService } from '../files/files.service';
@@ -65,7 +67,7 @@ export class PatientsService {
         }
 
         // Date range filter
-        if (filter?.startDate && filter?.endDate) {
+        if (filter?.startDate && filter?.endDate && filter.startDate.trim() !== '' && filter.endDate.trim() !== '') {
             where.createdAt = {
                 $gte: new Date(filter.startDate),
                 $lte: new Date(filter.endDate),
@@ -381,18 +383,44 @@ export class PatientsService {
     /**
      * Get patients with pending follow-ups
      */
-    async getPatientsWithFollowUps(orgId: string, pagination: PaginationDto) {
+    async getPatientsWithFollowUps(orgId: string, pagination: PaginationDto, filter?: FilterDto) {
         const { page = 1, limit = 20 } = pagination;
         const offset = (page - 1) * limit;
 
+        const where: any = {
+            orgId,
+            deletedAt: null,
+            followUpDate: { $ne: null },
+        };
+
+        // Filter by followUpStatus if provided
+        if (filter?.followUpStatus) {
+            where.followUpStatus = filter.followUpStatus;
+        } else {
+            // Default to pending if no status specified
+            where.followUpStatus = FollowUpStatus.PENDING;
+        }
+
+        // Search filter
+        if (filter?.search) {
+            where.$or = [
+                { firstName: { $ilike: `%${filter.search}%` } },
+                { lastName: { $ilike: `%${filter.search}%` } },
+                { mobileNumber: { $ilike: `%${filter.search}%` } },
+            ];
+        }
+
+        // Date range filter
+        if (filter?.startDate && filter?.endDate && filter.startDate.trim() !== '' && filter.endDate.trim() !== '') {
+            where.followUpDate = {
+                $gte: new Date(filter.startDate),
+                $lte: new Date(filter.endDate),
+            };
+        }
+
         const [patients, total] = await this.em.findAndCount(
             Patient,
-            {
-                orgId,
-                deletedAt: null,
-                followUpDate: { $ne: null },
-                followUpStatus: FollowUpStatus.PENDING,
-            },
+            where,
             {
                 limit,
                 offset,
@@ -482,4 +510,191 @@ export class PatientsService {
             },
         };
     }
+
+    /**
+     * Update patient medical history with audit trail
+     * Only admin and secretary can edit
+     */
+    async updateMedicalHistory(
+        patientId: string,
+        updateDto: UpdatePatientMedicalHistoryDto,
+        orgId: string,
+        userId: string,
+    ) {
+        const patient = await this.em.findOne(Patient, { id: patientId, orgId });
+        
+        if (!patient) {
+            throw new NotFoundException('Patient not found');
+        }
+
+        const user = await this.em.findOne(User, { id: userId });
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        // Get the previous medical history data
+        const previousData = patient.medicalHistory || {};
+
+        // Prepare the new medical history data
+        const newMedicalHistory = {
+            dateOfBirth: updateDto.dateOfBirth || (previousData as any).dateOfBirth,
+            emergencyContact: updateDto.emergencyContact || (previousData as any).emergencyContact,
+            email: updateDto.email || (previousData as any).email,
+            bloodType: updateDto.bloodType || (previousData as any).bloodType,
+            address: updateDto.address || (previousData as any).address,
+            responses: updateDto.responses,
+            lastUpdatedAt: new Date().toISOString(),
+            lastUpdatedBy: {
+                id: userId,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role,
+            },
+        };
+
+        // Calculate changes for audit trail
+        const changes: Record<string, { old: unknown; new: unknown }> = {};
+        
+        // Compare responses
+        const oldResponses = ((previousData as any).responses || []) as Array<any>;
+        const newResponses = updateDto.responses;
+
+        for (const newResponse of newResponses) {
+            const oldResponse = oldResponses.find((r: any) => r.questionId === newResponse.questionId);
+            if (oldResponse) {
+                // Check if answer changed
+                if (JSON.stringify(oldResponse.answer) !== JSON.stringify(newResponse.answer) ||
+                    oldResponse.answerText !== newResponse.answerText) {
+                    changes[newResponse.questionId] = {
+                        old: {
+                            answer: oldResponse.answer,
+                            answerText: oldResponse.answerText,
+                            questionText: oldResponse.questionText,
+                        },
+                        new: {
+                            answer: newResponse.answer,
+                            answerText: newResponse.answerText,
+                            questionText: newResponse.questionText,
+                        },
+                    };
+                }
+            } else {
+                // New question added
+                changes[newResponse.questionId] = {
+                    old: null,
+                    new: {
+                        answer: newResponse.answer,
+                        answerText: newResponse.answerText,
+                        questionText: newResponse.questionText,
+                    },
+                };
+            }
+        }
+
+        // Check for basic info changes
+        if ((previousData as any).dateOfBirth !== updateDto.dateOfBirth) {
+            changes['dateOfBirth'] = {
+                old: (previousData as any).dateOfBirth,
+                new: updateDto.dateOfBirth,
+            };
+        }
+        if ((previousData as any).emergencyContact !== updateDto.emergencyContact) {
+            changes['emergencyContact'] = {
+                old: (previousData as any).emergencyContact,
+                new: updateDto.emergencyContact,
+            };
+        }
+        if ((previousData as any).email !== updateDto.email) {
+            changes['email'] = {
+                old: (previousData as any).email,
+                new: updateDto.email,
+            };
+        }
+        if ((previousData as any).bloodType !== updateDto.bloodType) {
+            changes['bloodType'] = {
+                old: (previousData as any).bloodType,
+                new: updateDto.bloodType,
+            };
+        }
+        if ((previousData as any).address !== updateDto.address) {
+            changes['address'] = {
+                old: (previousData as any).address,
+                new: updateDto.address,
+            };
+        }
+
+        // Only create audit record if there are changes
+        if (Object.keys(changes).length > 0) {
+            const audit = this.em.create(MedicalHistoryAudit, {
+                patient,
+                editedBy: user,
+                previousData: previousData as Record<string, unknown>,
+                newData: newMedicalHistory as Record<string, unknown>,
+                changes,
+                notes: updateDto.notes,
+                orgId,
+            } as any);
+
+            await this.em.persistAndFlush(audit);
+        }
+
+        // Update patient fields if provided
+        if (updateDto.dateOfBirth && updateDto.dateOfBirth !== (previousData as any).dateOfBirth) {
+            patient.dateOfBirth = new Date(updateDto.dateOfBirth);
+        }
+        if (updateDto.emergencyContact) {
+            patient.emergencyContact = updateDto.emergencyContact;
+        }
+        if (updateDto.email) {
+            patient.email = updateDto.email;
+        }
+        if (updateDto.bloodType) {
+            patient.bloodType = updateDto.bloodType;
+        }
+        if (updateDto.address) {
+            patient.address = updateDto.address;
+        }
+
+        // Update medical history
+        patient.medicalHistory = newMedicalHistory;
+        await this.em.flush();
+
+        return newMedicalHistory;
+    }
+
+    /**
+     * Get medical history audit trail for a patient
+     */
+    async getMedicalHistoryAudit(patientId: string, orgId: string) {
+        const patient = await this.em.findOne(Patient, { id: patientId, orgId });
+        
+        if (!patient) {
+            throw new NotFoundException('Patient not found');
+        }
+
+        const audits = await this.em.find(
+            MedicalHistoryAudit,
+            { patient: patientId, orgId },
+            { 
+                populate: ['editedBy'],
+                orderBy: { createdAt: 'DESC' } 
+            },
+        );
+
+        return audits.map(audit => ({
+            id: audit.id,
+            patientId: audit.patient.id,
+            editedBy: {
+                id: audit.editedBy.id,
+                firstName: audit.editedBy.firstName,
+                lastName: audit.editedBy.lastName,
+                role: audit.editedBy.role,
+            },
+            changes: audit.changes,
+            notes: audit.notes,
+            createdAt: audit.createdAt,
+            updatedAt: audit.updatedAt,
+        }));
+    }
+}
 }

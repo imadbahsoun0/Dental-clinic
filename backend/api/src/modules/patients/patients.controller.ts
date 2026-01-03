@@ -7,6 +7,8 @@ import { PatientResponseDto } from './dto/patient-response.dto';
 import { PatientQueryDto } from './dto/patient-query.dto';
 import { SubmitMedicalHistoryDto } from './dto/submit-medical-history.dto';
 import { MedicalHistorySubmissionResponseDto } from './dto/medical-history-submission-response.dto';
+import { UpdatePatientMedicalHistoryDto } from './dto/update-patient-medical-history.dto';
+import { MedicalHistoryAuditResponseDto } from './dto/medical-history-audit-response.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { CurrentUserData } from '../../common/decorators/current-user.decorator';
 import { Roles, UserRole } from '../../common/decorators/roles.decorator';
@@ -56,6 +58,20 @@ export class PatientsController {
         return new StandardResponse(result, 'Patients search results');
     }
 
+    @Get('follow-ups')
+    @Roles(UserRole.ADMIN, UserRole.SECRETARY)
+    @ApiOperation({ summary: 'Get patients with follow-ups by status' })
+    @ApiStandardResponse(PatientResponseDto, true)
+    async getFollowUps(
+        @Query() query: PatientQueryDto,
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        const { page, limit, ...filter } = query;
+        const pagination = { page, limit };
+        const result = await this.patientsService.getPatientsWithFollowUps(user.orgId, pagination, filter);
+        return new StandardResponse({ data: result.data, meta: result.meta }, 'Follow-ups retrieved successfully');
+    }
+
     @Get(':id')
     @ApiOperation({ summary: 'Get patient by ID' })
     @ApiStandardResponse(PatientResponseDto)
@@ -66,7 +82,7 @@ export class PatientsController {
         const result = await this.patientsService.findOne(id, user.orgId);
         return new StandardResponse(result);
     }
-
+    
     @Patch(':id')
     @Roles(UserRole.ADMIN, UserRole.SECRETARY)
     @ApiOperation({ summary: 'Update patient' })
@@ -126,20 +142,6 @@ export class PatientsController {
         return new StandardResponse(result, result.message);
     }
 
-    @Get('follow-ups/pending')
-    @Roles(UserRole.ADMIN, UserRole.SECRETARY)
-    @ApiOperation({ summary: 'Get patients with pending follow-ups' })
-    @ApiStandardResponse(PatientResponseDto, true)
-    async getFollowUps(
-        @Query() query: PatientQueryDto,
-        @CurrentUser() user: CurrentUserData,
-    ) {
-        const { page, limit } = query;
-        const pagination = { page, limit };
-        const result = await this.patientsService.getPatientsWithFollowUps(user.orgId, pagination);
-        return new StandardResponse({ data: result.data, meta: result.meta }, 'Follow-ups retrieved successfully');
-    }
-
     @Get('unpaid/list')
     @Roles(UserRole.ADMIN, UserRole.SECRETARY)
     @ApiOperation({ summary: 'Get patients with unpaid balances' })
@@ -188,5 +190,30 @@ export class PatientsController {
     ) {
         const result = await this.patientsService.sendPaymentOverdueReminder(id, user.orgId);
         return new StandardResponse(result, result.message);
+    }
+
+    @Patch(':id/medical-history')
+    @Roles(UserRole.ADMIN, UserRole.SECRETARY)
+    @ApiOperation({ summary: 'Update patient medical history (with audit trail)' })
+    @ApiStandardResponse(MedicalHistorySubmissionResponseDto)
+    async updateMedicalHistory(
+        @Param('id') id: string,
+        @Body() updateDto: UpdatePatientMedicalHistoryDto,
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        const result = await this.patientsService.updateMedicalHistory(id, updateDto, user.orgId, user.id);
+        return new StandardResponse(result, 'Medical history updated successfully');
+    }
+
+    @Get(':id/medical-history/audit')
+    @Roles(UserRole.ADMIN, UserRole.SECRETARY, UserRole.DENTIST)
+    @ApiOperation({ summary: 'Get medical history audit trail for a patient' })
+    @ApiStandardResponse(MedicalHistoryAuditResponseDto, true)
+    async getMedicalHistoryAudit(
+        @Param('id') id: string,
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        const result = await this.patientsService.getMedicalHistoryAudit(id, user.orgId);
+        return new StandardResponse(result, 'Medical history audit retrieved successfully');
     }
 }
