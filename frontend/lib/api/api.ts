@@ -223,7 +223,10 @@ export interface PatientResponseDto {
   dateOfBirth?: string;
   address?: string;
   medicalHistory?: object;
-  enablePaymentReminders: boolean;
+  /** @format date-time */
+  followUpDate?: string;
+  followUpReason?: string;
+  followUpStatus?: "pending" | "completed" | "cancelled";
   documents?: object[];
   /** @format date-time */
   createdAt: string;
@@ -1574,6 +1577,7 @@ export class Api<
         search?: string;
         startDate?: string;
         endDate?: string;
+        followUpStatus?: "pending" | "completed" | "cancelled";
         sortBy?: string;
         sortOrder?: "ASC" | "DESC";
       },
@@ -1615,6 +1619,51 @@ export class Api<
         ErrorResponse
       >({
         path: `/api/v1/patients/search`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerGetFollowUps
+     * @summary Get patients with follow-ups by status
+     * @request GET:/api/v1/patients/follow-ups
+     * @secure
+     */
+    patientsControllerGetFollowUps: (
+      query?: {
+        /**
+         * @min 1
+         * @default 1
+         */
+        page?: number;
+        /**
+         * @min 1
+         * @max 1000
+         * @default 10
+         */
+        limit?: number;
+        search?: string;
+        startDate?: string;
+        endDate?: string;
+        followUpStatus?: "pending" | "completed" | "cancelled";
+        sortBy?: string;
+        sortOrder?: "ASC" | "DESC";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: PatientResponseDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/follow-ups`,
         method: "GET",
         query: query,
         secure: true,
@@ -1781,50 +1830,6 @@ export class Api<
      * No description
      *
      * @tags Patients
-     * @name PatientsControllerGetFollowUps
-     * @summary Get patients with pending follow-ups
-     * @request GET:/api/v1/patients/follow-ups/pending
-     * @secure
-     */
-    patientsControllerGetFollowUps: (
-      query?: {
-        /**
-         * @min 1
-         * @default 1
-         */
-        page?: number;
-        /**
-         * @min 1
-         * @max 1000
-         * @default 10
-         */
-        limit?: number;
-        search?: string;
-        startDate?: string;
-        endDate?: string;
-        sortBy?: string;
-        sortOrder?: "ASC" | "DESC";
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<
-        StandardResponse & {
-          data?: PatientResponseDto[];
-        },
-        ErrorResponse
-      >({
-        path: `/api/v1/patients/follow-ups/pending`,
-        method: "GET",
-        query: query,
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Patients
      * @name PatientsControllerGetUnpaidPatients
      * @summary Get patients with unpaid balances
      * @request GET:/api/v1/patients/unpaid/list
@@ -1846,6 +1851,7 @@ export class Api<
         search?: string;
         startDate?: string;
         endDate?: string;
+        followUpStatus?: "pending" | "completed" | "cancelled";
         sortBy?: string;
         sortOrder?: "ASC" | "DESC";
       },

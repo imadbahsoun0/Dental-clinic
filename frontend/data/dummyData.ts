@@ -75,7 +75,6 @@ export const dummyPatients: Patient[] = [
         mobileNumber: '+1 (555) 123-4567',
         email: 'sarah.johnson@email.com',
         dateOfBirth: '1990-05-15',
-        enablePaymentReminders: true,
         createdAt: '2024-01-15T10:00:00Z',
         updatedAt: '2024-01-15T10:00:00Z',
     },
@@ -86,7 +85,6 @@ export const dummyPatients: Patient[] = [
         mobileNumber: '+1 (555) 234-5678',
         email: 'michael.chen@email.com',
         dateOfBirth: '1985-08-22',
-        enablePaymentReminders: false,
         createdAt: '2024-01-16T11:00:00Z',
         updatedAt: '2024-01-16T11:00:00Z',
     },
@@ -97,7 +95,6 @@ export const dummyPatients: Patient[] = [
         mobileNumber: '+1 (555) 345-6789',
         email: 'emily.rodriguez@email.com',
         dateOfBirth: '1992-11-30',
-        enablePaymentReminders: true,
         createdAt: '2024-01-17T12:00:00Z',
         updatedAt: '2024-01-17T12:00:00Z',
     },
@@ -108,7 +105,6 @@ export const dummyPatients: Patient[] = [
         mobileNumber: '+1 (555) 456-7890',
         email: 'james.wilson@email.com',
         dateOfBirth: '1988-03-10',
-        enablePaymentReminders: true,
         createdAt: '2024-01-18T13:00:00Z',
         updatedAt: '2024-01-18T13:00:00Z',
     },
@@ -119,7 +115,6 @@ export const dummyPatients: Patient[] = [
         mobileNumber: '+1 (555) 567-8901',
         email: 'anna.martinez@email.com',
         dateOfBirth: '1995-07-18',
-        enablePaymentReminders: false,
         createdAt: '2024-01-19T14:00:00Z',
         updatedAt: '2024-01-19T14:00:00Z',
     },
@@ -521,7 +516,7 @@ export const dummyExpenses: Expense[] = [
         amount: 600.00,
         date: '2025-12-15',
         doctorId: 'user-1',
-        expenseType: 'Doctor Payment',
+        expenseType: 'doctor_payment',
         notes: 'Commission payment to Dr. Sarah Smith',
         createdAt: '2025-12-15T21:00:00Z',
         updatedAt: '2025-12-15T21:00:00Z',
@@ -532,7 +527,7 @@ export const dummyExpenses: Expense[] = [
         amount: 1200.00,
         date: '2025-12-10',
         doctorId: 'user-2',
-        expenseType: 'Doctor Payment',
+        expenseType: 'doctor_payment',
         notes: 'Commission payment to Dr. Michael Johnson',
         createdAt: '2025-12-10T21:00:00Z',
         updatedAt: '2025-12-10T21:00:00Z',
@@ -670,16 +665,9 @@ export const dummyClinicBranding: ClinicBranding = {
 
 // Notification Settings
 export const dummyNotificationSettings: NotificationSettings = {
-    appointmentReminder: {
-        enabled: true,
-        timing: 24,
-        timingUnit: 'hours',
-        messageTemplate: 'Hi {{patientName}}, this is a reminder about your appointment tomorrow at {{appointmentTime}} with {{doctorName}} at {{clinicLocation}}. See you soon!',
-    },
-    paymentReminder: {
-        enabled: true,
-        timing: 7,
-        timingUnit: 'days',
-        messageTemplate: 'Hello {{patientName}}, you have an outstanding balance of ${{amountDue}}. Please contact us at {{clinicLocation}} to arrange payment. Thank you!',
+    appointmentReminders: [],
+    messageTemplates: {
+        appointmentReminder: 'Hi {{patientName}}, this is a reminder about your appointment tomorrow at {{appointmentTime}} with {{doctorName}} at {{clinicLocation}}. See you soon!',
+        paymentReminder: 'Hello {{patientName}}, you have an outstanding balance of ${{amountDue}}. Please contact us at {{clinicLocation}} to arrange payment. Thank you!',
     },
 };

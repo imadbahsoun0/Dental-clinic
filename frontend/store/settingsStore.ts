@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { MedicalHistoryQuestion, TreatmentCategory, TreatmentType, User, UserWithRole, ClinicBranding, NotificationSettings } from '@/types';
-import { dummyDoctors } from '@/data/dummyData';
 import { api } from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -475,5 +474,5 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
     },
 
     // Doctors (legacy component reliance)
-    doctors: dummyDoctors,
+    doctors: [],
 }));

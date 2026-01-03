@@ -12,6 +12,7 @@ export const Select: React.FC<SelectProps> = ({
     className = '',
     error,
     required,
+    disabled = false,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -52,8 +53,8 @@ export const Select: React.FC<SelectProps> = ({
                 </label>
             )}
             <div
-                className={`${styles.selectTrigger} ${error ? styles.error : ''} ${className}`}
-                onClick={() => setIsOpen(!isOpen)}
+                className={`${styles.selectTrigger} ${error ? styles.error : ''} ${disabled ? styles.disabled : ''} ${className}`}
+                onClick={() => !disabled && setIsOpen(!isOpen)}
             >
                 <span className={selectedOption ? styles.selectedValue : styles.placeholder}>
                     {selectedOption ? selectedOption.label : placeholder}

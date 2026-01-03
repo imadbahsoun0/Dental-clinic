@@ -38,10 +38,6 @@
     background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
 }
 
-.balanceCard .summaryLabel {
-    color: rgba(255, 255, 255, 0.9);
-}
-
 .balanceCard .summaryValue {
     color: white;
 }
@@ -138,4 +134,54 @@
 .activeTab {
     color: var(--primary);
     border-bottom-color: var(--primary);
+}
+
+/* Status Badges for Reminders */
+.statusBadge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.statusSent {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.statusPending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.statusFailed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th {
+    text-align: left;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+}
+
+.table td {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+
+.table tbody tr:hover {
+    background: var(--bg-secondary);
 }

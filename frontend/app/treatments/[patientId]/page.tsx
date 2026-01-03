@@ -18,8 +18,10 @@ import { PaymentModal } from '@/components/payments/PaymentModal';
 import { ConfirmationModal } from '@/components/common/ConfirmationModal';
 import { useSettingsStore } from '@/store/settingsStore';
 import { usePaymentStore } from '@/store/paymentStore';
-import { Treatment, Payment } from '@/types';
+import { Treatment, Payment, Message } from '@/types';
 import styles from './treatments.module.css';
+import { api } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 export default function TreatmentsPage({ params }: { params: Promise<{ patientId: string }> }) {
     const { patientId } = React.use(params);
@@ -27,10 +29,12 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
     const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
     const [selectedTreatmentIds, setSelectedTreatmentIds] = useState<string[]>([]);
     const [isBulkDiscountModalOpen, setIsBulkDiscountModalOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState<'treatments' | 'payments'>('treatments');
+    const [activeTab, setActiveTab] = useState<'treatments' | 'payments' | 'reminders'>('treatments');
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
     const [treatmentToDelete, setTreatmentToDelete] = useState<string | null>(null);
+    const [reminders, setReminders] = useState<Message[]>([]);
+    const [remindersLoading, setRemindersLoading] = useState(false);
 
     const selectedPatient = usePatientStore((state) => state.selectedPatient);
     const fetchPatient = usePatientStore((state) => state.fetchPatient);
@@ -76,6 +80,38 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
         loadPatient();
     }, [patientId, fetchPatient, setSelectedPatient]);
 
+    // Fetch reminders
+    const fetchReminders = async () => {
+        setRemindersLoading(true);
+        try {
+            const response = await api.api.messagesControllerFindAll({ 
+                patientId,
+                page: 1,
+                limit: 1000
+            });
+            
+            if (response.success && response.data) {
+                // Handle both array and object with data property formats
+                const data = response.data as any;
+                if (Array.isArray(data)) {
+                    setReminders(data);
+                } else if (data.data && Array.isArray(data.data)) {
+                    setReminders(data.data);
+                } else {
+                    setReminders([]);
+                }
+            } else {
+                setReminders([]);
+            }
+        } catch (error) {
+            console.error('Error fetching reminders:', error);
+            toast.error('Failed to load reminders');
+            setReminders([]);
+        } finally {
+            setRemindersLoading(false);
+        }
+    };
+
     // Fetch treatments, payments, appointments, and configuration on mount
     React.useEffect(() => {
         fetchTreatments(patientId);
@@ -85,12 +121,17 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
         fetchUsers(); // Fetch users to get doctor commission percentages
         // Fetch specific patient's appointments for linking
         fetchAppointments(1, 1000, undefined, undefined, undefined, patientId);
+        fetchReminders();
     }, [patientId, fetchTreatments, fetchPayments, fetchTreatmentCategories, fetchTreatmentTypes, fetchUsers, fetchAppointments]);
 
-    // Calculate totals
+    // Calculate totals (excluding planned and cancelled treatments from balance)
     const totalPrice = treatments.reduce((sum, t) => sum + (t.totalPrice - t.discount), 0);
     const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-    const balance = totalPrice - totalPaid;
+    // Filter out planned and cancelled treatments when calculating balance
+    const balanceTotalPrice = treatments
+        .filter(t => t.status !== 'planned' && t.status !== 'cancelled')
+        .reduce((sum, t) => sum + (t.totalPrice - t.discount), 0);
+    const balance = balanceTotalPrice - totalPaid;
 
     const handleAddTreatment = () => {
         setSelectedTreatment(null);
@@ -250,6 +291,12 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
                     >
                         Payments
                     </button>
+                    <button
+                        className={`${styles.tab} ${activeTab === 'reminders' ? styles.activeTab : ''}`}
+                        onClick={() => setActiveTab('reminders')}
+                    >
+                        Reminders
+                    </button>
                 </div>
 
                 {/* Treatments Tab Content */}
@@ -293,6 +340,61 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
                             onDelete={handleDeletePayment}
                         />
                     </>
+                )}
+
+                {/* Reminders Tab Content */}
+                {activeTab === 'reminders' && (
+                    <Card>
+                        {remindersLoading ? (
+                            <div style={{ textAlign: 'center', padding: '48px' }}>
+                                <p>Loading reminders...</p>
+                            </div>
+                        ) : reminders.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '48px' }}>
+                                <p>No reminders sent yet</p>
+                            </div>
+                        ) : (
+                            <table className={styles.table}>
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Content</th>
+                                        <th>Status</th>
+                                        <th>Sent At</th>
+                                        <th>Error</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {reminders.map((reminder) => (
+                                        <tr key={reminder.id}>
+                                            <td>
+                                                {reminder.type.split('_').map(word => 
+                                                    word.charAt(0).toUpperCase() + word.slice(1)
+                                                ).join(' ')}
+                                            </td>
+                                            <td style={{ maxWidth: '400px', wordWrap: 'break-word' }}>
+                                                {reminder.content}
+                                            </td>
+                                            <td>
+                                                <span className={`${styles.statusBadge} ${styles[`status${reminder.status.charAt(0).toUpperCase() + reminder.status.slice(1)}`]}`}>
+                                                    {reminder.status.charAt(0).toUpperCase() + reminder.status.slice(1)}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {reminder.sentAt 
+                                                    ? new Date(reminder.sentAt).toLocaleString()
+                                                    : 'Not sent'
+                                                }
+                                            </td>
+                                            <td style={{ color: 'var(--danger)', fontSize: '13px' }}>
+                                                {reminder.error || '-'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </Card>
                 )}
 
                 {/* Treatment Modal */}

@@ -39,9 +39,14 @@ export default function NotificationsPage() {
     const [sendingReminder, setSendingReminder] = useState<string | null>(null);
     const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
     
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [total, setTotal] = useState(0);
+    
     // Filters
     const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [statusFilter, setStatusFilter] = useState<string>('pending');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
 
@@ -51,39 +56,51 @@ export default function NotificationsPage() {
         } else {
             fetchUnpaidPatients();
         }
-    }, [activeTab, searchQuery, statusFilter, startDate, endDate]);
+    }, [activeTab, searchQuery, statusFilter, startDate, endDate, currentPage, pageSize]);
 
     const fetchFollowUps = async () => {
         setLoading(true);
         try {
-            const response = await api.api.patientsControllerGetFollowUps({ page: 1, limit: 100 });
+            const response = await api.api.patientsControllerGetFollowUps({ 
+                page: currentPage, 
+                limit: pageSize, 
+                search: searchQuery, 
+                startDate, 
+                endDate,
+                followUpStatus: statusFilter as 'pending' | 'completed' | 'cancelled'
+            });
             console.log('Follow-ups API response:', response);
             
             if (response.success) {
                 // Check if data is directly an array or nested
                 let dataArray: FollowUpPatient[] = [];
+                let metaData = { total: 0 };
                 
                 if (Array.isArray(response.data)) {
                     dataArray = response.data as unknown as FollowUpPatient[];
                 } else if (response.data && typeof response.data === 'object') {
-                    // Maybe it's wrapped in another data property
                     const dataObj = response.data as any;
                     if (Array.isArray(dataObj.data)) {
                         dataArray = dataObj.data as unknown as FollowUpPatient[];
+                        metaData = dataObj.meta || { total: 0 };
                     } else if (Array.isArray(dataObj.items)) {
                         dataArray = dataObj.items as unknown as FollowUpPatient[];
+                        metaData = dataObj.meta || { total: 0 };
                     }
                 }
                 
                 console.log('Parsed follow-ups array:', dataArray);
                 setFollowUps(dataArray);
+                setTotal(metaData.total || 0);
             } else {
                 setFollowUps([]);
+                setTotal(0);
             }
         } catch (error) {
             console.error('Error fetching follow-ups:', error);
             toast.error('Failed to load follow-ups');
             setFollowUps([]);
+            setTotal(0);
         } finally {
             setLoading(false);
         }
@@ -92,12 +109,13 @@ export default function NotificationsPage() {
     const fetchUnpaidPatients = async () => {
         setLoading(true);
         try {
-            const response = await api.api.patientsControllerGetUnpaidPatients({ page: 1, limit: 100 });
+            const response = await api.api.patientsControllerGetUnpaidPatients({ page: currentPage, limit: pageSize });
             console.log('Unpaid patients API response:', response);
             
             if (response.success) {
                 // Check if data is directly an array or nested
                 let dataArray: UnpaidPatient[] = [];
+                let metaData = { total: 0 };
                 
                 if (Array.isArray(response.data)) {
                     dataArray = response.data as unknown as UnpaidPatient[];
@@ -106,20 +124,25 @@ export default function NotificationsPage() {
                     const dataObj = response.data as any;
                     if (Array.isArray(dataObj.data)) {
                         dataArray = dataObj.data as unknown as UnpaidPatient[];
+                        metaData = dataObj.meta || { total: 0 };
                     } else if (Array.isArray(dataObj.items)) {
                         dataArray = dataObj.items as unknown as UnpaidPatient[];
+                        metaData = dataObj.meta || { total: 0 };
                     }
                 }
                 
                 console.log('Parsed unpaid patients array:', dataArray);
                 setUnpaidPatients(dataArray);
+                setTotal(metaData.total || 0);
             } else {
                 setUnpaidPatients([]);
+                setTotal(0);
             }
         } catch (error) {
             console.error('Error fetching unpaid patients:', error);
             toast.error('Failed to load unpaid patients');
             setUnpaidPatients([]);
+            setTotal(0);
         } finally {
             setLoading(false);
         }
@@ -169,10 +192,23 @@ export default function NotificationsPage() {
 
     const clearFilters = () => {
         setSearchQuery('');
-        setStatusFilter('all');
+        setStatusFilter('pending');
         setStartDate('');
         setEndDate('');
+        setCurrentPage(1);
     };
+
+    const handlePageSizeChange = (value: string) => {
+        setPageSize(parseInt(value));
+        setCurrentPage(1);
+    };
+
+    const goToPage = (page: number) => {
+        const totalPages = Math.ceil(total / pageSize);
+        setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+    };
+
+    const totalPages = Math.ceil(total / pageSize);
 
     const getStatusBadge = (status: string) => {
         const statusMap: Record<string, 'success' | 'warning' | 'danger'> = {
@@ -189,12 +225,7 @@ export default function NotificationsPage() {
             `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
             patient.mobileNumber.includes(searchQuery);
         
-        const matchesStatus = statusFilter === 'all' || patient.followUpStatus === statusFilter;
-        
-        const matchesDateRange = (!startDate || !patient.followUpDate || new Date(patient.followUpDate) >= new Date(startDate)) &&
-                                 (!endDate || !patient.followUpDate || new Date(patient.followUpDate) <= new Date(endDate));
-        
-        return matchesSearch && matchesStatus && matchesDateRange;
+        return matchesSearch;
     });
 
     const filteredUnpaidPatients = unpaidPatients.filter((patient) => {
@@ -214,8 +245,8 @@ export default function NotificationsPage() {
                         onClick={() => setActiveTab('follow-ups')}
                     >
                         Follow-ups
-                        {filteredFollowUps.length > 0 && (
-                            <span className={styles.badge}>{filteredFollowUps.length}</span>
+                        {activeTab === 'follow-ups' && total > 0 && (
+                            <span className={styles.badge}>{total}</span>
                         )}
                     </button>
                     <button
@@ -223,8 +254,8 @@ export default function NotificationsPage() {
                         onClick={() => setActiveTab('unpaid')}
                     >
                         Unpaid Patients
-                        {filteredUnpaidPatients.length > 0 && (
-                            <span className={styles.badge}>{filteredUnpaidPatients.length}</span>
+                        {activeTab === 'unpaid' && total > 0 && (
+                            <span className={styles.badge}>{total}</span>
                         )}
                     </button>
                 </div>
@@ -266,9 +297,26 @@ export default function NotificationsPage() {
                             </>
                         )}
                         
-                        <Button variant="secondary" onClick={clearFilters}>
-                            Clear Filters
-                        </Button>
+                        <div className={styles.pageSizeControl}>
+                            <label className={styles.filterLabel}>Show:</label>
+                            <Select
+                                options={[
+                                    { value: '5', label: '5' },
+                                    { value: '10', label: '10' },
+                                    { value: '25', label: '25' },
+                                    { value: '50', label: '50' },
+                                    { value: '100', label: '100' },
+                                ]}
+                                value={String(pageSize)}
+                                onChange={handlePageSizeChange}
+                            />
+                        </div>
+                        
+                        <div className={styles.filterControl}>
+                            <Button variant="secondary" onClick={clearFilters}>
+                                Clear Filters
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
@@ -279,7 +327,8 @@ export default function NotificationsPage() {
                         ) : filteredFollowUps.length === 0 ? (
                             <p className={styles.emptyState}>No follow-ups found matching your filters</p>
                         ) : (
-                            <div className={styles.tableContainer}>
+                            <>
+                                <div className={styles.tableContainer}>
                                 <table className={styles.table}>
                                     <thead>
                                         <tr>
@@ -328,6 +377,55 @@ export default function NotificationsPage() {
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className={styles.pagination}>
+                                    <div className={styles.paginationInfo}>
+                                        Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, total)} of {total} follow-ups
+                                    </div>
+                                    <div className={styles.paginationControls}>
+                                        <button
+                                            className={styles.paginationBtn}
+                                            onClick={() => goToPage(currentPage - 1)}
+                                            disabled={currentPage === 1}
+                                        >
+                                            Previous
+                                        </button>
+                                        <div className={styles.pageNumbers}>
+                                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                let pageNum;
+                                                if (totalPages <= 5) {
+                                                    pageNum = i + 1;
+                                                } else if (currentPage <= 3) {
+                                                    pageNum = i + 1;
+                                                } else if (currentPage >= totalPages - 2) {
+                                                    pageNum = totalPages - 4 + i;
+                                                } else {
+                                                    pageNum = currentPage - 2 + i;
+                                                }
+                                                return (
+                                                    <button
+                                                        key={pageNum}
+                                                        className={`${styles.pageNumber} ${currentPage === pageNum ? styles.active : ''}`}
+                                                        onClick={() => goToPage(pageNum)}
+                                                    >
+                                                        {pageNum}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        <button
+                                            className={styles.paginationBtn}
+                                            onClick={() => goToPage(currentPage + 1)}
+                                            disabled={currentPage === totalPages}
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                            </>
                         )}
                     </div>
                 )}
@@ -339,7 +437,8 @@ export default function NotificationsPage() {
                         ) : filteredUnpaidPatients.length === 0 ? (
                             <p className={styles.emptyState}>No unpaid patients found matching your filters</p>
                         ) : (
-                            <div className={styles.tableContainer}>
+                            <>
+                                <div className={styles.tableContainer}>
                                 <table className={styles.table}>
                                     <thead>
                                         <tr>
@@ -374,6 +473,55 @@ export default function NotificationsPage() {
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className={styles.pagination}>
+                                    <div className={styles.paginationInfo}>
+                                        Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, total)} of {total} unpaid patients
+                                    </div>
+                                    <div className={styles.paginationControls}>
+                                        <button
+                                            className={styles.paginationBtn}
+                                            onClick={() => goToPage(currentPage - 1)}
+                                            disabled={currentPage === 1}
+                                        >
+                                            Previous
+                                        </button>
+                                        <div className={styles.pageNumbers}>
+                                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                let pageNum;
+                                                if (totalPages <= 5) {
+                                                    pageNum = i + 1;
+                                                } else if (currentPage <= 3) {
+                                                    pageNum = i + 1;
+                                                } else if (currentPage >= totalPages - 2) {
+                                                    pageNum = totalPages - 4 + i;
+                                                } else {
+                                                    pageNum = currentPage - 2 + i;
+                                                }
+                                                return (
+                                                    <button
+                                                        key={pageNum}
+                                                        className={`${styles.pageNumber} ${currentPage === pageNum ? styles.active : ''}`}
+                                                        onClick={() => goToPage(pageNum)}
+                                                    >
+                                                        {pageNum}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        <button
+                                            className={styles.paginationBtn}
+                                            onClick={() => goToPage(currentPage + 1)}
+                                            disabled={currentPage === totalPages}
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                            </>
                         )}
                     </div>
                 )}
