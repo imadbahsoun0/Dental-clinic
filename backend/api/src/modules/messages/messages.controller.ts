@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { MessagesService } from './messages.service';
 import { ReminderService } from '../reminders/reminder.service';
@@ -27,7 +35,7 @@ export class MessagesController {
   @ApiStandardResponse(Message, false, 'created')
   async create(
     @Body() createMessageDto: CreateMessageDto,
-     @CurrentUser() user: CurrentUserData ,
+    @CurrentUser() user: CurrentUserData,
   ) {
     return this.messagesService.create(createMessageDto, user.orgId);
   }
@@ -36,17 +44,20 @@ export class MessagesController {
   @ApiStandardResponse(Message, true)
   async findAll(
     @Query() filterDto: FilterMessageDto,
-    @CurrentUser() user: CurrentUserData ,
+    @CurrentUser() user: CurrentUserData,
   ) {
     const result = await this.messagesService.findAll(filterDto, user.orgId);
-    return new StandardResponse({ data: result.data, meta: result }, 'Messages retrieved successfully');
+    return new StandardResponse(
+      { data: result.data, meta: result },
+      'Messages retrieved successfully',
+    );
   }
 
   @Get(':id')
   @ApiStandardResponse(Message)
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: CurrentUserData ,
+    @CurrentUser() user: CurrentUserData,
   ) {
     const result = await this.messagesService.findOne(id, user.orgId);
     return new StandardResponse(result);
@@ -56,7 +67,7 @@ export class MessagesController {
   @ApiStandardResponse(Object)
   async resendMessage(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: CurrentUserData ,
+    @CurrentUser() user: CurrentUserData,
   ) {
     await this.reminderService.resendMessage(id, user.orgId);
     return new StandardResponse(null, 'Message resent successfully');

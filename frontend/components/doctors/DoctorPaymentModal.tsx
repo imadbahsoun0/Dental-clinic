@@ -1,17 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common/Button';
-import { User } from '@/types';
 import { formatLocalDate } from '@/utils/dateUtils';
 import styles from './DoctorPaymentModal.module.css';
+
+export interface DoctorWithWallet {
+    id: string;
+    name: string;
+    email: string;
+    wallet: number;
+}
 
 interface DoctorPaymentModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (paymentData: { amount: number; date: string; notes?: string }) => void;
-    doctor: User;
+    doctor: DoctorWithWallet;
 }
 
 export const DoctorPaymentModal: React.FC<DoctorPaymentModalProps> = ({
@@ -20,28 +26,17 @@ export const DoctorPaymentModal: React.FC<DoctorPaymentModalProps> = ({
     onSave,
     doctor,
 }) => {
-    const [formData, setFormData] = useState({
-        amount: '',
-        date: '',
+    const [formData, setFormData] = useState(() => ({
+        amount: (doctor.wallet || 0).toFixed(2),
+        date: formatLocalDate(new Date()),
         notes: '',
-    });
+    }));
     const [errors, setErrors] = useState<Record<string, string>>({});
-
-    useEffect(() => {
-        if (isOpen) {
-            setFormData({
-                amount: ((doctor as any).wallet || 0).toFixed(2),
-                date: formatLocalDate(new Date()),
-                notes: '',
-            });
-            setErrors({});
-        }
-    }, [isOpen, doctor]);
 
     const validate = () => {
         const newErrors: Record<string, string> = {};
         const amount = parseFloat(formData.amount);
-        const maxAmount = (doctor as any).wallet || 0;
+        const maxAmount = doctor.wallet || 0;
 
         if (!formData.amount || amount <= 0) {
             newErrors.amount = 'Amount must be greater than 0';
@@ -96,7 +91,7 @@ export const DoctorPaymentModal: React.FC<DoctorPaymentModalProps> = ({
                     <div className={styles.infoRow}>
                         <span className={styles.infoLabel}>Current Wallet:</span>
                         <span className={styles.walletValue}>
-                            ${((doctor as any).wallet || 0).toFixed(2)}
+                            ${(doctor.wallet || 0).toFixed(2)}
                         </span>
                     </div>
                 </div>
@@ -115,7 +110,7 @@ export const DoctorPaymentModal: React.FC<DoctorPaymentModalProps> = ({
                     />
                     {errors.amount && <span className={styles.errorText}>{errors.amount}</span>}
                     <span className={styles.helpText}>
-                        Maximum: ${((doctor as any).wallet || 0).toFixed(2)}
+                        Maximum: ${(doctor.wallet || 0).toFixed(2)}
                     </span>
                 </div>
 

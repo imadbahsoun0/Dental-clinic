@@ -3,11 +3,11 @@ import { BaseEntity } from './base.entity';
 import { Patient } from './patient.entity';
 
 export enum PaymentMethod {
-    CASH = 'cash',
-    CARD = 'card',
-    TRANSFER = 'transfer',
-    CHECK = 'check',
-    OTHER = 'other',
+  CASH = 'cash',
+  CARD = 'card',
+  TRANSFER = 'transfer',
+  CHECK = 'check',
+  OTHER = 'other',
 }
 
 @Entity({ tableName: 'payments' })
@@ -15,18 +15,18 @@ export enum PaymentMethod {
 @Index({ properties: ['patient', 'orgId'] })
 @Index({ properties: ['date', 'orgId'] })
 export class Payment extends BaseEntity {
-    @ManyToOne(() => Patient)
-    patient!: Patient;
+  @ManyToOne(() => Patient)
+  patient!: Patient;
 
-    @Property({ type: 'decimal', precision: 10, scale: 2 })
-    amount!: number;
+  @Property({ type: 'decimal', precision: 10, scale: 2 })
+  amount!: number;
 
-    @Property({ type: 'date' })
-    date!: Date;
+  @Property({ type: 'date' })
+  date!: Date;
 
-    @Enum(() => PaymentMethod)
-    paymentMethod!: PaymentMethod;
+  @Enum(() => PaymentMethod)
+  paymentMethod!: PaymentMethod;
 
-    @Property({ type: 'text', nullable: true })
-    notes?: string;
+  @Property({ type: 'text', nullable: true })
+  notes?: string;
 }

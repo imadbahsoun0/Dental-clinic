@@ -1,4 +1,11 @@
-import { Entity, Property, Index, ManyToMany, Collection, Enum } from '@mikro-orm/core';
+import {
+  Entity,
+  Property,
+  Index,
+  ManyToMany,
+  Collection,
+  Enum,
+} from '@mikro-orm/core';
 import { BaseEntity } from './base.entity';
 import { Attachment } from './attachment.entity';
 

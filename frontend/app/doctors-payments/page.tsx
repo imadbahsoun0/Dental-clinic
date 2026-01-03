@@ -4,13 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
-import { useSettingsStore } from '@/store/settingsStore';
 import { useExpenseStore } from '@/store/expenseStore';
-import { User } from '@/types';
 import { DoctorPaymentModal } from '@/components/doctors/DoctorPaymentModal';
-import { api } from '@/lib/api';
+import { api, StandardResponse } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import styles from './doctors-payments.module.css';
+import { useAuthStore } from '@/store/authStore';
+import { useRouter } from 'next/navigation';
 
 interface Dentist {
     id: string;
@@ -20,7 +20,23 @@ interface Dentist {
     percentage: number;
 }
 
+const isDentist = (value: unknown): value is Dentist => {
+    if (!value || typeof value !== 'object') return false;
+    const record = value as Record<string, unknown>;
+    return (
+        typeof record.id === 'string' &&
+        typeof record.name === 'string' &&
+        typeof record.email === 'string' &&
+        typeof record.wallet === 'number' &&
+        typeof record.percentage === 'number'
+    );
+};
+
 export default function DoctorPaymentsPage() {
+    const router = useRouter();
+    const currentOrg = useAuthStore((state) => state.currentOrg);
+    const role = currentOrg?.role;
+
     const processDoctorPayment = useExpenseStore((state) => state.processDoctorPayment);
     const [dentists, setDentists] = useState<Dentist[]>([]);
     const [loading, setLoading] = useState(false);
@@ -28,19 +44,29 @@ export default function DoctorPaymentsPage() {
     const [selectedDoctor, setSelectedDoctor] = useState<Dentist | null>(null);
 
     useEffect(() => {
-        fetchDentists();
-    }, []);
+        // Backend enforces admin-only access; mirror it in UI to avoid a broken page.
+        if (role && role !== 'admin') {
+            toast.error('Access denied');
+            router.replace('/dashboard');
+            return;
+        }
+
+        if (role === 'admin') {
+            fetchDentists();
+        }
+    }, [role, router]);
 
     const fetchDentists = async () => {
         setLoading(true);
         try {
-            const response: any = await api.api.usersControllerGetDentists();
-            if (response.success && response.data) {
-                setDentists(response.data);
-            }
-        } catch (error: any) {
+            const response = await api.api.usersControllerGetDentists();
+            const data = (response as StandardResponse & { data?: unknown }).data;
+            const list = Array.isArray(data) ? data.filter(isDentist) : [];
+            setDentists(list);
+        } catch (error: unknown) {
             console.error('Failed to fetch dentists:', error);
-            toast.error(error.response?.data?.message || 'Failed to fetch dentists');
+            const message = error instanceof Error ? error.message : 'Failed to fetch dentists';
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -171,7 +197,7 @@ export default function DoctorPaymentsPage() {
                         setSelectedDoctor(null);
                     }}
                     onSave={handleProcessPayment}
-                    doctor={selectedDoctor as any}
+                    doctor={selectedDoctor}
                 />
             )}
         </MainLayout>

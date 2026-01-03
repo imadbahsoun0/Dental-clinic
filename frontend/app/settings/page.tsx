@@ -10,28 +10,45 @@ import { BrandingTab } from '@/components/settings/BrandingTab';
 import { NotificationsTab } from '@/components/settings/NotificationsTab';
 import { MedicalHistoryTab } from '@/components/settings/MedicalHistoryTab';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
 import styles from './settings.module.css';
 
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('profile');
     const fetchClinicBranding = useSettingsStore((state) => state.fetchClinicBranding);
+    const currentOrg = useAuthStore((state) => state.currentOrg);
+    const role = currentOrg?.role;
 
     useEffect(() => {
-        // Fetch clinic branding on mount for notification templates
-        fetchClinicBranding();
-    }, []);
+        // Only admins can access branding/settings endpoints.
+        if (role === 'admin') {
+            fetchClinicBranding();
+        }
+    }, [fetchClinicBranding, role]);
 
-    const tabs: Tab[] = [
-        { id: 'profile', label: 'Profile Settings', icon: '👤' },
-        { id: 'treatments', label: 'Treatment Types', icon: '🦷' },
-        { id: 'users', label: 'Users', icon: '👥' },
-        { id: 'branding', label: 'Branding', icon: '🏥' },
-        { id: 'notifications', label: 'Notifications', icon: '🔔' },
-        { id: 'medical-history', label: 'Medical History', icon: '📋' },
-    ];
+    const tabs: Tab[] = role === 'admin'
+        ? [
+            { id: 'profile', label: 'Profile Settings', icon: '👤' },
+            { id: 'treatments', label: 'Treatment Types', icon: '🦷' },
+            { id: 'users', label: 'Users', icon: '👥' },
+            { id: 'branding', label: 'Branding', icon: '🏥' },
+            { id: 'notifications', label: 'Notifications', icon: '🔔' },
+            { id: 'medical-history', label: 'Medical History', icon: '📋' },
+        ]
+        : [
+            { id: 'profile', label: 'Profile Settings', icon: '👤' },
+        ];
+
+    const effectiveActiveTab = role === 'admin' ? activeTab : 'profile';
+
+    const handleTabChange = (tabId: string) => {
+        if (role === 'admin') {
+            setActiveTab(tabId);
+        }
+    };
 
     const renderTabContent = () => {
-        switch (activeTab) {
+        switch (effectiveActiveTab) {
             case 'profile':
                 return <ProfileTab />;
             case 'treatments':
@@ -52,7 +69,7 @@ export default function SettingsPage() {
     return (
         <MainLayout title="Settings">
             <div className={styles.settingsContainer}>
-                <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+                <Tabs tabs={tabs} activeTab={effectiveActiveTab} onTabChange={handleTabChange} />
                 <div className={styles.tabContentWrapper}>{renderTabContent()}</div>
             </div>
         </MainLayout>

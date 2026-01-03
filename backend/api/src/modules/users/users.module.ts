@@ -7,12 +7,9 @@ import { User, UserOrganization } from '../../common/entities';
 import { EmailModule } from '../email/email.module';
 
 @Module({
-    imports: [
-        MikroOrmModule.forFeature([User, UserOrganization]),
-        EmailModule,
-    ],
-    controllers: [UsersController],
-    providers: [UsersService],
-    exports: [UsersService],
+  imports: [MikroOrmModule.forFeature([User, UserOrganization]), EmailModule],
+  controllers: [UsersController],
+  providers: [UsersService],
+  exports: [UsersService],
 })
-export class UsersModule { }
+export class UsersModule {}

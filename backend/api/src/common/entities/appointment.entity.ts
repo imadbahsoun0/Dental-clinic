@@ -5,9 +5,9 @@ import { TreatmentType } from './treatment-type.entity';
 import { User } from './user.entity';
 
 export enum AppointmentStatus {
-    CONFIRMED = 'confirmed',
-    PENDING = 'pending',
-    CANCELLED = 'cancelled',
+  CONFIRMED = 'confirmed',
+  PENDING = 'pending',
+  CANCELLED = 'cancelled',
 }
 
 @Entity({ tableName: 'appointments' })
@@ -15,24 +15,24 @@ export enum AppointmentStatus {
 @Index({ properties: ['date', 'orgId'] })
 @Index({ properties: ['patient', 'orgId'] })
 export class Appointment extends BaseEntity {
-    @ManyToOne(() => Patient)
-    patient!: Patient;
+  @ManyToOne(() => Patient)
+  patient!: Patient;
 
-    @ManyToOne(() => TreatmentType, { nullable: true })
-    treatmentType?: TreatmentType;
+  @ManyToOne(() => TreatmentType, { nullable: true })
+  treatmentType?: TreatmentType;
 
-    @Property({ type: 'date' })
-    date!: Date;
+  @Property({ type: 'date' })
+  date!: Date;
 
-    @Property({ type: 'time' })
-    time!: string; // HH:mm format
+  @Property({ type: 'time' })
+  time!: string; // HH:mm format
 
-    @Enum(() => AppointmentStatus)
-    status: AppointmentStatus = AppointmentStatus.PENDING;
+  @Enum(() => AppointmentStatus)
+  status: AppointmentStatus = AppointmentStatus.PENDING;
 
-    @ManyToOne(() => User, { nullable: true })
-    doctor?: User;
+  @ManyToOne(() => User, { nullable: true })
+  doctor?: User;
 
-    @Property({ type: 'text', nullable: true })
-    notes?: string;
+  @Property({ type: 'text', nullable: true })
+  notes?: string;
 }

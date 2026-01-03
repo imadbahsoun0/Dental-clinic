@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEmail, IsOptional, IsDateString, IsArray, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsDateString,
+  IsArray,
+  IsEnum,
+} from 'class-validator';
 import { FollowUpStatus } from '../../../common/entities/patient.entity';
 
 export class CreatePatientDto {

@@ -5,8 +5,12 @@ import { CreateAppointmentDto } from './create-appointment.dto';
 import { AppointmentStatus } from '../../../common/entities/appointment.entity';
 
 export class UpdateAppointmentDto extends PartialType(CreateAppointmentDto) {
-    @ApiProperty({ enum: AppointmentStatus, required: false, description: 'Appointment status (only for updates)' })
-    @IsOptional()
-    @IsEnum(AppointmentStatus)
-    status?: AppointmentStatus;
+  @ApiProperty({
+    enum: AppointmentStatus,
+    required: false,
+    description: 'Appointment status (only for updates)',
+  })
+  @IsOptional()
+  @IsEnum(AppointmentStatus)
+  status?: AppointmentStatus;
 }

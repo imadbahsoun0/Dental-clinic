@@ -6,9 +6,9 @@ import { Treatment, Tooth } from '../../common/entities';
 import { UserOrganization } from '../../common/entities/user-organization.entity';
 
 @Module({
-    imports: [MikroOrmModule.forFeature([Treatment, Tooth, UserOrganization])],
-    controllers: [TreatmentsController],
-    providers: [TreatmentsService],
-    exports: [TreatmentsService],
+  imports: [MikroOrmModule.forFeature([Treatment, Tooth, UserOrganization])],
+  controllers: [TreatmentsController],
+  providers: [TreatmentsService],
+  exports: [TreatmentsService],
 })
-export class TreatmentsModule { }
+export class TreatmentsModule {}

@@ -4,10 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card } from '@/components/common/Card';
 import { Badge } from '@/components/common/Badge';
-import { Button } from '@/components/common/Button';
-import { Modal } from '@/components/common/Modal';
-import { Input } from '@/components/common/Input';
-import { Select } from '@/components/common/Select';
 import { useAppointmentStore } from '@/store/appointmentStore';
 import { usePatientStore } from '@/store/patientStore';
 import { ExpenseModal } from '@/components/expenses/ExpenseModal';
@@ -15,33 +11,17 @@ import { AppointmentModal } from '@/components/appointments/AppointmentModal';
 import { PatientModal } from '@/components/patients/PatientModal';
 import { ConfirmationModal } from '@/components/common/ConfirmationModal';
 import { formatLocalDate } from '@/utils/dateUtils';
-import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, DashboardStatsDto, PendingTreatmentDto, StandardResponse } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 import styles from './dashboard.module.css';
 
-interface DashboardStats {
-    todayAppointments: number;
-    totalPatients: number;
-    pendingPayments: number;
-    dailyNetIncome: number;
-}
-
-interface PendingTreatment {
-    id: string;
-    patientId: string;
-    patientFirstName: string;
-    patientLastName: string;
-    treatmentTypeId: string;
-    treatmentTypeName: string;
-    totalPrice: number;
-    discount: number;
-    notes?: string;
-    createdAt: string;
-}
+type DashboardStats = DashboardStatsDto;
+type PendingTreatment = PendingTreatmentDto;
 
 export default function DashboardPage() {
-    const router = useRouter();
+    const currentOrg = useAuthStore((state) => state.currentOrg);
+    const isSecretary = currentOrg?.role === 'secretary';
     const appointments = useAppointmentStore((state) => state.appointments);
     const fetchAppointments = useAppointmentStore((state) => state.fetchAppointments);
     const patients = usePatientStore((state) => state.patients);
@@ -75,12 +55,12 @@ export default function DashboardPage() {
             try {
                 setLoadingStats(true);
                 const response = await api.api.dashboardControllerGetStats();
-                const data = (response as any)?.data || response;
+                const data = (response as StandardResponse & { data?: Partial<DashboardStats> }).data;
                 setStats({
-                    todayAppointments: data?.todayAppointments || 0,
-                    totalPatients: data?.totalPatients || 0,
-                    pendingPayments: data?.pendingPayments || 0,
-                    dailyNetIncome: data?.dailyNetIncome || 0,
+                    todayAppointments: Number(data?.todayAppointments ?? 0),
+                    totalPatients: Number(data?.totalPatients ?? 0),
+                    pendingPayments: Number(data?.pendingPayments ?? 0),
+                    dailyNetIncome: Number(data?.dailyNetIncome ?? 0),
                 });
             } catch (error) {
                 console.error('Failed to fetch dashboard stats:', error);
@@ -99,8 +79,7 @@ export default function DashboardPage() {
             try {
                 setLoadingTreatments(true);
                 const response = await api.api.dashboardControllerGetPendingTreatments();
-                // Extract data from StandardResponse wrapper
-                const data = (response as any)?.data || response;
+                const data = (response as StandardResponse & { data?: PendingTreatment[] }).data;
                 setPendingTreatments(Array.isArray(data) ? data : []);
             } catch (error) {
                 console.error('Failed to fetch pending treatments:', error);
@@ -128,16 +107,16 @@ export default function DashboardPage() {
             toast.success('Treatment cancelled successfully');
             // Refresh pending treatments
             const response = await api.api.dashboardControllerGetPendingTreatments();
-            const data = (response as any)?.data || response;
+            const data = (response as StandardResponse & { data?: PendingTreatment[] }).data;
             setPendingTreatments(Array.isArray(data) ? data : []);
             // Refresh stats as well
             const statsResponse = await api.api.dashboardControllerGetStats();
-            const statsData = (statsResponse as any)?.data || statsResponse;
+            const statsData = (statsResponse as StandardResponse & { data?: Partial<DashboardStats> }).data;
             setStats({
-                todayAppointments: statsData?.todayAppointments || 0,
-                totalPatients: statsData?.totalPatients || 0,
-                pendingPayments: statsData?.pendingPayments || 0,
-                dailyNetIncome: statsData?.dailyNetIncome || 0,
+                todayAppointments: Number(statsData?.todayAppointments ?? 0),
+                totalPatients: Number(statsData?.totalPatients ?? 0),
+                pendingPayments: Number(statsData?.pendingPayments ?? 0),
+                dailyNetIncome: Number(statsData?.dailyNetIncome ?? 0),
             });
             setCancellingTreatment(null);
         } catch (error) {
@@ -158,16 +137,16 @@ export default function DashboardPage() {
             await fetchAppointments(1, 100, today);
         }
         const response = await api.api.dashboardControllerGetPendingTreatments();
-        const data = (response as any)?.data || response;
+        const data = (response as StandardResponse & { data?: PendingTreatment[] }).data;
         setPendingTreatments(Array.isArray(data) ? data : []);
         // Refresh stats
         const statsResponse = await api.api.dashboardControllerGetStats();
-        const statsData = (statsResponse as any)?.data || statsResponse;
+        const statsData = (statsResponse as StandardResponse & { data?: Partial<DashboardStats> }).data;
         setStats({
-            todayAppointments: statsData?.todayAppointments || 0,
-            totalPatients: statsData?.totalPatients || 0,
-            pendingPayments: statsData?.pendingPayments || 0,
-            dailyNetIncome: statsData?.dailyNetIncome || 0,
+            todayAppointments: Number(statsData?.todayAppointments ?? 0),
+            totalPatients: Number(statsData?.totalPatients ?? 0),
+            pendingPayments: Number(statsData?.pendingPayments ?? 0),
+            dailyNetIncome: Number(statsData?.dailyNetIncome ?? 0),
         });
     };
 
@@ -181,7 +160,7 @@ export default function DashboardPage() {
                         <span className={`${styles.statTrend} ${styles.up}`}>Today</span>
                     </div>
                     <div className={styles.statValue}>{loadingStats ? '...' : stats.todayAppointments}</div>
-                    <div className={styles.statLabel}>Today's Appointments</div>
+                    <div className={styles.statLabel}>Today&apos;s Appointments</div>
                 </div>
 
                 <div className={`${styles.statCard} ${styles.animateIn} ${styles.delay1}`}>
@@ -193,29 +172,33 @@ export default function DashboardPage() {
                     <div className={styles.statLabel}>Total Patients</div>
                 </div>
 
-                <div className={`${styles.statCard} ${styles.animateIn} ${styles.delay2}`}>
-                    <div className={styles.statHeader}>
-                        <div className={`${styles.statIcon} ${styles.pink}`}>💰</div>
-                        <span className={`${styles.statTrend} ${styles.down}`}>Pending</span>
-                    </div>
-                    <div className={styles.statValue}>
-                        {loadingStats ? '...' : `$${(stats.pendingPayments / 1000).toFixed(1)}k`}
-                    </div>
-                    <div className={styles.statLabel}>Pending Payments</div>
-                </div>
+                {!isSecretary && (
+                    <>
+                        <div className={`${styles.statCard} ${styles.animateIn} ${styles.delay2}`}>
+                            <div className={styles.statHeader}>
+                                <div className={`${styles.statIcon} ${styles.pink}`}>💰</div>
+                                <span className={`${styles.statTrend} ${styles.down}`}>Pending</span>
+                            </div>
+                            <div className={styles.statValue}>
+                                {loadingStats ? '...' : `$${(stats.pendingPayments / 1000).toFixed(1)}k`}
+                            </div>
+                            <div className={styles.statLabel}>Pending Payments</div>
+                        </div>
 
-                <div className={`${styles.statCard} ${styles.animateIn} ${styles.delay3}`}>
-                    <div className={styles.statHeader}>
-                        <div className={`${styles.statIcon} ${styles.green}`}>💵</div>
-                        <span className={`${styles.statTrend} ${stats.dailyNetIncome >= 0 ? styles.up : styles.down}`}>
-                            {stats.dailyNetIncome >= 0 ? '↑' : '↓'} {Math.abs(stats.dailyNetIncome) > 0 ? `$${Math.abs(stats.dailyNetIncome).toFixed(0)}` : '0'}
-                        </span>
-                    </div>
-                    <div className={styles.statValue}>
-                        {loadingStats ? '...' : `$${stats.dailyNetIncome.toFixed(0)}`}
-                    </div>
-                    <div className={styles.statLabel}>Daily Net Income</div>
-                </div>
+                        <div className={`${styles.statCard} ${styles.animateIn} ${styles.delay3}`}>
+                            <div className={styles.statHeader}>
+                                <div className={`${styles.statIcon} ${styles.green}`}>💵</div>
+                                <span className={`${styles.statTrend} ${stats.dailyNetIncome >= 0 ? styles.up : styles.down}`}>
+                                    {stats.dailyNetIncome >= 0 ? '↑' : '↓'} {Math.abs(stats.dailyNetIncome) > 0 ? `$${Math.abs(stats.dailyNetIncome).toFixed(0)}` : '0'}
+                                </span>
+                            </div>
+                            <div className={styles.statValue}>
+                                {loadingStats ? '...' : `$${stats.dailyNetIncome.toFixed(0)}`}
+                            </div>
+                            <div className={styles.statLabel}>Daily Net Income</div>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Main Grid */}
@@ -353,7 +336,8 @@ export default function DashboardPage() {
                     setIsExpenseModalOpen(false);
                     // Refresh stats
                     const statsResponse = await api.api.dashboardControllerGetStats();
-                    const statsData = (statsResponse as any)?.data || statsResponse;
+                    const maybeStandard = statsResponse as StandardResponse<DashboardStatsDto>;
+                    const statsData: DashboardStatsDto = maybeStandard.data ?? (statsResponse as DashboardStatsDto);
                     setStats({
                         todayAppointments: statsData?.todayAppointments || 0,
                         totalPatients: statsData?.totalPatients || 0,

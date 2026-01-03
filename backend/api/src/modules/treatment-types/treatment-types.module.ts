@@ -6,11 +6,9 @@ import { TreatmentCategory } from '../../common/entities/treatment-category.enti
 import { TreatmentType } from '../../common/entities/treatment-type.entity';
 
 @Module({
-    imports: [
-        MikroOrmModule.forFeature([TreatmentCategory, TreatmentType]),
-    ],
-    controllers: [TreatmentTypesController],
-    providers: [TreatmentTypesService],
-    exports: [TreatmentTypesService],
+  imports: [MikroOrmModule.forFeature([TreatmentCategory, TreatmentType])],
+  controllers: [TreatmentTypesController],
+  providers: [TreatmentTypesService],
+  exports: [TreatmentTypesService],
 })
-export class TreatmentTypesModule { }
+export class TreatmentTypesModule {}

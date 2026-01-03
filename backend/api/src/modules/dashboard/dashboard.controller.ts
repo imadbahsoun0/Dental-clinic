@@ -15,44 +15,55 @@ import { TreatmentStatus } from '../../common/entities/treatment.entity';
 @ApiBearerAuth('JWT-auth')
 @Controller('dashboard')
 export class DashboardController {
-    constructor(
-        private readonly dashboardService: DashboardService,
-        private readonly treatmentsService: TreatmentsService,
-    ) { }
+  constructor(
+    private readonly dashboardService: DashboardService,
+    private readonly treatmentsService: TreatmentsService,
+  ) {}
 
-    @Get('stats')
-    @ApiOperation({ summary: 'Get dashboard statistics' })
-    @ApiStandardResponse(DashboardStatsDto)
-    async getStats(@CurrentUser() user: CurrentUserData) {
-        const stats = await this.dashboardService.getDashboardStats(user.orgId);
-        return new StandardResponse(stats, 'Dashboard stats retrieved successfully');
-    }
+  @Get('stats')
+  @ApiOperation({ summary: 'Get dashboard statistics' })
+  @ApiStandardResponse(DashboardStatsDto)
+  async getStats(@CurrentUser() user: CurrentUserData) {
+    const stats = await this.dashboardService.getDashboardStats(
+      user.orgId,
+      user.role,
+    );
+    return new StandardResponse(
+      stats,
+      'Dashboard stats retrieved successfully',
+    );
+  }
 
-    @Get('pending-treatments')
-    @ApiOperation({ summary: 'Get all pending treatments' })
-    @ApiStandardResponse(PendingTreatmentDto, true)
-    async getPendingTreatments(@CurrentUser() user: CurrentUserData) {
-        const treatments = await this.dashboardService.getPendingTreatments(user.orgId);
-        return new StandardResponse(treatments, 'Pending treatments retrieved successfully');
-    }
+  @Get('pending-treatments')
+  @ApiOperation({ summary: 'Get all pending treatments' })
+  @ApiStandardResponse(PendingTreatmentDto, true)
+  async getPendingTreatments(@CurrentUser() user: CurrentUserData) {
+    const treatments = await this.dashboardService.getPendingTreatments(
+      user.orgId,
+    );
+    return new StandardResponse(
+      treatments,
+      'Pending treatments retrieved successfully',
+    );
+  }
 
-    @Patch('pending-treatments/:id/cancel')
-    @Roles(UserRole.ADMIN, UserRole.SECRETARY, UserRole.DENTIST)
-    @ApiOperation({ summary: 'Cancel a pending treatment' })
-    @ApiStandardResponse(Object)
-    async cancelPendingTreatment(
-        @Param('id') id: string,
-        @CurrentUser() user: CurrentUserData,
-    ) {
-        // Use the treatments service to update the status to cancelled
-        const result = await this.treatmentsService.update(
-            id,
-            { status: TreatmentStatus.CANCELLED },
-            user.orgId,
-            user.id,
-            user.role,
-            user.id
-        );
-        return new StandardResponse(result, 'Treatment cancelled successfully');
-    }
+  @Patch('pending-treatments/:id/cancel')
+  @Roles(UserRole.ADMIN, UserRole.SECRETARY, UserRole.DENTIST)
+  @ApiOperation({ summary: 'Cancel a pending treatment' })
+  @ApiStandardResponse(Object)
+  async cancelPendingTreatment(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    // Use the treatments service to update the status to cancelled
+    const result = await this.treatmentsService.update(
+      id,
+      { status: TreatmentStatus.CANCELLED },
+      user.orgId,
+      user.id,
+      user.role,
+      user.id,
+    );
+    return new StandardResponse(result, 'Treatment cancelled successfully');
+  }
 }

@@ -5,11 +5,7 @@ import { TreatmentSeeder } from './TreatmentSeeder';
 import { OrganizationSeeder } from './OrganizationSeeder';
 
 export class DatabaseSeeder extends Seeder {
-    async run(em: EntityManager): Promise<void> {
-        return this.call(em, [
-            ToothSeeder,
-            OrganizationSeeder,
-            TreatmentSeeder,
-        ]);
-    }
+  async run(em: EntityManager): Promise<void> {
+    return this.call(em, [ToothSeeder, OrganizationSeeder, TreatmentSeeder]);
+  }
 }

@@ -5,9 +5,9 @@ import { FilesService } from './files.service';
 import { Attachment } from '../../common/entities';
 
 @Module({
-    imports: [MikroOrmModule.forFeature([Attachment])],
-    controllers: [FilesController],
-    providers: [FilesService],
-    exports: [FilesService],
+  imports: [MikroOrmModule.forFeature([Attachment])],
+  controllers: [FilesController],
+  providers: [FilesService],
+  exports: [FilesService],
 })
-export class FilesModule { }
+export class FilesModule {}

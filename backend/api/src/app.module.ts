@@ -71,4 +71,4 @@ import { SchedulerModule } from './modules/scheduler/scheduler.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

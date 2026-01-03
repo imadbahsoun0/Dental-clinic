@@ -6,10 +6,7 @@ import { Payment } from '../../common/entities';
 import { RemindersModule } from '../reminders/reminders.module';
 
 @Module({
-  imports: [
-    MikroOrmModule.forFeature([Payment]),
-    RemindersModule,
-  ],
+  imports: [MikroOrmModule.forFeature([Payment]), RemindersModule],
   controllers: [PaymentsController],
   providers: [PaymentsService],
   exports: [PaymentsService],

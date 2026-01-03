@@ -19,9 +19,15 @@ export class WhatsappService {
   private readonly wahaSession: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.wahaApiUrl = this.configService.get<string>('WAHA_API_URL', 'http://localhost:3002');
+    this.wahaApiUrl = this.configService.get<string>(
+      'WAHA_API_URL',
+      'http://localhost:3002',
+    );
     this.wahaApiKey = this.configService.get<string>('WAHA_API_KEY', '');
-    this.wahaSession = this.configService.get<string>('WAHA_SESSION', 'default');
+    this.wahaSession = this.configService.get<string>(
+      'WAHA_SESSION',
+      'default',
+    );
   }
 
   /**
@@ -40,18 +46,20 @@ export class WhatsappService {
    * @param params - Phone number and message content
    * @returns Success status and error if any
    */
-  async sendMessage(params: SendWhatsAppMessageParams): Promise<WhatsAppResponse> {
+  async sendMessage(
+    params: SendWhatsAppMessageParams,
+  ): Promise<WhatsAppResponse> {
     const { phoneNumber, message } = params;
 
     try {
       const chatId = this.formatChatId(phoneNumber);
-      
+
       this.logger.log(`Sending WhatsApp message to ${chatId}`);
 
       const response = await fetch(`${this.wahaApiUrl}/api/sendText`, {
         method: 'POST',
         headers: {
-          'accept': 'application/json',
+          accept: 'application/json',
           'X-Api-Key': this.wahaApiKey,
           'Content-Type': 'application/json',
         },
@@ -79,9 +87,10 @@ export class WhatsappService {
 
       return { success: true };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to send WhatsApp message: ${errorMessage}`);
-      
+
       return {
         success: false,
         error: errorMessage,

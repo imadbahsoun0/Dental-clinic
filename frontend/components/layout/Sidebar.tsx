@@ -27,6 +27,16 @@ export const Sidebar: React.FC = () => {
     const currentOrg = useAuthStore((state) => state.currentOrg);
     const logout = useAuthStore((state) => state.logout);
 
+    const role = currentOrg?.role;
+
+    const visibleMainNavItems = React.useMemo(() => {
+        // Secretary should not see Doctor Payments page.
+        if (role === 'secretary') {
+            return mainNavItems.filter((item) => item.href !== '/doctors-payments');
+        }
+        return mainNavItems;
+    }, [role]);
+
     // Dynamic Appointment Badge
     const todayCount = useAppointmentStore((state) => state.todayCount);
     const fetchTodayStats = useAppointmentStore((state) => state.fetchTodayStats);
@@ -67,7 +77,7 @@ export const Sidebar: React.FC = () => {
             {/* Main Navigation */}
             <nav className={styles.navSection}>
                 <div className={styles.navLabel}>Main Menu</div>
-                {mainNavItems.map((item) => {
+                {visibleMainNavItems.map((item) => {
                     const isActive = pathname?.startsWith(item.href);
                     // Determine badge content
                     let badge = null;

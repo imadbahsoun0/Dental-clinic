@@ -14,24 +14,34 @@ import { StandardResponse } from '../../common/dto/standard-response.dto';
 @Controller('notification-settings')
 @Roles(UserRole.ADMIN) // Only admins can manage notification settings
 export class NotificationSettingsController {
-    constructor(private readonly notificationSettingsService: NotificationSettingsService) {}
+  constructor(
+    private readonly notificationSettingsService: NotificationSettingsService,
+  ) {}
 
-    @Get()
-    @ApiOperation({ summary: 'Get notification settings for the organization' })
-    @ApiStandardResponse(NotificationSettingsResponseDto)
-    async get(@CurrentUser() user: CurrentUserData) {
-        const result = await this.notificationSettingsService.getOrCreateSettings(user.orgId);
-        return new StandardResponse(result);
-    }
+  @Get()
+  @ApiOperation({ summary: 'Get notification settings for the organization' })
+  @ApiStandardResponse(NotificationSettingsResponseDto)
+  async get(@CurrentUser() user: CurrentUserData) {
+    const result = await this.notificationSettingsService.getOrCreateSettings(
+      user.orgId,
+    );
+    return new StandardResponse(result);
+  }
 
-    @Patch()
-    @ApiOperation({ summary: 'Update notification settings' })
-    @ApiStandardResponse(NotificationSettingsResponseDto)
-    async update(
-        @Body() updateDto: UpdateNotificationSettingsDto,
-        @CurrentUser() user: CurrentUserData,
-    ) {
-        const result = await this.notificationSettingsService.update(user.orgId, updateDto);
-        return new StandardResponse(result, 'Notification settings updated successfully');
-    }
+  @Patch()
+  @ApiOperation({ summary: 'Update notification settings' })
+  @ApiStandardResponse(NotificationSettingsResponseDto)
+  async update(
+    @Body() updateDto: UpdateNotificationSettingsDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const result = await this.notificationSettingsService.update(
+      user.orgId,
+      updateDto,
+    );
+    return new StandardResponse(
+      result,
+      'Notification settings updated successfully',
+    );
+  }
 }

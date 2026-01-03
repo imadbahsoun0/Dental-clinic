@@ -19,11 +19,16 @@ export class NotificationSettingsService {
           { enabled: true, timingInHours: 1 },
         ],
         messageTemplates: {
-          medical_history: 'Hello {{patientName}}, please fill out your medical history form: {{medicalHistoryLink}}',
-          payment_receipt: 'Hello {{patientName}}, thank you for your payment of {{amount}}. Your remaining balance is {{remainingBalance}}.',
-          appointment_reminder: 'Hello {{patientName}}, this is a reminder for your appointment on {{appointmentDate}} at {{appointmentTime}} with Dr. {{doctorName}} at {{clinicLocation}}.',
-          follow_up: 'Hello {{patientName}}, this is a reminder for your follow-up appointment. Reason: {{followUpReason}}. Please contact us at {{clinicLocation}}.',
-          payment_overdue: 'Hello {{patientName}}, you have an outstanding balance of {{amountDue}} for completed treatments. Please contact us at {{clinicLocation}} to arrange payment.',
+          medical_history:
+            'Hello {{patientName}}, please fill out your medical history form: {{medicalHistoryLink}}',
+          payment_receipt:
+            'Hello {{patientName}}, thank you for your payment of {{amount}}. Your remaining balance is {{remainingBalance}}.',
+          appointment_reminder:
+            'Hello {{patientName}}, this is a reminder for your appointment on {{appointmentDate}} at {{appointmentTime}} with Dr. {{doctorName}} at {{clinicLocation}}.',
+          follow_up:
+            'Hello {{patientName}}, this is a reminder for your follow-up appointment. Reason: {{followUpReason}}. Please contact us at {{clinicLocation}}.',
+          payment_overdue:
+            'Hello {{patientName}}, you have an outstanding balance of {{amountDue}} for completed treatments. Please contact us at {{clinicLocation}} to arrange payment.',
         },
       } as NotificationSettings);
 

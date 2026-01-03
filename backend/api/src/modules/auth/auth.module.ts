@@ -11,15 +11,15 @@ import { EmailModule } from '../email/email.module';
 import jwtConfig from '../../config/jwt.config';
 
 @Module({
-    imports: [
-        ConfigModule.forFeature(jwtConfig),
-        PassportModule,
-        JwtModule.register({}), // Configuration done in service
-        MikroOrmModule.forFeature([User, UserOrganization]),
-        EmailModule,
-    ],
-    controllers: [AuthController],
-    providers: [AuthService, JwtStrategy],
-    exports: [AuthService],
+  imports: [
+    ConfigModule.forFeature(jwtConfig),
+    PassportModule,
+    JwtModule.register({}), // Configuration done in service
+    MikroOrmModule.forFeature([User, UserOrganization]),
+    EmailModule,
+  ],
+  controllers: [AuthController],
+  providers: [AuthService, JwtStrategy],
+  exports: [AuthService],
 })
-export class AuthModule { }
+export class AuthModule {}

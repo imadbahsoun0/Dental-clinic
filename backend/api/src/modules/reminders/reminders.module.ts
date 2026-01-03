@@ -4,11 +4,23 @@ import { ReminderService } from './reminder.service';
 import { WhatsappModule } from '../whatsapp/whatsapp.module';
 import { MessagesModule } from '../messages/messages.module';
 import { NotificationSettingsModule } from '../notification-settings/notification-settings.module';
-import { Patient, Organization, User, Appointment, Payment } from '../../common/entities';
+import {
+  Patient,
+  Organization,
+  User,
+  Appointment,
+  Payment,
+} from '../../common/entities';
 
 @Module({
   imports: [
-    MikroOrmModule.forFeature([Patient, Organization, User, Appointment, Payment]),
+    MikroOrmModule.forFeature([
+      Patient,
+      Organization,
+      User,
+      Appointment,
+      Payment,
+    ]),
     WhatsappModule,
     MessagesModule,
     NotificationSettingsModule,

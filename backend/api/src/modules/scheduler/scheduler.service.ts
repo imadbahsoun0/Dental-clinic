@@ -3,7 +3,10 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { Appointment, Organization, Message } from '../../common/entities';
 import { AppointmentStatus } from '../../common/entities/appointment.entity';
-import { MessageType, MessageStatus } from '../../common/entities/message.entity';
+import {
+  MessageType,
+  MessageStatus,
+} from '../../common/entities/message.entity';
 import { ReminderService } from '../reminders/reminder.service';
 import { NotificationSettingsService } from '../notification-settings/notification-settings.service';
 @Injectable()
@@ -21,15 +24,16 @@ export class SchedulerService {
    * Cron format: minute hour day month weekday
    * 0 * * * * = At minute 0 of every hour
    */
-  
+
   @Cron(CronExpression.EVERY_5_MINUTES)
   async sendAppointmentReminders() {
-
     this.logger.log('Running appointment reminder check...');
-    
+
     try {
       // Get all active organizations
-      const organizations = await this.em.find(Organization, { isActive: true });
+      const organizations = await this.em.find(Organization, {
+        isActive: true,
+      });
 
       for (const org of organizations) {
         await this.processOrganizationReminders(org);
@@ -39,7 +43,7 @@ export class SchedulerService {
     } catch (error) {
       this.logger.error('Error in appointment reminder cron job:', error);
     }
-}
+  }
 
   /**
    * Process reminders for a specific organization
@@ -49,7 +53,8 @@ export class SchedulerService {
       const orgId = org.id;
 
       // Get organization's notification settings
-      const settings = await this.notificationSettingsService.getOrCreateSettings(orgId);
+      const settings =
+        await this.notificationSettingsService.getOrCreateSettings(orgId);
 
       const now = new Date();
 
@@ -58,8 +63,15 @@ export class SchedulerService {
         if (!reminder.enabled) continue;
 
         // Calculate the target datetime for this reminder
-        const targetTime = new Date(now.getTime() + reminder.timingInHours * 60 * 60 * 1000);
-        console.log('Target time for', reminder.timingInHours, 'h reminder:', targetTime);
+        const targetTime = new Date(
+          now.getTime() + reminder.timingInHours * 60 * 60 * 1000,
+        );
+        console.log(
+          'Target time for',
+          reminder.timingInHours,
+          'h reminder:',
+          targetTime,
+        );
         // Find appointments that should receive this reminder
         // We look for appointments within a 1-hour window from the target time
         const windowStart = new Date(targetTime.getTime() - 5 * 60 * 1000); // 5 min before
@@ -79,10 +91,18 @@ export class SchedulerService {
           .where({
             orgId,
             deletedAt: null,
-            status: { $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED] },
+            status: {
+              $in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
+            },
           })
-          .andWhere(`((a.date + a.time) AT TIME ZONE ?) >= ?::timestamptz`, [clinicTimeZone, windowStartTs])
-          .andWhere(`((a.date + a.time) AT TIME ZONE ?) <= ?::timestamptz`, [clinicTimeZone, windowEndTs])
+          .andWhere(`((a.date + a.time) AT TIME ZONE ?) >= ?::timestamptz`, [
+            clinicTimeZone,
+            windowStartTs,
+          ])
+          .andWhere(`((a.date + a.time) AT TIME ZONE ?) <= ?::timestamptz`, [
+            clinicTimeZone,
+            windowEndTs,
+          ])
           .leftJoinAndSelect('a.patient', 'patient')
           .leftJoinAndSelect('a.doctor', 'doctor')
           .getResultList();
@@ -91,7 +111,7 @@ export class SchedulerService {
         console.log('windowEndTs:', windowEndTs);
         console.log(
           `Found ${appointmentsToRemind.length} appointments to remind for ${reminder.timingInHours}h timing in org ${orgId}`,
-        );  
+        );
 
         // Send reminders
         for (const appointment of appointmentsToRemind) {
@@ -103,7 +123,11 @@ export class SchedulerService {
             );
 
             if (!alreadySent) {
-              await this.reminderService.sendAppointmentReminder(appointment.id, orgId, reminder.timingInHours);
+              await this.reminderService.sendAppointmentReminder(
+                appointment.id,
+                orgId,
+                reminder.timingInHours,
+              );
               this.logger.log(
                 `Sent ${reminder.timingInHours}h reminder for appointment ${appointment.id}`,
               );
@@ -125,17 +149,20 @@ export class SchedulerService {
    * Check if a reminder was already sent for this appointment at this timing
    * This prevents duplicate reminders
    */
-  private async wasReminderSent(appointmentId: string, timingInHours: number): Promise<boolean> {
+  private async wasReminderSent(
+    appointmentId: string,
+    timingInHours: number,
+  ): Promise<boolean> {
     // Check if a reminder was sent for this specific timing in the last 2 hours
     // This gives some buffer to avoid duplicates while handling cron running multiple times
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
-    
+
     const messages = await this.em.find(Message, {
-      metadata: { 
-        $contains: { 
+      metadata: {
+        $contains: {
           appointmentId,
-          timingInHours 
-        } 
+          timingInHours,
+        },
       },
       type: MessageType.APPOINTMENT_REMINDER,
       status: { $in: [MessageStatus.SENT, MessageStatus.PENDING] },

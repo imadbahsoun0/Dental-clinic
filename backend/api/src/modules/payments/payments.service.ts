@@ -15,230 +15,256 @@ export class PaymentsService {
     private reminderService: ReminderService,
   ) {}
 
-    async create(createDto: CreatePaymentDto, orgId: string, createdBy: string) {
-        const payment = this.em.create(Payment, {
-            amount: createDto.amount,
-            date: new Date(createDto.date),
-            paymentMethod: createDto.paymentMethod,
-            ...(createDto.notes && { notes: createDto.notes }),
-            orgId,
-            createdBy,
-            patient: this.em.getReference('Patient', createDto.patientId) as any,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
+  async create(createDto: CreatePaymentDto, orgId: string, createdBy: string) {
+    const payment = this.em.create(Payment, {
+      amount: createDto.amount,
+      date: new Date(createDto.date),
+      paymentMethod: createDto.paymentMethod,
+      ...(createDto.notes && { notes: createDto.notes }),
+      orgId,
+      createdBy,
+      patient: this.em.getReference('Patient', createDto.patientId) as any,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
-        await this.em.persistAndFlush(payment);
-        
-        // Calculate remaining balance and send receipt
-        try {
-            const remainingBalance = await this.calculateRemainingBalance(createDto.patientId, orgId);
-            await this.reminderService.sendPaymentReceipt(
-                createDto.patientId,
-                payment.id,
-                createDto.amount,
-                remainingBalance,
-                orgId,
-            );
-        } catch (error) {
-            // Log error but don't fail payment creation
-            console.error('Failed to send payment receipt:', error);
-        }
-        
-        return this.findOne(payment.id, orgId, createdBy, UserRole.ADMIN);
+    await this.em.persistAndFlush(payment);
+
+    // Calculate remaining balance and send receipt
+    try {
+      const remainingBalance = await this.calculateRemainingBalance(
+        createDto.patientId,
+        orgId,
+      );
+      await this.reminderService.sendPaymentReceipt(
+        createDto.patientId,
+        payment.id,
+        createDto.amount,
+        remainingBalance,
+        orgId,
+      );
+    } catch (error) {
+      // Log error but don't fail payment creation
+      console.error('Failed to send payment receipt:', error);
     }
 
-    /**
-     * Calculate remaining balance for a patient
-     */
-    private async calculateRemainingBalance(patientId: string, orgId: string): Promise<number> {
-        // Get all completed treatments
-        const completedTreatments = await this.em.find(Treatment, {
-            patient: patientId,
-            orgId,
-            status: TreatmentStatus.COMPLETED,
-            deletedAt: null,
-        });
+    return this.findOne(payment.id, orgId, createdBy, UserRole.ADMIN);
+  }
 
-        const totalTreatmentCost = completedTreatments.reduce((sum, t) => {
-            return sum + (Number(t.totalPrice) - Number(t.discount));
-        }, 0);
+  /**
+   * Calculate remaining balance for a patient
+   */
+  private async calculateRemainingBalance(
+    patientId: string,
+    orgId: string,
+  ): Promise<number> {
+    // Get all completed treatments
+    const completedTreatments = await this.em.find(Treatment, {
+      patient: patientId,
+      orgId,
+      status: TreatmentStatus.COMPLETED,
+      deletedAt: null,
+    });
 
-        // Get total payments
-        const payments = await this.em.find(Payment, {
-            patient: patientId,
-            orgId,
-            deletedAt: null,
-        });
+    const totalTreatmentCost = completedTreatments.reduce((sum, t) => {
+      return sum + (Number(t.totalPrice) - Number(t.discount));
+    }, 0);
 
-        const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    // Get total payments
+    const payments = await this.em.find(Payment, {
+      patient: patientId,
+      orgId,
+      deletedAt: null,
+    });
 
-        return totalTreatmentCost - totalPaid;
+    const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+    return totalTreatmentCost - totalPaid;
+  }
+
+  async findAll(
+    orgId: string,
+    userId: string,
+    role: string,
+    query: PaymentQueryDto,
+  ) {
+    const { page = 1, limit = 10, patientId, startDate, endDate } = query;
+    const offset = (page - 1) * limit;
+
+    const where: any = { orgId, deletedAt: null };
+
+    // Apply filters
+    if (patientId) {
+      where.patient = { id: patientId };
     }
 
-    async findAll(
-        orgId: string,
-        userId: string,
-        role: string,
-        query: PaymentQueryDto,
-    ) {
-        const { page = 1, limit = 10, patientId, startDate, endDate } = query;
-        const offset = (page - 1) * limit;
-
-        const where: any = { orgId, deletedAt: null };
-
-        // Apply filters
-        if (patientId) {
-            where.patient = { id: patientId };
-        }
-
-        // Filter by date range
-        if (startDate && endDate) {
-            where.date = {
-                $gte: new Date(startDate),
-                $lte: new Date(endDate),
-            };
-        } else if (startDate) {
-            where.date = { $gte: new Date(startDate) };
-        } else if (endDate) {
-            where.date = { $lte: new Date(endDate) };
-        }
-
-        const [payments, total] = await this.em.findAndCount(
-            Payment,
-            where,
-            {
-                populate: ['patient'],
-                limit,
-                offset,
-                orderBy: { date: 'DESC', createdAt: 'DESC' },
-            },
-        );
-
-        // Transform to match frontend expectations
-        const transformedPayments = payments.map(p => this.transformPayment(p));
-
-        return {
-            data: transformedPayments,
-            meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
-        };
+    // Filter by date range
+    if (startDate && endDate) {
+      where.date = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    } else if (startDate) {
+      where.date = { $gte: new Date(startDate) };
+    } else if (endDate) {
+      where.date = { $lte: new Date(endDate) };
     }
 
-    async findOne(id: string, orgId: string, userId: string, role: string) {
-        const where: any = { id, orgId, deletedAt: null };
+    const [payments, total] = await this.em.findAndCount(Payment, where, {
+      populate: ['patient'],
+      limit,
+      offset,
+      orderBy: { date: 'DESC', createdAt: 'DESC' },
+    });
 
-        const payment = await this.em.findOne(Payment, where, {
-            populate: ['patient'],
-        });
+    // Transform to match frontend expectations
+    const transformedPayments = payments.map((p) => this.transformPayment(p));
 
-        if (!payment) {
-            throw new NotFoundException('Payment not found');
-        }
+    return {
+      data: transformedPayments,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
 
-        return this.transformPayment(payment);
+  async findOne(id: string, orgId: string, userId: string, role: string) {
+    const where: any = { id, orgId, deletedAt: null };
+
+    const payment = await this.em.findOne(Payment, where, {
+      populate: ['patient'],
+    });
+
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
     }
 
-    async update(id: string, updateDto: UpdatePaymentDto, orgId: string, userId: string, role: string, updatedBy: string) {
-        const payment = await this.em.findOne(Payment, { id, orgId, deletedAt: null });
+    return this.transformPayment(payment);
+  }
 
-        if (!payment) {
-            throw new NotFoundException('Payment not found');
-        }
+  async update(
+    id: string,
+    updateDto: UpdatePaymentDto,
+    orgId: string,
+    userId: string,
+    role: string,
+    updatedBy: string,
+  ) {
+    const payment = await this.em.findOne(Payment, {
+      id,
+      orgId,
+      deletedAt: null,
+    });
 
-        const { patientId, ...updateData } = updateDto;
-
-        // Update basic fields
-        this.em.assign(payment, {
-            ...updateData,
-            ...(updateDto.date && { date: new Date(updateDto.date) }),
-            updatedBy,
-            updatedAt: new Date(),
-        });
-
-        // Update patient if provided
-        if (patientId) {
-            payment.patient = this.em.getReference('Patient', patientId) as any;
-        }
-
-        await this.em.flush();
-        return this.findOne(id, orgId, userId, role);
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
     }
 
-    async remove(id: string, orgId: string, userId: string, role: string, deletedBy: string) {
-        const payment = await this.em.findOne(Payment, { id, orgId, deletedAt: null });
+    const { patientId, ...updateData } = updateDto;
 
-        if (!payment) {
-            throw new NotFoundException('Payment not found');
-        }
+    // Update basic fields
+    this.em.assign(payment, {
+      ...updateData,
+      ...(updateDto.date && { date: new Date(updateDto.date) }),
+      updatedBy,
+      updatedAt: new Date(),
+    });
 
-        // Soft delete
-        payment.deletedAt = new Date();
-        payment.deletedBy = deletedBy;
-
-        await this.em.flush();
-        return { message: 'Payment deleted successfully' };
+    // Update patient if provided
+    if (patientId) {
+      payment.patient = this.em.getReference('Patient', patientId) as any;
     }
 
-    async getPatientPaymentStats(patientId: string, orgId: string) {
-        const payments = await this.em.find(Payment, {
-            patient: { id: patientId },
-            orgId,
-            deletedAt: null,
-        });
+    await this.em.flush();
+    return this.findOne(id, orgId, userId, role);
+  }
 
-        const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
-        const paymentCount = payments.length;
+  async remove(
+    id: string,
+    orgId: string,
+    userId: string,
+    role: string,
+    deletedBy: string,
+  ) {
+    const payment = await this.em.findOne(Payment, {
+      id,
+      orgId,
+      deletedAt: null,
+    });
 
-        return {
-            totalPaid,
-            paymentCount,
-            lastPaymentDate: payments.length > 0
-                ? payments.sort((a, b) => b.date.getTime() - a.date.getTime())[0].date.toISOString()
-                : null,
-        };
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
     }
 
-    private transformPayment(payment: Payment) {
-        return {
-            id: payment.id,
-            patientId: payment.patient.id,
-            patient: {
-                id: payment.patient.id,
-                firstName: payment.patient.firstName,
-                lastName: payment.patient.lastName,
-            },
-            amount: Number(payment.amount),
-            date: payment.date.toISOString(),
-            paymentMethod: payment.paymentMethod,
-            notes: payment.notes,
-            createdAt: payment.createdAt.toISOString(),
-            updatedAt: payment.updatedAt.toISOString(),
-        };
-    }
+    // Soft delete
+    payment.deletedAt = new Date();
+    payment.deletedBy = deletedBy;
 
-    /**
-     * Manually send payment receipt
-     */
-    async sendPaymentReceipt(paymentId: string, orgId: string) {
-        const payment = await this.em.findOneOrFail(
-            Payment,
-            { id: paymentId, orgId, deletedAt: null },
-            { populate: ['patient'] },
-        );
+    await this.em.flush();
+    return { message: 'Payment deleted successfully' };
+  }
 
-        const remainingBalance = await this.calculateRemainingBalance(
-            payment.patient.id,
-            orgId,
-        );
+  async getPatientPaymentStats(patientId: string, orgId: string) {
+    const payments = await this.em.find(Payment, {
+      patient: { id: patientId },
+      orgId,
+      deletedAt: null,
+    });
 
-        await this.reminderService.sendPaymentReceipt(
-            payment.patient.id,
-            paymentId,
-            Number(payment.amount),
-            remainingBalance,
-            orgId,
-        );
+    const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const paymentCount = payments.length;
 
-        return { message: 'Payment receipt sent successfully' };
-    }
+    return {
+      totalPaid,
+      paymentCount,
+      lastPaymentDate:
+        payments.length > 0
+          ? payments
+              .sort((a, b) => b.date.getTime() - a.date.getTime())[0]
+              .date.toISOString()
+          : null,
+    };
+  }
+
+  private transformPayment(payment: Payment) {
+    return {
+      id: payment.id,
+      patientId: payment.patient.id,
+      patient: {
+        id: payment.patient.id,
+        firstName: payment.patient.firstName,
+        lastName: payment.patient.lastName,
+      },
+      amount: Number(payment.amount),
+      date: payment.date.toISOString(),
+      paymentMethod: payment.paymentMethod,
+      notes: payment.notes,
+      createdAt: payment.createdAt.toISOString(),
+      updatedAt: payment.updatedAt.toISOString(),
+    };
+  }
+
+  /**
+   * Manually send payment receipt
+   */
+  async sendPaymentReceipt(paymentId: string, orgId: string) {
+    const payment = await this.em.findOneOrFail(
+      Payment,
+      { id: paymentId, orgId, deletedAt: null },
+      { populate: ['patient'] },
+    );
+
+    const remainingBalance = await this.calculateRemainingBalance(
+      payment.patient.id,
+      orgId,
+    );
+
+    await this.reminderService.sendPaymentReceipt(
+      payment.patient.id,
+      paymentId,
+      Number(payment.amount),
+      remainingBalance,
+      orgId,
+    );
+
+    return { message: 'Payment receipt sent successfully' };
+  }
 }

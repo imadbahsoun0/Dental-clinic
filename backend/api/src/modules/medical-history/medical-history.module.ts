@@ -5,9 +5,9 @@ import { MedicalHistoryController } from './medical-history.controller';
 import { MedicalHistoryQuestion } from '../../common/entities/medical-history-question.entity';
 
 @Module({
-    imports: [MikroOrmModule.forFeature([MedicalHistoryQuestion])],
-    controllers: [MedicalHistoryController],
-    providers: [MedicalHistoryService],
-    exports: [MedicalHistoryService],
+  imports: [MikroOrmModule.forFeature([MedicalHistoryQuestion])],
+  controllers: [MedicalHistoryController],
+  providers: [MedicalHistoryService],
+  exports: [MedicalHistoryService],
 })
 export class MedicalHistoryModule {}

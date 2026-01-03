@@ -13,7 +13,10 @@ export class MessagesService {
     private readonly em: EntityManager,
   ) {}
 
-  async create(createMessageDto: CreateMessageDto, orgId: string): Promise<Message> {
+  async create(
+    createMessageDto: CreateMessageDto,
+    orgId: string,
+  ): Promise<Message> {
     const message = this.messageRepository.create({
       patient: createMessageDto.patientId as any,
       type: createMessageDto.type,
@@ -32,19 +35,26 @@ export class MessagesService {
 
     const { page = 1, limit = 20, patientId, type, status } = filterDto;
     console.log('[MessagesService.findAll] pagination', { page, limit });
-    console.log('[MessagesService.findAll] filters', { patientId, type, status });
+    console.log('[MessagesService.findAll] filters', {
+      patientId,
+      type,
+      status,
+    });
 
     // Use query builder for more control
     const qb = this.em.createQueryBuilder(Message, 'm');
     console.log('[MessagesService.findAll] created QueryBuilder');
     console.log('[MessagesService.findAll] applying orgId filter', orgId);
-    qb.where({  orgId});
+    qb.where({ orgId });
     console.log('[MessagesService.findAll] applied orgId filter', orgId);
-    
+
     if (patientId) {
       // Use explicit join column filtering to avoid any relation issues
       qb.andWhere({ patient: { id: patientId } });
-      console.log('[MessagesService.findAll] applied patientId filter', patientId);
+      console.log(
+        '[MessagesService.findAll] applied patientId filter',
+        patientId,
+      );
     }
     if (type) {
       qb.andWhere({ type });
@@ -66,7 +76,10 @@ export class MessagesService {
     });
 
     const [data, total] = await qb.getResultAndCount();
-    console.log('[MessagesService.findAll] query result', { total, dataCount: data.length });
+    console.log('[MessagesService.findAll] query result', {
+      total,
+      dataCount: data.length,
+    });
 
     const result = {
       data,
@@ -76,7 +89,9 @@ export class MessagesService {
       totalPages: Math.ceil(total / limit),
     };
 
-    console.log('[MessagesService.findAll] returning', { totalPages: result.totalPages });
+    console.log('[MessagesService.findAll] returning', {
+      totalPages: result.totalPages,
+    });
     return result;
   }
 
@@ -94,14 +109,18 @@ export class MessagesService {
   ): Promise<Message> {
     const message = await this.messageRepository.findOneOrFail({ id });
     message.status = status;
-    message.sentAt = status === MessageStatus.SENT ? new Date() : message.sentAt;
+    message.sentAt =
+      status === MessageStatus.SENT ? new Date() : message.sentAt;
     if (error) message.error = error;
 
     await this.em.flush();
     return message;
   }
 
-  async getPatientMessages(patientId: string, orgId: string): Promise<Message[]> {
+  async getPatientMessages(
+    patientId: string,
+    orgId: string,
+  ): Promise<Message[]> {
     return this.messageRepository.find(
       { patient: { id: patientId }, orgId },
       { orderBy: { createdAt: 'DESC' } },

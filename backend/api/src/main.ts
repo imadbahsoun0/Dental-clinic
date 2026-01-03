@@ -27,10 +27,7 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // Global filters (order matters - most specific first)
-  app.useGlobalFilters(
-    new AllExceptionsFilter(),
-    new HttpExceptionFilter(),
-  );
+  app.useGlobalFilters(new AllExceptionsFilter(), new HttpExceptionFilter());
 
   // Global interceptors
   app.useGlobalInterceptors(
@@ -83,7 +80,9 @@ async function bootstrap() {
   const port = configService.get('PORT') || 3000;
   await app.listen(port);
 
-  console.log(`🚀 Application is running on: http://localhost:${port}/${apiPrefix}`);
+  console.log(
+    `🚀 Application is running on: http://localhost:${port}/${apiPrefix}`,
+  );
   console.log(`📚 Swagger documentation: http://localhost:${port}/api/docs`);
 }
 

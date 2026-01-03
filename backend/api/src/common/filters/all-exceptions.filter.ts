@@ -1,45 +1,45 @@
 import {
-    ExceptionFilter,
-    Catch,
-    ArgumentsHost,
-    HttpException,
-    HttpStatus,
-    Logger,
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ErrorResponse } from '../dto/error-response.dto';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-    private readonly logger = new Logger(AllExceptionsFilter.name);
+  private readonly logger = new Logger(AllExceptionsFilter.name);
 
-    catch(exception: unknown, host: ArgumentsHost) {
-        const ctx = host.switchToHttp();
-        const response = ctx.getResponse<Response>();
-        const request = ctx.getRequest<Request>();
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
 
-        const status =
-            exception instanceof HttpException
-                ? exception.getStatus()
-                : HttpStatus.INTERNAL_SERVER_ERROR;
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
 
-        const message =
-            exception instanceof HttpException
-                ? exception.message
-                : 'Internal server error';
+    const message =
+      exception instanceof HttpException
+        ? exception.message
+        : 'Internal server error';
 
-        const errorResponse = new ErrorResponse(
-            message,
-            HttpStatus[status],
-            undefined,
-            request.url,
-        );
+    const errorResponse = new ErrorResponse(
+      message,
+      HttpStatus[status],
+      undefined,
+      request.url,
+    );
 
-        this.logger.error(
-            `${request.method} ${request.url} - Status: ${status} - Message: ${message}`,
-            exception instanceof Error ? exception.stack : 'No stack trace',
-        );
+    this.logger.error(
+      `${request.method} ${request.url} - Status: ${status} - Message: ${message}`,
+      exception instanceof Error ? exception.stack : 'No stack trace',
+    );
 
-        response.status(status).json(errorResponse);
-    }
+    response.status(status).json(errorResponse);
+  }
 }

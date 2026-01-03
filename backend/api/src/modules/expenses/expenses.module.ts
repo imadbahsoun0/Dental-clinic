@@ -6,9 +6,9 @@ import { Expense } from '../../common/entities/expense.entity';
 import { UserOrganization } from '../../common/entities/user-organization.entity';
 
 @Module({
-    imports: [MikroOrmModule.forFeature([Expense, UserOrganization])],
-    controllers: [ExpensesController],
-    providers: [ExpensesService],
-    exports: [ExpensesService],
+  imports: [MikroOrmModule.forFeature([Expense, UserOrganization])],
+  controllers: [ExpensesController],
+  providers: [ExpensesService],
+  exports: [ExpensesService],
 })
-export class ExpensesModule { }
+export class ExpensesModule {}

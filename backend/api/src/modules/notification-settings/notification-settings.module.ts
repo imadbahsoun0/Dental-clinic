@@ -5,9 +5,9 @@ import { NotificationSettingsController } from './notification-settings.controll
 import { NotificationSettings } from '../../common/entities/notification-settings.entity';
 
 @Module({
-    imports: [MikroOrmModule.forFeature([NotificationSettings])],
-    controllers: [NotificationSettingsController],
-    providers: [NotificationSettingsService],
-    exports: [NotificationSettingsService],
+  imports: [MikroOrmModule.forFeature([NotificationSettings])],
+  controllers: [NotificationSettingsController],
+  providers: [NotificationSettingsService],
+  exports: [NotificationSettingsService],
 })
 export class NotificationSettingsModule {}

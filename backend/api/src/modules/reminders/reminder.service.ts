@@ -4,8 +4,17 @@ import { EntityManager } from '@mikro-orm/core';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 import { MessagesService } from '../messages/messages.service';
 import { NotificationSettingsService } from '../notification-settings/notification-settings.service';
-import { Patient, Organization, User, Appointment, Payment } from '../../common/entities';
-import { MessageType, MessageStatus } from '../../common/entities/message.entity';
+import {
+  Patient,
+  Organization,
+  User,
+  Appointment,
+  Payment,
+} from '../../common/entities';
+import {
+  MessageType,
+  MessageStatus,
+} from '../../common/entities/message.entity';
 
 @Injectable()
 export class ReminderService {
@@ -19,16 +28,25 @@ export class ReminderService {
     private readonly configService: ConfigService,
     private readonly em: EntityManager,
   ) {
-    this.frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3001');
+    this.frontendUrl = this.configService.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:3001',
+    );
   }
 
   /**
    * Replace template variables with actual values
    */
-  private replaceVariables(template: string, variables: Record<string, string>): string {
+  private replaceVariables(
+    template: string,
+    variables: Record<string, string>,
+  ): string {
     let result = template;
     for (const [key, value] of Object.entries(variables)) {
-      result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value || '');
+      result = result.replace(
+        new RegExp(`\\{\\{${key}\\}\\}`, 'g'),
+        value || '',
+      );
     }
     return result;
   }
@@ -36,10 +54,17 @@ export class ReminderService {
   /**
    * Send medical history link to patient after creation
    */
-  async sendMedicalHistoryLink(patientId: string, orgId: string): Promise<void> {
+  async sendMedicalHistoryLink(
+    patientId: string,
+    orgId: string,
+  ): Promise<void> {
     try {
-      const patient = await this.em.findOneOrFail(Patient, { id: patientId, orgId });
-      const settings = await this.notificationSettingsService.getOrCreateSettings(orgId);
+      const patient = await this.em.findOneOrFail(Patient, {
+        id: patientId,
+        orgId,
+      });
+      const settings =
+        await this.notificationSettingsService.getOrCreateSettings(orgId);
       const org = await this.em.findOneOrFail(Organization, { id: orgId });
 
       const medicalHistoryLink = `${this.frontendUrl}/medical-history/${patientId}?orgId=${orgId}`;
@@ -83,7 +108,9 @@ export class ReminderService {
       if (result.success) {
         this.logger.log(`Medical history link sent to patient ${patientId}`);
       } else {
-        this.logger.error(`Failed to send medical history link: ${result.error}`);
+        this.logger.error(
+          `Failed to send medical history link: ${result.error}`,
+        );
       }
     } catch (error) {
       this.logger.error(`Error sending medical history link: ${error}`);
@@ -102,8 +129,12 @@ export class ReminderService {
     orgId: string,
   ): Promise<void> {
     try {
-      const patient = await this.em.findOneOrFail(Patient, { id: patientId, orgId });
-      const settings = await this.notificationSettingsService.getOrCreateSettings(orgId);
+      const patient = await this.em.findOneOrFail(Patient, {
+        id: patientId,
+        orgId,
+      });
+      const settings =
+        await this.notificationSettingsService.getOrCreateSettings(orgId);
       const org = await this.em.findOneOrFail(Organization, { id: orgId });
 
       const variables = {
@@ -157,7 +188,11 @@ export class ReminderService {
   /**
    * Send appointment reminder
    */
-  async sendAppointmentReminder(appointmentId: string, orgId: string, timingInHours?: number): Promise<void> {
+  async sendAppointmentReminder(
+    appointmentId: string,
+    orgId: string,
+    timingInHours?: number,
+  ): Promise<void> {
     try {
       const appointment = await this.em.findOneOrFail(
         Appointment,
@@ -165,14 +200,13 @@ export class ReminderService {
         { populate: ['patient', 'doctor'] },
       );
 
-      const settings = await this.notificationSettingsService.getOrCreateSettings(orgId);
+      const settings =
+        await this.notificationSettingsService.getOrCreateSettings(orgId);
       const org = await this.em.findOneOrFail(Organization, { id: orgId });
 
       const appointmentDate = appointment.date.toISOString().split('T')[0];
-      const doctor = appointment.doctor
-      const doctorName = doctor
-        ? `${doctor.name}`
-        : 'the doctor';
+      const doctor = appointment.doctor;
+      const doctorName = doctor ? `${doctor.name}` : 'the doctor';
 
       const variables = {
         patientName: `${appointment.patient.firstName} ${appointment.patient.lastName}`,
@@ -194,11 +228,11 @@ export class ReminderService {
           patientId: appointment.patient.id,
           type: MessageType.APPOINTMENT_REMINDER,
           content,
-          metadata: { 
-            appointmentId, 
-            appointmentDate, 
+          metadata: {
+            appointmentId,
+            appointmentDate,
             appointmentTime: appointment.time,
-            timingInHours 
+            timingInHours,
           },
         },
         orgId,
@@ -218,9 +252,13 @@ export class ReminderService {
       );
 
       if (result.success) {
-        this.logger.log(`Appointment reminder sent for appointment ${appointmentId}`);
+        this.logger.log(
+          `Appointment reminder sent for appointment ${appointmentId}`,
+        );
       } else {
-        this.logger.error(`Failed to send appointment reminder: ${result.error}`);
+        this.logger.error(
+          `Failed to send appointment reminder: ${result.error}`,
+        );
       }
     } catch (error) {
       this.logger.error(`Error sending appointment reminder: ${error}`);
@@ -233,8 +271,12 @@ export class ReminderService {
    */
   async sendFollowUpReminder(patientId: string, orgId: string): Promise<void> {
     try {
-      const patient = await this.em.findOneOrFail(Patient, { id: patientId, orgId });
-      const settings = await this.notificationSettingsService.getOrCreateSettings(orgId);
+      const patient = await this.em.findOneOrFail(Patient, {
+        id: patientId,
+        orgId,
+      });
+      const settings =
+        await this.notificationSettingsService.getOrCreateSettings(orgId);
       const org = await this.em.findOneOrFail(Organization, { id: orgId });
 
       const variables = {
@@ -255,7 +297,10 @@ export class ReminderService {
           patientId,
           type: MessageType.FOLLOW_UP,
           content,
-          metadata: { followUpDate: patient.followUpDate, followUpReason: patient.followUpReason },
+          metadata: {
+            followUpDate: patient.followUpDate,
+            followUpReason: patient.followUpReason,
+          },
         },
         orgId,
       );
@@ -293,8 +338,12 @@ export class ReminderService {
     orgId: string,
   ): Promise<void> {
     try {
-      const patient = await this.em.findOneOrFail(Patient, { id: patientId, orgId });
-      const settings = await this.notificationSettingsService.getOrCreateSettings(orgId);
+      const patient = await this.em.findOneOrFail(Patient, {
+        id: patientId,
+        orgId,
+      });
+      const settings =
+        await this.notificationSettingsService.getOrCreateSettings(orgId);
       const org = await this.em.findOneOrFail(Organization, { id: orgId });
 
       const variables = {
@@ -334,9 +383,13 @@ export class ReminderService {
       );
 
       if (result.success) {
-        this.logger.log(`Payment overdue reminder sent to patient ${patientId}`);
+        this.logger.log(
+          `Payment overdue reminder sent to patient ${patientId}`,
+        );
       } else {
-        this.logger.error(`Failed to send payment overdue reminder: ${result.error}`);
+        this.logger.error(
+          `Failed to send payment overdue reminder: ${result.error}`,
+        );
       }
     } catch (error) {
       this.logger.error(`Error sending payment overdue reminder: ${error}`);
@@ -350,7 +403,9 @@ export class ReminderService {
   async resendMessage(messageId: string, orgId: string): Promise<void> {
     try {
       const message = await this.messagesService.findOne(messageId, orgId);
-      const patient = await this.em.findOneOrFail(Patient, { id: message.patient.id });
+      const patient = await this.em.findOneOrFail(Patient, {
+        id: message.patient.id,
+      });
 
       // Send WhatsApp message
       const result = await this.whatsappService.sendMessage({
