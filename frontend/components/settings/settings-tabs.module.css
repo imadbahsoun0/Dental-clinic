@@ -148,6 +148,17 @@
     border-color: var(--primary);
 }
 
+.reminderRow {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+}
+
+.reminderRow:last-of-type {
+    margin-bottom: 0;
+}
+
 /* Medical History Options */
 .optionsContainer {
     display: flex;
@@ -185,6 +196,34 @@
     grid-template-columns: 1fr auto;
     gap: 12px;
     align-items: end;
+}
+
+.removeBtn {
+    background: none;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: end;
+    margin-bottom: 4px;
+}
+
+.removeBtn:hover:not(:disabled) {
+    background-color: var(--danger);
+    color: white;
+}
+
+.removeBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 /* Responsive */

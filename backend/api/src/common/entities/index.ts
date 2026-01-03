@@ -13,3 +13,4 @@ export * from './medical-history-question.entity';
 export * from './notification-settings.entity';
 export * from './attachment.entity';
 export * from './tooth.entity';
+export * from './message.entity';

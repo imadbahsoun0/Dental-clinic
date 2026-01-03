@@ -11,7 +11,9 @@ export interface Patient {
   emergencyContact?: string;
   bloodType?: string;
   medicalHistory?: MedicalHistorySubmission;
-  enablePaymentReminders?: boolean; // Enable/disable payment reminder notifications (default: true)
+  followUpDate?: string;
+  followUpReason?: string;
+  followUpStatus?: 'pending' | 'completed' | 'cancelled';
   createdAt: string;
   updatedAt: string;
 }
@@ -211,9 +213,41 @@ export interface NotificationTemplate {
   messageTemplate: string; // Template with {{variables}}
 }
 
+export interface AppointmentReminder {
+  enabled: boolean;
+  timingInHours: number;
+}
+
+export interface MessageTemplates {
+  medical_history: string;
+  payment_receipt: string;
+  appointment_reminder: string;
+  follow_up: string;
+  payment_overdue: string;
+}
+
 export interface NotificationSettings {
-  appointmentReminder: NotificationTemplate;
-  paymentReminder: NotificationTemplate;
+  appointmentReminders: AppointmentReminder[];
+  messageTemplates: MessageTemplates;
+}
+
+export interface Message {
+  id: string;
+  patientId: string;
+  type: 'medical_history' | 'payment_receipt' | 'appointment_reminder' | 'follow_up' | 'payment_overdue';
+  content: string;
+  status: 'pending' | 'sent' | 'failed';
+  sentAt?: string;
+  error?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FollowUpStatus {
+  PENDING: 'pending';
+  COMPLETED: 'completed';
+  CANCELLED: 'cancelled';
 }
 
 // UI Component Props Types

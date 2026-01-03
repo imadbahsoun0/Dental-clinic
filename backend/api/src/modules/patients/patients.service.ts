@@ -1,20 +1,24 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
-import { Patient, Attachment } from '../../common/entities';
+import { Patient, Attachment, Treatment, Payment } from '../../common/entities';
 import { MedicalHistoryQuestion } from '../../common/entities/medical-history-question.entity';
+import { TreatmentStatus } from '../../common/entities/treatment.entity';
+import { FollowUpStatus } from '../../common/entities/patient.entity';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { SubmitMedicalHistoryDto } from './dto/submit-medical-history.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { FilterDto } from '../../common/dto/filter.dto';
 import { FilesService } from '../files/files.service';
+import { ReminderService } from '../reminders/reminder.service';
 
 @Injectable()
 export class PatientsService {
-    constructor(
-        private em: EntityManager,
-        private filesService: FilesService,
-    ) { }
+  constructor(
+    private em: EntityManager,
+    private filesService: FilesService,
+    private reminderService: ReminderService,
+  ) {}
 
     async create(createPatientDto: CreatePatientDto, orgId: string, createdBy: string) {
         const { documentIds, ...patientData } = createPatientDto;
@@ -32,6 +36,15 @@ export class PatientsService {
         }
 
         await this.em.persistAndFlush(patient);
+        
+        // Send medical history link via WhatsApp
+        try {
+            await this.reminderService.sendMedicalHistoryLink(patient.id, orgId);
+        } catch (error) {
+            // Log error but don't fail patient creation
+            console.error('Failed to send medical history link:', error);
+        }
+        
         return this.mapToResponse(patient);
     }
 
@@ -169,7 +182,9 @@ export class PatientsService {
             dateOfBirth: patient.dateOfBirth,
             address: patient.address,
             medicalHistory: patient.medicalHistory,
-            enablePaymentReminders: patient.enablePaymentReminders,
+            followUpDate: patient.followUpDate,
+            followUpReason: patient.followUpReason,
+            followUpStatus: patient.followUpStatus,
             documents: docsWithUrls,
             createdAt: patient.createdAt,
             updatedAt: patient.updatedAt,
@@ -316,6 +331,155 @@ export class PatientsService {
         return {
             message: `Updated ${updatedCount} patient medical histories with question text`,
             updatedCount,
+        };
+    }
+
+    /**
+     * Manually trigger medical history reminder
+     */
+    async sendMedicalHistoryReminder(patientId: string, orgId: string) {
+        await this.reminderService.sendMedicalHistoryLink(patientId, orgId);
+        return { message: 'Medical history reminder sent successfully' };
+    }
+
+    async sendFollowUpReminder(patientId: string, orgId: string) {
+        await this.reminderService.sendFollowUpReminder(patientId, orgId);
+        return { message: 'Follow-up reminder sent successfully' };
+    }
+
+    async sendPaymentOverdueReminder(patientId: string, orgId: string) {
+        // Get patient with completed treatments to calculate amount due
+        const patient = await this.findOne(patientId, orgId);
+        
+        // Calculate remaining balance
+        const completedTreatments = await this.em.find(Treatment, {
+            patient: patientId,
+            status: TreatmentStatus.COMPLETED,
+            deletedAt: null,
+        });
+
+        const totalTreatmentCost = completedTreatments.reduce((sum, t) => {
+            return sum + (Number(t.totalPrice) - Number(t.discount));
+        }, 0);
+
+        const payments = await this.em.find(Payment, {
+            patient: patientId,
+            deletedAt: null,
+        });
+
+        const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+        const amountDue = totalTreatmentCost - totalPaid;
+
+        if (amountDue <= 0) {
+            return { message: 'No outstanding balance for this patient' };
+        }
+
+        await this.reminderService.sendPaymentOverdueReminder(patientId, amountDue, orgId);
+        return { message: 'Payment overdue reminder sent successfully' };
+    }
+
+    /**
+     * Get patients with pending follow-ups
+     */
+    async getPatientsWithFollowUps(orgId: string, pagination: PaginationDto) {
+        const { page = 1, limit = 20 } = pagination;
+        const offset = (page - 1) * limit;
+
+        const [patients, total] = await this.em.findAndCount(
+            Patient,
+            {
+                orgId,
+                deletedAt: null,
+                followUpDate: { $ne: null },
+                followUpStatus: FollowUpStatus.PENDING,
+            },
+            {
+                limit,
+                offset,
+                orderBy: { followUpDate: 'ASC' },
+                populate: ['documents'],
+            },
+        );
+
+        const data = await Promise.all(patients.map(p => this.mapToResponse(p)));
+
+        return {
+            data,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    }
+
+    /**
+     * Get patients with unpaid balances (completed treatments but outstanding payments)
+     */
+    async getUnpaidPatients(orgId: string, pagination: PaginationDto) {
+        const { page = 1, limit = 20 } = pagination;
+        const offset = (page - 1) * limit;
+
+        // Get all patients
+        const patients = await this.em.find(Patient, {
+            orgId,
+            deletedAt: null,
+        }, {
+            limit,
+            offset,
+        });
+        
+        // For each patient, calculate if they have unpaid balance
+        const unpaidPatientsData: any[] = [];
+
+        for (const patient of patients) {
+            // Get all completed treatments
+            const completedTreatments = await this.em.find(Treatment, {
+                patient: patient.id,
+                status: TreatmentStatus.COMPLETED,
+                deletedAt: null,
+            });
+
+            if (completedTreatments.length === 0) continue;
+
+            // Calculate total treatment cost
+            const totalTreatmentCost = completedTreatments.reduce((sum, t) => {
+                return sum + (Number(t.totalPrice) - Number(t.discount));
+            }, 0);
+
+            // Get total payments
+            const payments = await this.em.find(Payment, {
+                patient: patient.id,
+                deletedAt: null,
+            });
+
+            const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+            const remainingBalance = totalTreatmentCost - totalPaid;
+
+            // Only include if there's an outstanding balance
+            if (remainingBalance > 0) {
+                unpaidPatientsData.push({
+                    ...patient,
+                    totalTreatmentCost,
+                    totalPaid,
+                    remainingBalance,
+                });
+            }
+        }
+
+        // Get total count of unpaid patients (simplified - may need optimization)
+        const totalUnpaid = unpaidPatientsData.length;
+
+        return {
+            data: unpaidPatientsData,
+            meta: {
+                total: totalUnpaid,
+                page,
+                limit,
+                totalPages: Math.ceil(totalUnpaid / limit),
+            },
         };
     }
 }

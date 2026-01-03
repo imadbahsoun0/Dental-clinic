@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Payment } from '@/types';
+import { PaymentReceiptStatus } from './PaymentReceiptStatus';
 import styles from './PaymentsTable.module.css';
 
 interface PaymentsTableProps {
@@ -43,6 +44,7 @@ export const PaymentsTable: React.FC<PaymentsTableProps> = ({
                         <th>Amount</th>
                         <th>Payment Method</th>
                         <th>Notes</th>
+                        <th>Receipt Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -57,6 +59,9 @@ export const PaymentsTable: React.FC<PaymentsTableProps> = ({
                                 </span>
                             </td>
                             <td>{payment.notes || '-'}</td>
+                            <td>
+                                <PaymentReceiptStatus paymentId={payment.id} />
+                            </td>
                             <td>
                                 <div className={styles.actions}>
                                     <button

@@ -244,8 +244,10 @@ export interface CreatePatientDto {
   dateOfBirth?: string;
   address?: string;
   medicalHistory?: object;
-  /** @example true */
-  enablePaymentReminders?: boolean;
+  /** @example "2026-02-15" */
+  followUpDate?: string;
+  followUpReason?: string;
+  followUpStatus?: "pending" | "completed" | "cancelled";
   documentIds?: string[];
 }
 
@@ -262,8 +264,10 @@ export interface UpdatePatientDto {
   dateOfBirth?: string;
   address?: string;
   medicalHistory?: object;
-  /** @example true */
-  enablePaymentReminders?: boolean;
+  /** @example "2026-02-15" */
+  followUpDate?: string;
+  followUpReason?: string;
+  followUpStatus?: "pending" | "completed" | "cancelled";
   documentIds?: string[];
 }
 
@@ -330,6 +334,63 @@ export interface SubmitMedicalHistoryDto {
    * @example "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA..."
    */
   signature: string;
+}
+
+export type Message = object;
+
+export interface CreateMessageDto {
+  patientId: string;
+  type:
+    | "medical_history"
+    | "payment_receipt"
+    | "appointment_reminder"
+    | "follow_up"
+    | "payment_overdue";
+  content: string;
+  metadata?: object;
+}
+
+export interface AppointmentReminderResponseDto {
+  enabled: boolean;
+  timing: number;
+  timingUnit: string;
+  messageTemplate: string;
+}
+
+export interface PaymentReminderResponseDto {
+  enabled: boolean;
+  timing: number;
+  timingUnit: string;
+  messageTemplate: string;
+}
+
+export interface NotificationSettingsResponseDto {
+  id: string;
+  appointmentReminder: AppointmentReminderResponseDto;
+  paymentReminder: PaymentReminderResponseDto;
+  /** @format date-time */
+  createdAt: string;
+  /** @format date-time */
+  updatedAt: string;
+}
+
+export interface AppointmentReminderDto {
+  enabled: boolean;
+  /** Timing in hours before appointment */
+  timingInHours: number;
+}
+
+export interface MessageTemplatesDto {
+  medical_history: string;
+  payment_receipt: string;
+  appointment_reminder: string;
+  follow_up: string;
+  payment_overdue: string;
+}
+
+export interface UpdateNotificationSettingsDto {
+  appointmentReminders: AppointmentReminderDto[];
+  messageTemplates: MessageTemplatesDto;
 }
 
 export interface CreateAppointmentDto {
@@ -624,49 +685,6 @@ export interface UpdateMedicalHistoryQuestionDto {
   required?: boolean;
   /** @example 1 */
   order?: number;
-}
-
-export interface AppointmentReminderResponseDto {
-  enabled: boolean;
-  timing: number;
-  timingUnit: string;
-  messageTemplate: string;
-}
-
-export interface PaymentReminderResponseDto {
-  enabled: boolean;
-  timing: number;
-  timingUnit: string;
-  messageTemplate: string;
-}
-
-export interface NotificationSettingsResponseDto {
-  id: string;
-  appointmentReminder: AppointmentReminderResponseDto;
-  paymentReminder: PaymentReminderResponseDto;
-  /** @format date-time */
-  createdAt: string;
-  /** @format date-time */
-  updatedAt: string;
-}
-
-export interface AppointmentReminderDto {
-  enabled: boolean;
-  timing: number;
-  timingUnit: "hours" | "days";
-  messageTemplate: string;
-}
-
-export interface PaymentReminderDto {
-  enabled: boolean;
-  timing: number;
-  timingUnit: "hours" | "days";
-  messageTemplate: string;
-}
-
-export interface UpdateNotificationSettingsDto {
-  appointmentReminder: AppointmentReminderDto;
-  paymentReminder: PaymentReminderDto;
 }
 
 export interface CreateExpenseDto {
@@ -1762,6 +1780,340 @@ export class Api<
     /**
      * No description
      *
+     * @tags Patients
+     * @name PatientsControllerGetFollowUps
+     * @summary Get patients with pending follow-ups
+     * @request GET:/api/v1/patients/follow-ups/pending
+     * @secure
+     */
+    patientsControllerGetFollowUps: (
+      query?: {
+        /**
+         * @min 1
+         * @default 1
+         */
+        page?: number;
+        /**
+         * @min 1
+         * @max 1000
+         * @default 10
+         */
+        limit?: number;
+        search?: string;
+        startDate?: string;
+        endDate?: string;
+        sortBy?: string;
+        sortOrder?: "ASC" | "DESC";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: PatientResponseDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/follow-ups/pending`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerGetUnpaidPatients
+     * @summary Get patients with unpaid balances
+     * @request GET:/api/v1/patients/unpaid/list
+     * @secure
+     */
+    patientsControllerGetUnpaidPatients: (
+      query?: {
+        /**
+         * @min 1
+         * @default 1
+         */
+        page?: number;
+        /**
+         * @min 1
+         * @max 1000
+         * @default 10
+         */
+        limit?: number;
+        search?: string;
+        startDate?: string;
+        endDate?: string;
+        sortBy?: string;
+        sortOrder?: "ASC" | "DESC";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/unpaid/list`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerSendMedicalHistoryReminder
+     * @summary Manually send medical history link to patient
+     * @request POST:/api/v1/patients/{id}/send-medical-history
+     * @secure
+     */
+    patientsControllerSendMedicalHistoryReminder: (
+      id: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/${id}/send-medical-history`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerSendFollowUpReminder
+     * @summary Send follow-up reminder to patient
+     * @request POST:/api/v1/patients/{id}/send-follow-up
+     * @secure
+     */
+    patientsControllerSendFollowUpReminder: (
+      id: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/${id}/send-follow-up`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerSendPaymentOverdueReminder
+     * @summary Send payment overdue reminder to patient
+     * @request POST:/api/v1/patients/{id}/send-payment-overdue
+     * @secure
+     */
+    patientsControllerSendPaymentOverdueReminder: (
+      id: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/${id}/send-payment-overdue`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags messages
+     * @name MessagesControllerCreate
+     * @request POST:/api/v1/messages
+     * @secure
+     */
+    messagesControllerCreate: (
+      data: CreateMessageDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Message;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/messages`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags messages
+     * @name MessagesControllerFindAll
+     * @request GET:/api/v1/messages
+     * @secure
+     */
+    messagesControllerFindAll: (
+      query?: {
+        /**
+         * @min 1
+         * @default 1
+         */
+        page?: number;
+        /**
+         * @min 1
+         * @max 1000
+         * @default 10
+         */
+        limit?: number;
+        patientId?: string;
+        type?:
+          | "medical_history"
+          | "payment_receipt"
+          | "appointment_reminder"
+          | "follow_up"
+          | "payment_overdue";
+        status?: "pending" | "sent" | "failed";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Message[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/messages`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags messages
+     * @name MessagesControllerFindOne
+     * @request GET:/api/v1/messages/{id}
+     * @secure
+     */
+    messagesControllerFindOne: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Message;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/messages/${id}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags messages
+     * @name MessagesControllerResendMessage
+     * @request POST:/api/v1/messages/{id}/resend
+     * @secure
+     */
+    messagesControllerResendMessage: (id: string, params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/messages/${id}/resend`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Notification Settings
+     * @name NotificationSettingsControllerGet
+     * @summary Get notification settings for the organization
+     * @request GET:/api/v1/notification-settings
+     * @secure
+     */
+    notificationSettingsControllerGet: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: NotificationSettingsResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/notification-settings`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Notification Settings
+     * @name NotificationSettingsControllerUpdate
+     * @summary Update notification settings
+     * @request PATCH:/api/v1/notification-settings
+     * @secure
+     */
+    notificationSettingsControllerUpdate: (
+      data: UpdateNotificationSettingsDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: NotificationSettingsResponseDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/notification-settings`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags Appointments
      * @name AppointmentsControllerCreate
      * @summary Create a new appointment
@@ -2509,6 +2861,32 @@ export class Api<
     /**
      * No description
      *
+     * @tags Payments
+     * @name PaymentsControllerSendPaymentReceipt
+     * @summary Manually send payment receipt to patient
+     * @request POST:/api/v1/payments/{id}/send-receipt
+     * @secure
+     */
+    paymentsControllerSendPaymentReceipt: (
+      id: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/payments/${id}/send-receipt`,
+        method: "POST",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags Medical History
      * @name MedicalHistoryControllerCreate
      * @summary Create a new medical history question
@@ -2657,57 +3035,6 @@ export class Api<
         path: `/api/v1/medical-history/${id}`,
         method: "DELETE",
         secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Notification Settings
-     * @name NotificationSettingsControllerGet
-     * @summary Get notification settings for the organization
-     * @request GET:/api/v1/notification-settings
-     * @secure
-     */
-    notificationSettingsControllerGet: (params: RequestParams = {}) =>
-      this.request<
-        StandardResponse & {
-          data?: NotificationSettingsResponseDto;
-        },
-        ErrorResponse
-      >({
-        path: `/api/v1/notification-settings`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Notification Settings
-     * @name NotificationSettingsControllerUpdate
-     * @summary Update notification settings
-     * @request PATCH:/api/v1/notification-settings
-     * @secure
-     */
-    notificationSettingsControllerUpdate: (
-      data: UpdateNotificationSettingsDto,
-      params: RequestParams = {},
-    ) =>
-      this.request<
-        StandardResponse & {
-          data?: NotificationSettingsResponseDto;
-        },
-        ErrorResponse
-      >({
-        path: `/api/v1/notification-settings`,
-        method: "PATCH",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
         format: "json",
         ...params,
       }),

@@ -13,6 +13,7 @@ const mainNavItems = [
     { href: '/patients', label: 'Patients', icon: '👥' },
     { href: '/expenses', label: 'Expenses', icon: '💰' },
     { href: '/doctors-payments', label: 'Doctor Payments', icon: '💳' },
+    { href: '/notifications', label: 'Notifications', icon: '🔔' },
 ];
 
 const settingsNavItems = [

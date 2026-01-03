@@ -436,17 +436,15 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
     // Notification Settings
     notificationSettings: {
-        appointmentReminder: {
-            enabled: true,
-            timing: 24,
-            timingUnit: 'hours' as const,
-            messageTemplate: 'Hello {{patientName}}, reminder for your appointment on {{appointmentDate}} at {{appointmentTime}}.',
-        },
-        paymentReminder: {
-            enabled: true,
-            timing: 7,
-            timingUnit: 'days' as const,
-            messageTemplate: 'Hello {{patientName}}, you have an outstanding balance of {{amountDue}}.',
+        appointmentReminders: [
+            { enabled: true, timingInHours: 24 }
+        ],
+        messageTemplates: {
+            medical_history: 'Hello {{patientName}}, please fill out your medical history form: {{medicalHistoryLink}}',
+            payment_receipt: 'Hello {{patientName}}, we received your payment of {{amount}}. Remaining balance: {{remainingBalance}}. Thank you!',
+            appointment_reminder: 'Hello {{patientName}}, reminder for your appointment on {{appointmentDate}} at {{appointmentTime}} with Dr. {{doctorName}}.',
+            follow_up: 'Hello {{patientName}}, this is a reminder for your follow-up: {{followUpReason}}',
+            payment_overdue: 'Hello {{patientName}}, you have an outstanding balance of {{amountDue}}. Please contact us to arrange payment.',
         },
     },
 

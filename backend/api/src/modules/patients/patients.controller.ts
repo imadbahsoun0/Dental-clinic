@@ -125,4 +125,68 @@ export class PatientsController {
         const result = await this.patientsService.updateMedicalHistoryWithQuestionText(user.orgId);
         return new StandardResponse(result, result.message);
     }
+
+    @Get('follow-ups/pending')
+    @Roles(UserRole.ADMIN, UserRole.SECRETARY)
+    @ApiOperation({ summary: 'Get patients with pending follow-ups' })
+    @ApiStandardResponse(PatientResponseDto, true)
+    async getFollowUps(
+        @Query() query: PatientQueryDto,
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        const { page, limit } = query;
+        const pagination = { page, limit };
+        const result = await this.patientsService.getPatientsWithFollowUps(user.orgId, pagination);
+        return new StandardResponse({ data: result.data, meta: result.meta }, 'Follow-ups retrieved successfully');
+    }
+
+    @Get('unpaid/list')
+    @Roles(UserRole.ADMIN, UserRole.SECRETARY)
+    @ApiOperation({ summary: 'Get patients with unpaid balances' })
+    @ApiStandardResponse(Object, true)
+    async getUnpaidPatients(
+        @Query() query: PatientQueryDto,
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        const { page, limit } = query;
+        const pagination = { page, limit };
+        const result = await this.patientsService.getUnpaidPatients(user.orgId, pagination);
+        return new StandardResponse({ data: result.data, meta: result.meta }, 'Unpaid patients retrieved successfully');
+    }
+
+    @Post(':id/send-medical-history')
+    @Roles(UserRole.ADMIN, UserRole.SECRETARY)
+    @ApiOperation({ summary: 'Manually send medical history link to patient' })
+    @ApiStandardResponse(Object)
+    async sendMedicalHistoryReminder(
+        @Param('id') id: string,
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        const result = await this.patientsService.sendMedicalHistoryReminder(id, user.orgId);
+        return new StandardResponse(result, result.message);
+    }
+
+    @Post(':id/send-follow-up')
+    @Roles(UserRole.ADMIN, UserRole.SECRETARY)
+    @ApiOperation({ summary: 'Send follow-up reminder to patient' })
+    @ApiStandardResponse(Object)
+    async sendFollowUpReminder(
+        @Param('id') id: string,
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        const result = await this.patientsService.sendFollowUpReminder(id, user.orgId);
+        return new StandardResponse(result, result.message);
+    }
+
+    @Post(':id/send-payment-overdue')
+    @Roles(UserRole.ADMIN, UserRole.SECRETARY)
+    @ApiOperation({ summary: 'Send payment overdue reminder to patient' })
+    @ApiStandardResponse(Object)
+    async sendPaymentOverdueReminder(
+        @Param('id') id: string,
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        const result = await this.patientsService.sendPaymentOverdueReminder(id, user.orgId);
+        return new StandardResponse(result, result.message);
+    }
 }

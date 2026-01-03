@@ -10,6 +10,7 @@ import { Select } from '@/components/common/Select';
 import { usePatientStore } from '@/store/patientStore';
 import { PatientModal } from '@/components/patients/PatientModal';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { MedicalHistoryStatus } from '@/components/patients/MedicalHistoryStatus';
 import styles from './patients.module.css';
 import toast from 'react-hot-toast';
 
@@ -101,16 +102,6 @@ export default function PatientsPage() {
         }
     };
 
-    const handleTogglePaymentReminders = async (patientId: string, currentValue: boolean | undefined, e: React.MouseEvent) => {
-        e.stopPropagation();
-        try {
-            await updatePatient(patientId, { enablePaymentReminders: !currentValue });
-            toast.success(`Payment reminders ${!currentValue ? 'enabled' : 'disabled'}`);
-        } catch (e) {
-            toast.error('Failed to update settings');
-        }
-    };
-
     const goToPage = (page: number) => {
         const totalPages = Math.ceil(total / pageSize);
         setCurrentPage(Math.max(1, Math.min(page, totalPages)));
@@ -182,7 +173,7 @@ export default function PatientsPage() {
                                         <th>Phone</th>
                                         <th>Email</th>
                                         <th>Date of Birth</th>
-                                        <th>Payment Reminders</th>
+                                        <th>Medical History</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -214,17 +205,7 @@ export default function PatientsPage() {
                                                     : 'N/A'}
                                             </td>
                                             <td>
-                                                <div
-                                                    className={styles.toggleContainer}
-                                                    onClick={(e) => handleTogglePaymentReminders(patient.id, patient.enablePaymentReminders, e)}
-                                                >
-                                                    <div className={`${styles.toggle} ${(patient.enablePaymentReminders ?? true) ? styles.toggleOn : styles.toggleOff}`}>
-                                                        <div className={styles.toggleSlider}></div>
-                                                    </div>
-                                                    <span className={styles.toggleLabel}>
-                                                        {(patient.enablePaymentReminders ?? true) ? 'Enabled' : 'Disabled'}
-                                                    </span>
-                                                </div>
+                                                <MedicalHistoryStatus patientId={patient.id} />
                                             </td>
                                             <td>
                                                 <div className={styles.actionButtons}>

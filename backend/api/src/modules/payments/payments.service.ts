@@ -1,14 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
-import { Payment } from '../../common/entities';
+import { Payment, Treatment } from '../../common/entities';
+import { TreatmentStatus } from '../../common/entities/treatment.entity';
 import { UserRole } from '../../common/decorators/roles.decorator';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { PaymentQueryDto } from './dto/payment-query.dto';
+import { ReminderService } from '../reminders/reminder.service';
 
 @Injectable()
 export class PaymentsService {
-    constructor(private em: EntityManager) { }
+  constructor(
+    private em: EntityManager,
+    private reminderService: ReminderService,
+  ) {}
 
     async create(createDto: CreatePaymentDto, orgId: string, createdBy: string) {
         const payment = this.em.create(Payment, {
@@ -24,7 +29,51 @@ export class PaymentsService {
         });
 
         await this.em.persistAndFlush(payment);
+        
+        // Calculate remaining balance and send receipt
+        try {
+            const remainingBalance = await this.calculateRemainingBalance(createDto.patientId, orgId);
+            await this.reminderService.sendPaymentReceipt(
+                createDto.patientId,
+                payment.id,
+                createDto.amount,
+                remainingBalance,
+                orgId,
+            );
+        } catch (error) {
+            // Log error but don't fail payment creation
+            console.error('Failed to send payment receipt:', error);
+        }
+        
         return this.findOne(payment.id, orgId, createdBy, UserRole.ADMIN);
+    }
+
+    /**
+     * Calculate remaining balance for a patient
+     */
+    private async calculateRemainingBalance(patientId: string, orgId: string): Promise<number> {
+        // Get all completed treatments
+        const completedTreatments = await this.em.find(Treatment, {
+            patient: patientId,
+            orgId,
+            status: TreatmentStatus.COMPLETED,
+            deletedAt: null,
+        });
+
+        const totalTreatmentCost = completedTreatments.reduce((sum, t) => {
+            return sum + (Number(t.totalPrice) - Number(t.discount));
+        }, 0);
+
+        // Get total payments
+        const payments = await this.em.find(Payment, {
+            patient: patientId,
+            orgId,
+            deletedAt: null,
+        });
+
+        const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+        return totalTreatmentCost - totalPaid;
     }
 
     async findAll(
@@ -165,5 +214,31 @@ export class PaymentsService {
             createdAt: payment.createdAt.toISOString(),
             updatedAt: payment.updatedAt.toISOString(),
         };
+    }
+
+    /**
+     * Manually send payment receipt
+     */
+    async sendPaymentReceipt(paymentId: string, orgId: string) {
+        const payment = await this.em.findOneOrFail(
+            Payment,
+            { id: paymentId, orgId, deletedAt: null },
+            { populate: ['patient'] },
+        );
+
+        const remainingBalance = await this.calculateRemainingBalance(
+            payment.patient.id,
+            orgId,
+        );
+
+        await this.reminderService.sendPaymentReceipt(
+            payment.patient.id,
+            paymentId,
+            Number(payment.amount),
+            remainingBalance,
+            orgId,
+        );
+
+        return { message: 'Payment receipt sent successfully' };
     }
 }

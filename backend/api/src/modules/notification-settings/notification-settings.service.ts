@@ -5,41 +5,40 @@ import { UpdateNotificationSettingsDto } from './dto/update-notification-setting
 
 @Injectable()
 export class NotificationSettingsService {
-    constructor(private readonly em: EntityManager) {}
+  constructor(private readonly em: EntityManager) {}
 
-    async getOrCreateSettings(orgId: string): Promise<NotificationSettings> {
-        let settings = await this.em.findOne(NotificationSettings, { orgId });
+  async getOrCreateSettings(orgId: string): Promise<NotificationSettings> {
+    let settings = await this.em.findOne(NotificationSettings, { orgId });
 
-        if (!settings) {
-            // Create default settings
-            settings = this.em.create(NotificationSettings, {
-                orgId,
-                appointmentReminder: {
-                    enabled: true,
-                    timing: 24,
-                    timingUnit: 'hours',
-                    messageTemplate: 'Hello {{patientName}}, this is a reminder for your appointment on {{appointmentDate}} at {{appointmentTime}} with Dr. {{doctorName}} at {{clinicLocation}}.',
-                },
-                paymentReminder: {
-                    enabled: true,
-                    timing: 7,
-                    timingUnit: 'days',
-                    messageTemplate: 'Hello {{patientName}}, you have an outstanding balance of {{amountDue}}. Please contact us at {{clinicLocation}} to arrange payment.',
-                },
-            } as any);
+    if (!settings) {
+      // Create default settings
+      settings = this.em.create(NotificationSettings, {
+        orgId,
+        appointmentReminders: [
+          { enabled: true, timingInHours: 24 },
+          { enabled: true, timingInHours: 1 },
+        ],
+        messageTemplates: {
+          medical_history: 'Hello {{patientName}}, please fill out your medical history form: {{medicalHistoryLink}}',
+          payment_receipt: 'Hello {{patientName}}, thank you for your payment of {{amount}}. Your remaining balance is {{remainingBalance}}.',
+          appointment_reminder: 'Hello {{patientName}}, this is a reminder for your appointment on {{appointmentDate}} at {{appointmentTime}} with Dr. {{doctorName}} at {{clinicLocation}}.',
+          follow_up: 'Hello {{patientName}}, this is a reminder for your follow-up appointment. Reason: {{followUpReason}}. Please contact us at {{clinicLocation}}.',
+          payment_overdue: 'Hello {{patientName}}, you have an outstanding balance of {{amountDue}} for completed treatments. Please contact us at {{clinicLocation}} to arrange payment.',
+        },
+      } as NotificationSettings);
 
-            await this.em.persistAndFlush(settings);
-        }
-
-        return settings;
+      await this.em.persistAndFlush(settings);
     }
 
-    async update(orgId: string, updateDto: UpdateNotificationSettingsDto) {
-        const settings = await this.getOrCreateSettings(orgId);
+    return settings;
+  }
 
-        this.em.assign(settings, updateDto);
-        await this.em.flush();
+  async update(orgId: string, updateDto: UpdateNotificationSettingsDto) {
+    const settings = await this.getOrCreateSettings(orgId);
 
-        return settings;
-    }
+    this.em.assign(settings, updateDto);
+    await this.em.flush();
+
+    return settings;
+  }
 }

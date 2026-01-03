@@ -1,0 +1,54 @@
+.statusContainer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.loading {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.sendBtn {
+    padding: 4px 12px;
+    font-size: 12px;
+    border: 1px solid var(--primary);
+    background: transparent;
+    color: var(--primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sendBtn:hover:not(:disabled) {
+    background: var(--primary);
+    color: white;
+}
+
+.sendBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.resendBtn {
+    padding: 4px 8px;
+    font-size: 14px;
+    font-weight: bold;
+    border: 1px solid var(--error);
+    background: transparent;
+    color: var(--error);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.resendBtn:hover:not(:disabled) {
+    background: var(--error);
+    color: white;
+}
+
+.resendBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

@@ -91,4 +91,16 @@ export class PaymentsController {
         await this.paymentsService.remove(id, user.orgId, user.id, user.role, user.id);
         return new StandardResponse(null, 'Payment deleted successfully');
     }
+
+    @Post(':id/send-receipt')
+    @Roles(UserRole.ADMIN, UserRole.SECRETARY)
+    @ApiOperation({ summary: 'Manually send payment receipt to patient' })
+    @ApiStandardResponse(Object)
+    async sendPaymentReceipt(
+        @Param('id') id: string,
+        @CurrentUser() user: CurrentUserData,
+    ) {
+        const result = await this.paymentsService.sendPaymentReceipt(id, user.orgId);
+        return new StandardResponse(result, result.message);
+    }
 }

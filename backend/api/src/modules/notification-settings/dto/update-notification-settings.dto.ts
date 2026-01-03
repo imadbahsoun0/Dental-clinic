@@ -1,51 +1,48 @@
-import { IsBoolean, IsInt, IsString, IsEnum, ValidateNested } from 'class-validator';
+import { IsBoolean, IsInt, IsString, ValidateNested, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 class AppointmentReminderDto {
-    @ApiProperty()
-    @IsBoolean()
-    enabled!: boolean;
+  @ApiProperty()
+  @IsBoolean()
+  enabled!: boolean;
 
-    @ApiProperty()
-    @IsInt()
-    timing!: number;
-
-    @ApiProperty({ enum: ['hours', 'days'] })
-    @IsEnum(['hours', 'days'])
-    timingUnit!: 'hours' | 'days';
-
-    @ApiProperty()
-    @IsString()
-    messageTemplate!: string;
+  @ApiProperty({ description: 'Timing in hours before appointment' })
+  @IsInt()
+  timingInHours!: number;
 }
 
-class PaymentReminderDto {
-    @ApiProperty()
-    @IsBoolean()
-    enabled!: boolean;
+class MessageTemplatesDto {
+  @ApiProperty()
+  @IsString()
+  medical_history!: string;
 
-    @ApiProperty()
-    @IsInt()
-    timing!: number;
+  @ApiProperty()
+  @IsString()
+  payment_receipt!: string;
 
-    @ApiProperty({ enum: ['hours', 'days'] })
-    @IsEnum(['hours', 'days'])
-    timingUnit!: 'hours' | 'days';
+  @ApiProperty()
+  @IsString()
+  appointment_reminder!: string;
 
-    @ApiProperty()
-    @IsString()
-    messageTemplate!: string;
+  @ApiProperty()
+  @IsString()
+  follow_up!: string;
+
+  @ApiProperty()
+  @IsString()
+  payment_overdue!: string;
 }
 
 export class UpdateNotificationSettingsDto {
-    @ApiProperty({ type: () => AppointmentReminderDto })
-    @ValidateNested()
-    @Type(() => AppointmentReminderDto)
-    appointmentReminder!: AppointmentReminderDto;
+  @ApiProperty({ type: () => [AppointmentReminderDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AppointmentReminderDto)
+  appointmentReminders!: AppointmentReminderDto[];
 
-    @ApiProperty({ type: () => PaymentReminderDto })
-    @ValidateNested()
-    @Type(() => PaymentReminderDto)
-    paymentReminder!: PaymentReminderDto;
+  @ApiProperty({ type: () => MessageTemplatesDto })
+  @ValidateNested()
+  @Type(() => MessageTemplatesDto)
+  messageTemplates!: MessageTemplatesDto;
 }

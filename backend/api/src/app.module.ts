@@ -23,6 +23,10 @@ import { MedicalHistoryModule } from './modules/medical-history/medical-history.
 import { NotificationSettingsModule } from './modules/notification-settings/notification-settings.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { MessagesModule } from './modules/messages/messages.module';
+import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
+import { RemindersModule } from './modules/reminders/reminders.module';
+import { SchedulerModule } from './modules/scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -46,6 +50,10 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     NotificationSettingsModule,
     ExpensesModule,
     DashboardModule,
+    MessagesModule,
+    WhatsappModule,
+    RemindersModule,
+    SchedulerModule,
     TestModule,
   ],
   providers: [

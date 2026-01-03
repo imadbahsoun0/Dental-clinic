@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
+import { Select } from '@/components/common/Select';
 import toast from 'react-hot-toast';
 import { formatLocalDate } from '@/utils/dateUtils';
 import { usePatientStore } from '@/store/patientStore';
@@ -16,6 +17,9 @@ const schema = z.object({
     email: z.string().email('Invalid email address').optional().or(z.literal('')),
     address: z.string().optional(),
     dateOfBirth: z.string().optional(),
+    followUpDate: z.string().optional(),
+    followUpReason: z.string().optional(),
+    followUpStatus: z.enum(['pending', 'completed', 'cancelled']).optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -42,6 +46,9 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, pat
             email: '',
             address: '',
             dateOfBirth: '',
+            followUpDate: '',
+            followUpReason: '',
+            followUpStatus: 'pending',
         }
     });
 
@@ -56,6 +63,14 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, pat
                     }
                 }
 
+                let followUpDateStr = '';
+                if (editingPatient.followUpDate) {
+                    const d = new Date(editingPatient.followUpDate);
+                    if (!isNaN(d.getTime())) {
+                        followUpDateStr = formatLocalDate(d);
+                    }
+                }
+
                 reset({
                     firstName: editingPatient.firstName,
                     lastName: editingPatient.lastName,
@@ -63,6 +78,9 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, pat
                     email: editingPatient.email || '',
                     address: editingPatient.address || '',
                     dateOfBirth: dob,
+                    followUpDate: followUpDateStr,
+                    followUpReason: editingPatient.followUpReason || '',
+                    followUpStatus: editingPatient.followUpStatus || 'pending',
                 });
             } else {
                 reset({
@@ -72,6 +90,9 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, pat
                     email: '',
                     address: '',
                     dateOfBirth: '',
+                    followUpDate: '',
+                    followUpReason: '',
+                    followUpStatus: 'pending',
                 });
             }
         }
@@ -80,9 +101,12 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, pat
     const onSubmit = async (data: FormData) => {
         try {
             const payload = { ...data };
-            if (!payload.email) delete (payload as any).email;
-            if (!payload.address) delete (payload as any).address;
-            if (!payload.dateOfBirth) delete (payload as any).dateOfBirth;
+            if (!payload.email) delete (payload as Record<string, unknown>).email;
+            if (!payload.address) delete (payload as Record<string, unknown>).address;
+            if (!payload.dateOfBirth) delete (payload as Record<string, unknown>).dateOfBirth;
+            if (!payload.followUpDate) delete (payload as Record<string, unknown>).followUpDate;
+            if (!payload.followUpReason) delete (payload as Record<string, unknown>).followUpReason;
+            if (!payload.followUpStatus) delete (payload as Record<string, unknown>).followUpStatus;
 
             if (patientId) {
                 await updatePatient(patientId, payload);
@@ -201,6 +225,70 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, pat
                         />
                     )}
                 />
+
+                {/* Follow-up Section */}
+                <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+                    <h3 style={{ marginBottom: '16px', fontSize: '14px', fontWeight: 600 }}>Follow-up Information</h3>
+                    
+                    <div style={{ display: 'grid', gap: '16px' }}>
+                        <Controller
+                            name="followUpDate"
+                            control={control}
+                            render={({ field }) => (
+                                <Input
+                                    label="Follow-up Date (Optional)"
+                                    type="date"
+                                    value={field.value || ''}
+                                    onChange={field.onChange}
+                                    error={errors.followUpDate?.message}
+                                />
+                            )}
+                        />
+
+                        <Controller
+                            name="followUpReason"
+                            control={control}
+                            render={({ field }) => (
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>
+                                        Follow-up Reason (Optional)
+                                    </label>
+                                    <textarea
+                                        placeholder="Reason for follow-up..."
+                                        value={field.value || ''}
+                                        onChange={(e) => field.onChange(e.target.value)}
+                                        style={{
+                                            width: '100%',
+                                            minHeight: '80px',
+                                            padding: '8px 12px',
+                                            fontSize: '14px',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: 'var(--radius-md)',
+                                            resize: 'vertical'
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        />
+
+                        <Controller
+                            name="followUpStatus"
+                            control={control}
+                            render={({ field }) => (
+                                <Select
+                                    label="Follow-up Status"
+                                    options={[
+                                        { value: 'pending', label: 'Pending' },
+                                        { value: 'completed', label: 'Completed' },
+                                        { value: 'cancelled', label: 'Cancelled' },
+                                    ]}
+                                    value={field.value || 'pending'}
+                                    onChange={field.onChange}
+                                />
+                            )}
+                        />
+                    </div>
+                </div>
             </div>
         </Modal>
     );
