@@ -49,10 +49,6 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
-    env_file:
-      - ./frontend/.env
-    environment:
-      NODE_ENV: production
     depends_on:
       - backend
     networks:
