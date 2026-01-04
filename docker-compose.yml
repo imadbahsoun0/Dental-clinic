@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: dental-clinic-db
+    restart: unless-stopped
+    env_file:
+      - ./backend/api/.env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dental-clinic-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend/api
+      dockerfile: Dockerfile
+    container_name: dental-clinic-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/api/.env
+    environment:
+      DB_HOST: postgres
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dental-clinic-network
+    volumes:
+      - ./backend/api/src:/app/src
+    command: sh -c "npm run migration:up && npm run start:prod"
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dental-clinic-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+    depends_on:
+      - backend
+    networks:
+      - dental-clinic-network
+
+networks:
+  dental-clinic-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
