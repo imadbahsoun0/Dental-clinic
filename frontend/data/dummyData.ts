@@ -667,7 +667,10 @@ export const dummyClinicBranding: ClinicBranding = {
 export const dummyNotificationSettings: NotificationSettings = {
     appointmentReminders: [],
     messageTemplates: {
-        appointmentReminder: 'Hi {{patientName}}, this is a reminder about your appointment tomorrow at {{appointmentTime}} with {{doctorName}} at {{clinicLocation}}. See you soon!',
-        paymentReminder: 'Hello {{patientName}}, you have an outstanding balance of ${{amountDue}}. Please contact us at {{clinicLocation}} to arrange payment. Thank you!',
+        appointment_reminder: 'Hi {{patientName}}, this is a reminder about your appointment tomorrow at {{appointmentTime}} with {{doctorName}} at {{clinicLocation}}. See you soon!',
+        payment_receipt: 'Hello {{patientName}}, thank you for your payment of ${{amount}}. Your receipt is attached. Contact us at {{clinicLocation}} if you have questions.',
+        follow_up: 'Hi {{patientName}}, this is a follow-up message from {{doctorName}} at {{clinicLocation}}. Please let us know if you have any questions.',
+        payment_overdue: 'Hello {{patientName}}, you have an outstanding balance of ${{amountDue}}. Please contact us at {{clinicLocation}} to arrange payment. Thank you!',
+        medical_history: 'Hi {{patientName}}, please complete your medical history form: {{formLink}}. Thank you!',
     },
 };

@@ -336,8 +336,8 @@ export default function DashboardPage() {
                     setIsExpenseModalOpen(false);
                     // Refresh stats
                     const statsResponse = await api.api.dashboardControllerGetStats();
-                    const maybeStandard = statsResponse as StandardResponse<DashboardStatsDto>;
-                    const statsData: DashboardStatsDto = maybeStandard.data ?? (statsResponse as DashboardStatsDto);
+                    const maybeStandard = statsResponse as StandardResponse;
+                    const statsData = (maybeStandard.data ?? statsResponse) as DashboardStatsDto;
                     setStats({
                         todayAppointments: statsData?.todayAppointments || 0,
                         totalPatients: statsData?.totalPatients || 0,
