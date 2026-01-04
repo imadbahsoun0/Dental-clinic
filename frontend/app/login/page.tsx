@@ -113,11 +113,6 @@ export default function LoginPage() {
                     </div>
                 </form>
 
-                <div className={styles.footer}>
-                    <p className={styles.hint}>
-                        💡 Demo credentials: Use <code>admin@dentalclinic.com</code> with password: <code>password123</code>
-                    </p>
-                </div>
             </div>
         </div>
     );
