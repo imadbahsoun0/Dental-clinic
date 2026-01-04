@@ -21,6 +21,7 @@
     "mikro-orm": "mikro-orm --config=./src/common/config/mikro-orm.config.ts",
     "migration:create": "mikro-orm migration:create --config=./src/common/config/mikro-orm.config.ts",
     "migration:up": "mikro-orm migration:up --config=./src/common/config/mikro-orm.config.ts",
+    "migration:up:prod": "mikro-orm migration:up --config=./dist/common/config/mikro-orm.config.js",
     "migration:down": "mikro-orm migration:down --config=./src/common/config/mikro-orm.config.ts",
     "migration:fresh": "mikro-orm migration:fresh --config=./src/common/config/mikro-orm.config.ts",
     "schema:drop": "mikro-orm schema:drop --run --config=./src/common/config/mikro-orm.config.ts",

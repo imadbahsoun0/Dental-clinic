@@ -38,9 +38,7 @@ services:
         condition: service_healthy
     networks:
       - dental-clinic-network
-    volumes:
-      - ./backend/api/src:/app/src
-    command: sh -c "npm run migration:up && npm run start:prod"
+    command: sh -c "npm run migration:up:prod && npm run start:prod"
 
   # Frontend
   frontend:
