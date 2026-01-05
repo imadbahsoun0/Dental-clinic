@@ -25,10 +25,10 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto) {
-    // Find user by email
+    // Find user by email (case-insensitive)
     const user = await this.em.findOne(
       User,
-      { email: loginDto.email },
+      { email: loginDto.email.toLowerCase() },
       {
         populate: ['organizations', 'organizations.organization'],
       },
@@ -174,7 +174,7 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
-    const user = await this.em.findOne(User, { email });
+    const user = await this.em.findOne(User, { email: email.toLowerCase() });
     // Faking success to prevent email enumeration if user not found,
     // but for now, if user not found, we just return.
     // Or we can throw, but security best practice is to always say "If email exists, instruction sent".

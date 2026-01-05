@@ -41,7 +41,7 @@ export class User extends BaseEntity {
   constructor(name: string, email: string, password: string) {
     super();
     this.name = name;
-    this.email = email;
+    this.email = email.toLowerCase();
     this.password = password;
     // User entity doesn't have orgId since they can belong to multiple orgs
     // We'll set it to a default value and override in BaseEntity

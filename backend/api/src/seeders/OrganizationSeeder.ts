@@ -61,7 +61,7 @@ export class OrganizationSeeder extends Seeder {
     ];
 
     for (const u of users) {
-      let user = await em.findOne(User, { email: u.email });
+      let user = await em.findOne(User, { email: u.email.toLowerCase() });
       if (!user) {
         user = new User(u.name, u.email, password);
         user.createdBy = SYSTEM_USER_ID;

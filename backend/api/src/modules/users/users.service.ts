@@ -27,9 +27,9 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto, orgId: string, createdBy: string) {
-    // Check if user with email already exists
+    // Check if user with email already exists (case-insensitive)
     const existingUser = await this.em.findOne(User, {
-      email: createUserDto.email,
+      email: createUserDto.email.toLowerCase(),
     });
 
     let user: User;

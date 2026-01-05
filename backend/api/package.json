@@ -27,7 +27,9 @@
     "schema:drop": "mikro-orm schema:drop --run --config=./src/common/config/mikro-orm.config.ts",
     "schema:create": "mikro-orm schema:create --run --config=./src/common/config/mikro-orm.config.ts",
     "schema:update": "mikro-orm schema:update --run --config=./src/common/config/mikro-orm.config.ts",
-    "create:org": "ts-node -r tsconfig-paths/register src/scripts/create-organization.ts"
+    "create:org": "ts-node -r tsconfig-paths/register src/scripts/create-organization.ts",
+    "seed:run": "mikro-orm seeder:run --config=./src/common/config/mikro-orm.config.ts",
+    "seed:run:prod": "mikro-orm seeder:run --config=./dist/common/config/mikro-orm.config.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.958.0",

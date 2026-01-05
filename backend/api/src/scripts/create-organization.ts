@@ -110,8 +110,8 @@ async function createOrganization() {
       throw new Error(`Organization with name "${orgName}" already exists`);
     }
 
-    // Check if user with same email exists
-    const existingUser = await em.findOne(User, { email: userEmail });
+    // Check if user with same email exists (case-insensitive)
+    const existingUser = await em.findOne(User, { email: userEmail.toLowerCase() });
     if (existingUser) {
       throw new Error(`User with email "${userEmail}" already exists`);
     }
