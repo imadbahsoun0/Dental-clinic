@@ -272,6 +272,116 @@
     margin: 0 0 24px 0;
 }
 
+.tableContainer {
+    display: block;
+}
+
+.mobileCardView {
+    display: none;
+}
+
+.expenseCard {
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.expenseCard:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
+}
+
+.expenseCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.expenseCardTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-dark);
+    flex: 1;
+}
+
+.expenseCardAmount {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    font-family: 'Fraunces', serif;
+}
+
+.expenseCardBody {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.expenseCardRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.expenseCardLabel {
+    font-size: 12px;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.expenseCardValue {
+    font-size: 14px;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.expenseCardFooter {
+    display: flex;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.expenseCardAction {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--bg-cream);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.expenseCardAction:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.expenseCardAction.delete:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+}
+
 @media (max-width: 1024px) {
     .filters {
         grid-template-columns: 1fr;
@@ -288,5 +398,97 @@
     .table th,
     .table td {
         padding: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .tableContainer {
+        display: none;
+    }
+
+    .mobileCardView {
+        display: block;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .title {
+        font-size: 24px;
+    }
+
+    .subtitle {
+        font-size: 13px;
+    }
+
+    .summaryCard {
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .summaryItem {
+        padding: 16px;
+    }
+
+    .summaryValue {
+        font-size: 22px;
+    }
+
+    .filters {
+        gap: 12px;
+    }
+
+    .clearFilters {
+        width: 100%;
+    }
+
+    .pagination {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .pageBtn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .title {
+        font-size: 20px;
+    }
+
+    .summaryItem {
+        padding: 14px;
+    }
+
+    .summaryValue {
+        font-size: 20px;
+    }
+
+    .summaryLabel {
+        font-size: 11px;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px;
+        font-size: 11px;
+    }
+
+    .notes {
+        max-width: 100px;
+    }
+
+    .actions {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .actionBtn {
+        width: 26px;
+        height: 26px;
     }
 }

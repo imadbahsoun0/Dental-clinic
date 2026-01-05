@@ -328,6 +328,7 @@ export default function NotificationsPage() {
                             <p className={styles.emptyState}>No follow-ups found matching your filters</p>
                         ) : (
                             <>
+                                {/* Desktop Table View */}
                                 <div className={styles.tableContainer}>
                                 <table className={styles.table}>
                                     <thead>
@@ -376,6 +377,66 @@ export default function NotificationsPage() {
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+
+                            {/* Mobile Card View */}
+                            <div className={styles.mobileCardView}>
+                                {filteredFollowUps.map((patient) => (
+                                    <div key={patient.id} className={styles.notificationCard}>
+                                        <div className={styles.notificationCardHeader}>
+                                            <div className={styles.notificationCardTitle}>
+                                                {`${patient.firstName} ${patient.lastName}`}
+                                            </div>
+                                        </div>
+
+                                        <div className={styles.notificationCardBody}>
+                                            <div className={styles.notificationCardRow}>
+                                                <span className={styles.notificationCardLabel}>Phone</span>
+                                                <span className={styles.notificationCardValue}>{patient.mobileNumber}</span>
+                                            </div>
+
+                                            <div className={styles.notificationCardRow}>
+                                                <span className={styles.notificationCardLabel}>Follow-up Date</span>
+                                                <span className={styles.notificationCardValue}>
+                                                    {patient.followUpDate 
+                                                        ? new Date(patient.followUpDate).toLocaleDateString()
+                                                        : 'N/A'
+                                                    }
+                                                </span>
+                                            </div>
+
+                                            {patient.followUpReason && (
+                                                <div className={styles.notificationCardRow}>
+                                                    <span className={styles.notificationCardLabel}>Reason</span>
+                                                    <span className={styles.notificationCardValue}>{patient.followUpReason}</span>
+                                                </div>
+                                            )}
+
+                                            <div className={styles.notificationCardRow}>
+                                                <span className={styles.notificationCardLabel}>Status</span>
+                                                <Select
+                                                    options={[
+                                                        { value: 'pending', label: 'Pending' },
+                                                        { value: 'completed', label: 'Completed' },
+                                                        { value: 'cancelled', label: 'Cancelled' },
+                                                    ]}
+                                                    value={patient.followUpStatus}
+                                                    onChange={(value) => updateFollowUpStatus(patient.id, value as 'pending' | 'completed' | 'cancelled')}
+                                                    disabled={updatingStatus === patient.id}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className={styles.notificationCardFooter}>
+                                            <Button
+                                                onClick={() => sendFollowUpReminder(patient.id)}
+                                                disabled={sendingReminder === patient.id}
+                                            >
+                                                {sendingReminder === patient.id ? 'Sending...' : 'Send Reminder'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
 
                             {/* Pagination */}
@@ -438,6 +499,7 @@ export default function NotificationsPage() {
                             <p className={styles.emptyState}>No unpaid patients found matching your filters</p>
                         ) : (
                             <>
+                                {/* Desktop Table View */}
                                 <div className={styles.tableContainer}>
                                 <table className={styles.table}>
                                     <thead>
@@ -472,6 +534,56 @@ export default function NotificationsPage() {
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+
+                            {/* Mobile Card View */}
+                            <div className={styles.mobileCardView}>
+                                {filteredUnpaidPatients.map((patient) => (
+                                    <div key={patient.id} className={styles.notificationCard}>
+                                        <div className={styles.notificationCardHeader}>
+                                            <div className={styles.notificationCardTitle}>
+                                                {`${patient.firstName} ${patient.lastName}`}
+                                            </div>
+                                        </div>
+
+                                        <div className={styles.notificationCardBody}>
+                                            <div className={styles.notificationCardRow}>
+                                                <span className={styles.notificationCardLabel}>Phone</span>
+                                                <span className={styles.notificationCardValue}>{patient.mobileNumber}</span>
+                                            </div>
+
+                                            <div className={styles.notificationCardRow}>
+                                                <span className={styles.notificationCardLabel}>Total Treatment</span>
+                                                <span className={styles.notificationCardValue}>
+                                                    ${patient.totalTreatmentCost?.toFixed(2) || '0.00'}
+                                                </span>
+                                            </div>
+
+                                            <div className={styles.notificationCardRow}>
+                                                <span className={styles.notificationCardLabel}>Total Paid</span>
+                                                <span className={styles.notificationCardValue}>
+                                                    ${patient.totalPaid?.toFixed(2) || '0.00'}
+                                                </span>
+                                            </div>
+
+                                            <div className={styles.notificationCardRow}>
+                                                <span className={styles.notificationCardLabel}>Remaining</span>
+                                                <span className={`${styles.notificationCardValue} ${styles.amount}`}>
+                                                    ${patient.remainingBalance?.toFixed(2) || '0.00'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className={styles.notificationCardFooter}>
+                                            <Button
+                                                onClick={() => sendPaymentReminder(patient.id)}
+                                                disabled={sendingReminder === patient.id}
+                                            >
+                                                {sendingReminder === patient.id ? 'Sending...' : 'Send Reminder'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
 
                             {/* Pagination */}

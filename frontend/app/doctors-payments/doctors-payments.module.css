@@ -150,3 +150,186 @@
     color: var(--text-secondary);
     margin: 0;
 }
+
+.tableContainer {
+    display: block;
+}
+
+.mobileCardView {
+    display: none;
+}
+
+.doctorCard {
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.doctorCard:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
+}
+
+.doctorCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.doctorCardTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.doctorCardWallet {
+    font-size: 18px;
+    font-weight: 700;
+    color: #6b7280;
+    font-family: 'Fraunces', serif;
+}
+
+.doctorCardWallet.positive {
+    color: #dc2626;
+}
+
+.doctorCardBody {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.doctorCardRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.doctorCardLabel {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.doctorCardValue {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.doctorCardFooter {
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.doctorCardFooter button {
+    width: 100%;
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+    .summaryCard {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .tableContainer {
+        display: none;
+    }
+
+    .mobileCardView {
+        display: block;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+
+    .subtitle {
+        font-size: 0.875rem;
+    }
+
+    .summaryCard {
+        gap: 1rem;
+    }
+
+    .summaryItem {
+        padding: 1rem;
+    }
+
+    .summaryValue {
+        font-size: 1.5rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.75rem;
+        font-size: 0.8125rem;
+    }
+
+    .doctorName {
+        gap: 0.5rem;
+    }
+
+    .doctorIcon {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .title {
+        font-size: 1.25rem;
+    }
+
+    .summaryItem {
+        padding: 0.875rem;
+    }
+
+    .summaryValue {
+        font-size: 1.25rem;
+    }
+
+    .summaryLabel {
+        font-size: 0.75rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .wallet {
+        font-size: 1rem;
+    }
+
+    .percentage {
+        font-size: 0.875rem;
+    }
+
+    .statusBadge {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.625rem;
+    }
+}

@@ -330,6 +330,99 @@
     }
 }
 
+@media (max-width: 768px) {
+    .statsGrid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .statCard {
+        padding: 18px;
+    }
+
+    .statValue {
+        font-size: 24px;
+    }
+
+    .statIcon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+
+    .mainGrid {
+        gap: 20px;
+    }
+
+    .quickActions {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .quickActionBtn {
+        flex-direction: row;
+        justify-content: flex-start;
+        padding: 14px;
+    }
+
+    .patientTable th,
+    .patientTable td {
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    .appointmentItem {
+        padding: 12px;
+    }
+
+    .pendingTreatmentItem {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .pendingTreatmentActions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 480px) {
+    .statCard {
+        padding: 14px;
+    }
+
+    .statValue {
+        font-size: 20px;
+    }
+
+    .statLabel {
+        font-size: 12px;
+    }
+
+    .appointmentHour {
+        font-size: 15px;
+    }
+
+    .appointmentPatient {
+        font-size: 13px;
+    }
+
+    .appointmentType {
+        font-size: 11px;
+    }
+
+    .quickActionIcon {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .quickActionLabel {
+        font-size: 11px;
+    }
+}
+
 .statIcon.green {
     background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
 }

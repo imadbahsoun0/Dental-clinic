@@ -135,36 +135,81 @@ export default function DoctorPaymentsPage() {
                         <p>Loading dentists...</p>
                     </div>
                 ) : dentists.length > 0 ? (
-                    <table className={styles.table}>
-                        <thead>
-                            <tr>
-                                <th>Doctor Name</th>
-                                <th>Email</th>
-                                <th>Commission %</th>
-                                <th>Wallet Balance</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <>
+                        {/* Desktop Table View */}
+                        <div className={styles.tableContainer}>
+                        <table className={styles.table}>
+                            <thead>
+                                <tr>
+                                    <th>Doctor Name</th>
+                                    <th>Email</th>
+                                    <th>Commission %</th>
+                                    <th>Wallet Balance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {dentists.map((doctor) => (
+                                    <tr key={doctor.id}>
+                                        <td>
+                                            <div className={styles.doctorName}>
+                                                <span className={styles.doctorIcon}>👨‍⚕️</span>
+                                                {doctor.name}
+                                            </div>
+                                        </td>
+                                        <td>{doctor.email}</td>
+                                        <td>{doctor.percentage || 0}%</td>
+                                        <td>
+                                            <span
+                                                className={`${styles.wallet} ${(doctor.wallet || 0) > 0 ? styles.walletPositive : ''
+                                                    }`}
+                                            >
+                                                ${(doctor.wallet || 0).toFixed(2)}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                onClick={() => handlePayDoctor(doctor)}
+                                                disabled={!doctor.wallet || doctor.wallet <= 0}
+                                            >
+                                                Pay Doctor
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        </div>
+
+                        {/* Mobile Card View */}
+                        <div className={styles.mobileCardView}>
                             {dentists.map((doctor) => (
-                                <tr key={doctor.id}>
-                                    <td>
-                                        <div className={styles.doctorName}>
+                                <div key={doctor.id} className={styles.doctorCard}>
+                                    <div className={styles.doctorCardHeader}>
+                                        <div className={styles.doctorCardTitle}>
                                             <span className={styles.doctorIcon}>👨‍⚕️</span>
                                             {doctor.name}
                                         </div>
-                                    </td>
-                                    <td>{doctor.email}</td>
-                                    <td>{doctor.percentage || 0}%</td>
-                                    <td>
-                                        <span
-                                            className={`${styles.wallet} ${(doctor.wallet || 0) > 0 ? styles.walletPositive : ''
-                                                }`}
-                                        >
+                                        <div className={`${styles.doctorCardWallet} ${(doctor.wallet || 0) > 0 ? styles.positive : ''}`}>
                                             ${(doctor.wallet || 0).toFixed(2)}
-                                        </span>
-                                    </td>
-                                    <td>
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.doctorCardBody}>
+                                        <div className={styles.doctorCardRow}>
+                                            <span className={styles.doctorCardLabel}>Email</span>
+                                            <span className={styles.doctorCardValue}>{doctor.email}</span>
+                                        </div>
+
+                                        <div className={styles.doctorCardRow}>
+                                            <span className={styles.doctorCardLabel}>Commission</span>
+                                            <span className={styles.doctorCardValue}>{doctor.percentage || 0}%</span>
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.doctorCardFooter}>
                                         <Button
                                             variant="primary"
                                             size="sm"
@@ -173,11 +218,11 @@ export default function DoctorPaymentsPage() {
                                         >
                                             Pay Doctor
                                         </Button>
-                                    </td>
-                                </tr>
+                                    </div>
+                                </div>
                             ))}
-                        </tbody>
-                    </table>
+                        </div>
+                    </>
                 ) : (
                     <div className={styles.emptyState}>
                         <div className={styles.emptyIcon}>👨‍⚕️</div>

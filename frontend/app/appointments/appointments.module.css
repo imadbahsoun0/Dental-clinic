@@ -1,9 +1,12 @@
+/* Header */
 .calendarHeader {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 22px;
+    padding: 20px 24px;
     border-bottom: 1px solid var(--border);
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 .calendarNav {
@@ -13,8 +16,8 @@
 }
 
 .calendarNavBtn {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: var(--radius-full);
     border: 1px solid var(--border);
     background: white;
@@ -23,6 +26,7 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .calendarNavBtn:hover {
@@ -33,35 +37,55 @@
     font-family: 'Fraunces', serif;
     font-size: 18px;
     font-weight: 600;
+    white-space: nowrap;
 }
 
+.headerActions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.doctorFilters {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Calendar Grid */
 .calendarGrid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
 }
 
 .calendarDayHeader {
-    padding: 14px;
+    padding: 12px;
     text-align: center;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--text-light);
     text-transform: uppercase;
-    border-bottom: 1px solid var(--border);
+    background: var(--bg-cream);
+    border-bottom: 2px solid var(--border);
+    letter-spacing: 0.5px;
 }
 
 .calendarDay {
-    min-height: 100px;
-    padding: 10px;
+    min-height: 110px;
+    padding: 12px 10px;
     border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
     background: white;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
+    position: relative;
 }
 
 .calendarDay:hover {
-    background: var(--bg-cream);
+    background: #f0fdf4;
+    box-shadow: inset 0 0 0 1px var(--primary);
 }
 
 .calendarDay:nth-child(7n) {
@@ -69,41 +93,970 @@
 }
 
 .calendarDay.otherMonth {
-    background: var(--bg-cream);
+    background: #fafafa;
+    opacity: 0.6;
+}
+
+.calendarDay.otherMonth:hover {
+    background: #f5f5f5;
 }
 
 .calendarDayNumber {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--text-dark);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    line-height: 1;
 }
 
 .calendarDay.otherMonth .calendarDayNumber {
     color: var(--text-light);
 }
 
+.calendarDay.today {
+    background: #ecfdf5;
+}
+
 .calendarDay.today .calendarDayNumber {
-    width: 26px;
-    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
     background: var(--primary);
     color: white;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .calendarEvent {
-    font-size: 10px;
-    padding: 3px 6px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 3px;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin-bottom: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-left: 3px solid currentColor;
 }
 
 .calendarEvent:hover {
-    transform: scale(1.02);
+    transform: translateX(2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Today List Styles */
+.todayList {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    margin-bottom: 20px;
+    margin-top: 20px;
+}
+
+.todayListHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.todayListTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.todayListClose {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 24px;
+    color: var(--text-light);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    transition: all 0.2s ease;
+}
+
+.todayListClose:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-dark);
+}
+
+.todayAppointments {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.appointmentCard {
+    background: white;
+    border-radius: var(--radius-md);
+    padding: 16px;
+    border: 1px solid #d1fae5;
+    transition: all 0.2s ease;
+}
+
+.appointmentCard:hover {
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+}
+
+.appointmentCardContent {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+}
+
+.appointmentTime {
+    font-weight: 700;
+    font-size: 18px;
+    min-width: 65px;
+    color: var(--primary);
+}
+
+.appointmentInfo {
+    flex: 1;
+}
+
+.appointmentPatient {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+}
+
+.appointmentDoctor {
+    font-size: 13px;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.appointmentMeta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.statusBadge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.appointmentActions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.actionButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.actionButton:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.actionButton.view {
+    color: #3b82f6;
+}
+
+.actionButton.delete {
+    color: #ef4444;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+}
+
+.emptyIcon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.emptyText {
+    font-size: 14px;
+}
+
+/* Responsive Styles */
+@media (max-width: 1200px) {
+    .calendarDay {
+        min-height: 90px;
+        padding: 10px 8px;
+    }
+
+    .calendarEvent {
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+
+    .calendarDayNumber {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .calendarDay {
+        min-height: 80px;
+        padding: 8px 6px;
+    }
+
+    .calendarEvent {
+        font-size: 9px;
+        padding: 2px 5px;
+        margin-bottom: 3px;
+    }
+
+    .calendarDayNumber {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    .doctorFilters {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .calendarHeader {
+        padding: 16px;
+    }
+
+    .calendarNav {
+        flex: 1;
+    }
+
+    .calendarMonth {
+        font-size: 16px;
+    }
+
+    .calendarNavBtn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .headerActions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .doctorFilters {
+        overflow-x: auto;
+        width: 100%;
+        padding-bottom: 4px;
+    }
+
+    .calendarDay {
+        min-height: 70px;
+        padding: 6px 4px;
+    }
+
+    .calendarDayNumber {
+        font-size: 11px;
+        margin-bottom: 4px;
+    }
+
+    .calendarDay.today .calendarDayNumber {
+        width: 24px;
+        height: 24px;
+        font-size: 11px;
+    }
+
+    .calendarEvent {
+        font-size: 8px;
+        padding: 2px 4px;
+        margin-bottom: 2px;
+        border-left-width: 2px;
+    }
+
+    .calendarDayHeader {
+        padding: 8px 4px;
+        font-size: 10px;
+    }
+
+    .todayList {
+        padding: 16px;
+        margin: 16px 16px 16px 16px;
+        margin-top:20px;
+    }
+
+    .todayListTitle {
+        font-size: 16px;
+    }
+
+    .appointmentCard {
+        padding: 14px;
+    }
+
+    .appointmentCardContent {
+        flex-wrap: wrap;
+    }
+
+    .appointmentTime {
+        font-size: 16px;
+        min-width: 55px;
+    }
+
+    .appointmentPatient {
+        font-size: 14px;
+    }
+
+    .appointmentMeta {
+        width: 100%;
+        margin-top: 8px;
+        justify-content: space-between;
+    }
+
+    .appointmentActions {
+        margin-top: 8px;
+        justify-content: flex-end;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendarHeader {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .calendarNav {
+        gap: 8px;
+    }
+
+    .calendarMonth {
+        font-size: 14px;
+    }
+
+    .calendarNavBtn {
+        width: 28px;
+        height: 28px;
+    }
+
+    /* Make calendar more compact on small screens */
+    .calendarDay {
+        min-height: 55px;
+        padding: 4px 2px;
+    }
+
+    .calendarDayNumber {
+        font-size: 10px;
+        margin-bottom: 3px;
+    }
+
+    .calendarDay.today .calendarDayNumber {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+    }
+
+    .calendarEvent {
+        font-size: 7px;
+        padding: 1px 3px;
+        margin-bottom: 2px;
+    }
+
+    .calendarDayHeader {
+        padding: 6px 2px;
+        font-size: 9px;
+    }
+
+    .todayList {
+        padding: 12px;
+        margin: 0 12px 12px 12px;
+        margin-top: 20px;
+    }
+
+    .todayListTitle {
+        font-size: 15px;
+    }
+
+    .appointmentCard {
+        padding: 12px;
+    }
+
+    .appointmentTime {
+        font-size: 15px;
+        min-width: 50px;
+    }
+
+    .appointmentPatient {
+        font-size: 13px;
+    }
+
+    .appointmentDoctor {
+        font-size: 12px;
+    }
+
+    .statusBadge {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+
+    .actionButton {
+        padding: 4px;
+    }
+}
+/* View Toggle Buttons */
+.viewToggleContainer {
+    display: flex;
+    gap: 6px;
+    background: var(--bg-cream);
+    padding: 4px;
+    border-radius: var(--radius-full);
+}
+
+.viewToggleBtn {
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-light);
+}
+
+.viewToggleBtn.active {
+    background: white;
+    color: var(--primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.viewToggleBtn:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.viewToggleBtn.active:hover {
+    background: white;
+}
+
+/* Hide calendar in list mode */
+.calendarGrid.hidden {
+    display: none;
+}
+
+/* Agenda View */
+.agendaView {
+    padding: 20px;
+}
+
+.agendaDay {
+    margin-bottom: 28px;
+}
+
+.agendaDayHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+}
+
+.agendaDayHeader.todayHeader {
+    border-bottom-color: var(--primary);
+}
+
+.agendaDayNumber {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    background: var(--bg-cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.agendaDayHeader.todayHeader .agendaDayNumber {
+    background: var(--primary);
+    color: white;
+}
+
+.agendaDayName {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.agendaAppointments {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.agendaAppointment {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.agendaAppointment:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.agendaTimeBar {
+    width: 4px;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-radius: 0 4px 4px 0;
+}
+
+.agendaAppointmentContent {
+    flex: 1;
+    padding-left: 6px;
+}
+
+.agendaTimeRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.agendaTime {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.agendaPatientName {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+}
+
+.agendaDoctorName {
+    font-size: 13px;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.agendaActions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+/* Today List Redesign */
+.todayListHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.todayListHeaderContent {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.todayBadgeLarge {
+    background: linear-gradient(135deg, var(--primary) 0%, #059669 100%);
+    color: white;
+    padding: 10px 16px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.todayListHeaderText {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.todayListTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+}
+
+.todayListSubtitle {
+    font-size: 13px;
+    color: var(--text-light);
+    margin: 0;
+}
+
+.todayListClose {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border);
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.todayListClose:hover {
+    background: #fee2e2;
+    border-color: #dc2626;
+    color: #dc2626;
+}
+
+.todayAppointments {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.todayAppointmentCard {
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+    align-items: stretch;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.todayAppointmentCard:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.todayCardLeft {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: relative;
+    min-width: 70px;
+    padding-right: 14px;
+    border-right: 1px solid var(--border);
+}
+
+.todayTimeBlock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.todayTimeMain {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: -0.3px;
+    text-align: center;
+}
+
+.todaySequence {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-light);
+    background: var(--bg-cream);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+}
+
+.todayTimeBar {
+    display: none;
+}
+
+.todayCardContent {
+    flex: 1;
+    cursor: pointer;
+}
+
+.todayTopRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.todayPatientName {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.todayDoctorRow {
+    font-size: 13px;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.todayTreatmentRow {
+    font-size: 12px;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.todayTreatmentDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.statusBadge.today,
+.statusBadge.small {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+}
+
+.todayCardActions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.todayActionButton {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.todayActionButton.view {
+    color: var(--primary);
+}
+
+.todayActionButton.view:hover {
+    background: #ecfdf5;
+    border-color: var(--primary);
+}
+
+.todayActionButton.delete {
+    color: #ef4444;
+}
+
+.todayActionButton.delete:hover {
+    background: #fee2e2;
+    border-color: #ef4444;
+}
+
+/* Empty State Updates */
+.emptySubtext {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-top: 4px;
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+    /* Hide view toggle on mobile - force list view */
+    .viewToggleContainer {
+        display: none;
+    }
+    
+    /* Hide calendar completely on mobile */
+    .calendarGrid {
+        display: none !important;
+    }
+
+    .agendaView {
+        padding: 12px;
+    }
+    
+    /* Make today list fill better on mobile */
+    .todayList {
+        margin: 0 0 16px 0;
+        padding: 18px;
+        border-radius: var(--radius-lg);
+        margin-top:20px;
+    }
+
+    .agendaDayNumber {
+        width: 42px;
+        height: 42px;
+        font-size: 18px;
+    }
+
+    .agendaAppointment {
+        padding: 14px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .agendaActions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .todayAppointmentCard {
+        padding: 14px;
+        gap: 12px;
+    }
+    
+    .todayCardLeft {
+        min-width: 65px;
+        padding-right: 12px;
+    }
+
+    .todayCardContent {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .todayPatientName {
+        font-size: 14px;
+    }
+    
+    .todayTimeMain {
+        font-size: 15px;
+    }
+    
+    .todayCardActions {
+        flex-direction: row;
+    }
+}
+
+@media (max-width: 480px) {
+    .todayList {
+        padding: 16px;
+        margin: 0;
+        border-radius: var(--radius-lg);
+    }
+    
+    .todayListHeaderContent {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .todayBadgeLarge {
+        font-size: 11px;
+        padding: 8px 14px;
+    }
+    
+    .todayListTitle {
+        font-size: 16px;
+    }
+    
+    .todayListSubtitle {
+        font-size: 12px;
+    }
+
+    .todayAppointmentCard {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .todayCardLeft {
+        min-width: 60px;
+        padding-right: 10px;
+        border-right: 1px solid var(--border);
+    }
+    
+    .todayTimeMain {
+        font-size: 14px;
+    }
+    
+    .todaySequence {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+
+    .todayTimeBar {
+        display: none;
+    }
+
+    .todayCardActions {
+        justify-content: flex-end;
+    }
+    
+    .todayActionButton {
+        width: 34px;
+        height: 34px;
+    }
+
+    .agendaAppointment {
+        gap: 10px;
+    }
+
+    .agendaTimeBar {
+        width: 100%;
+        height: 4px;
+        left: 0;
+        bottom: 0;
+        top: auto;
+        border-radius: 4px 4px 0 0;
+    }
 }

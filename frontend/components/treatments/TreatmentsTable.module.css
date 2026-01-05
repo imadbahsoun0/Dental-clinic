@@ -134,14 +134,164 @@
     font-size: 16px;
 }
 
-@media (max-width: 1200px) {
-    .treatmentsTable {
-        font-size: 13px;
-    }
+/* Mobile Card View */
+.mobileCardView {
+    display: none;
+}
 
-    .treatmentsTable th,
-    .treatmentsTable td {
-        padding: 10px 12px;
+.treatmentCard {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.treatmentCard.selected {
+    background: #e0f2fe;
+    border-color: #0284c7;
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.cardHeaderLeft {
+    flex: 1;
+}
+
+.cardTreatmentName {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+}
+
+.cardTeethInfo {
+    font-size: 12px;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cardCheckbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.cardBody {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.cardRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.cardLabel {
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.cardValue {
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+.cardValue.currency {
+    font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.cardFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.cardStatusSelect {
+    flex: 1;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    cursor: pointer;
+}
+
+.cardActions {
+    display: flex;
+    gap: 6px;
+}
+
+.cardActionBtn {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.cardActionBtn:hover:not(:disabled) {
+    background: var(--bg-cream);
+}
+
+.cardActionBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    /* Hide table on mobile, show cards */
+    .tableContainer {
+        display: none;
+    }
+    
+    .mobileCardView {
+        display: block;
+        padding: 0;
+    }
+    
+    .treatmentCard {
+        margin-bottom: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .treatmentCard {
+        padding: 14px;
+    }
+    
+    .cardTreatmentName {
+        font-size: 14px;
+    }
+    
+    .cardRow {
+        font-size: 12px;
+    }
+    
+    .cardActionBtn {
+        width: 34px;
+        height: 34px;
     }
 }
 

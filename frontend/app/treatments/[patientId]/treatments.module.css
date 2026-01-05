@@ -19,8 +19,8 @@
 }
 
 .summaryLabel {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
     color: var(--text-light);
     margin-bottom: 8px;
     text-transform: uppercase;
@@ -28,7 +28,7 @@
 }
 
 .summaryValue {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
     color: var(--text-dark);
     font-family: 'Monaco', 'Courier New', monospace;
@@ -54,7 +54,9 @@
 .actions {
     margin-bottom: 24px;
     display: flex;
+    gap: 12px;
     justify-content: flex-end;
+    flex-wrap: wrap;
 }
 
 /* Error State */
@@ -75,11 +77,16 @@
 /* Responsive Design */
 @media (max-width: 968px) {
     .summaryCards {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
     }
 
     .summaryValue {
-        font-size: 28px;
+        font-size: 24px;
+    }
+    
+    .summaryLabel {
+        font-size: 12px;
     }
 }
 
@@ -89,20 +96,98 @@
     }
 
     .summaryCards {
-        gap: 12px;
+        grid-template-columns: 1fr;
+        gap: 10px;
         margin-bottom: 16px;
     }
 
     .summaryCard {
-        padding: 16px 20px;
+        padding: 16px;
     }
 
     .summaryValue {
         font-size: 24px;
     }
+    
+    .summaryLabel {
+        font-size: 12px;
+    }
 
     .actions {
         margin-bottom: 16px;
+        justify-content: stretch;
+    }
+    
+    .actions button {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    .tabNavigation {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        margin: 16px 0;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    
+    .tabNavigation::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab {
+        padding: 10px 20px;
+        font-size: 14px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .table th,
+    .table td {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pageContainer {
+        padding: 12px;
+    }
+
+    .summaryCard {
+        padding: 14px;
+    }
+
+    .summaryLabel {
+        font-size: 11px;
+    }
+
+    .summaryValue {
+        font-size: 22px;
+    }
+    
+    .actions {
+        flex-direction: column;
+    }
+    
+    .actions button {
+        width: 100%;
+    }
+
+    .tab {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px;
+        font-size: 11px;
+    }
+
+    .statusBadge {
+        font-size: 10px;
+        padding: 3px 8px;
     }
 }
 /* Tab Navigation */
@@ -184,4 +269,257 @@
 
 .table tbody tr:hover {
     background: var(--bg-secondary);
+}
+
+/* Mobile Card View for Reminders */
+.reminderCards {
+    display: none;
+}
+
+.reminderCard {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.reminderCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.reminderType {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.reminderCardBody {
+    margin-bottom: 10px;
+}
+
+.reminderContent {
+    font-size: 13px;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.reminderMeta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.reminderMetaRow {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-light);
+}
+
+.reminderError {
+    color: var(--danger);
+    font-size: 12px;
+    margin-top: 8px;
+    padding: 8px;
+    background: #fee2e2;
+    border-radius: var(--radius-sm);
+}
+
+/* Mobile Card View for Reminders */
+.reminderCard {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.reminderCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.reminderType {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.reminderCardBody {
+    margin-bottom: 10px;
+}
+
+.reminderContent {
+    font-size: 13px;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.reminderMeta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.reminderMetaRow {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-light);
+}
+
+.reminderError {
+    color: var(--danger);
+    font-size: 12px;
+    margin-top: 8px;
+    padding: 8px;
+    background: #fee2e2;
+    border-radius: var(--radius-sm);
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+    .summaryCards {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .summaryValue {
+        font-size: 24px;
+    }
+    
+    .summaryLabel {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .pageContainer {
+        padding: 16px;
+    }
+
+    .summaryCards {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .summaryCard {
+        padding: 16px;
+    }
+
+    .summaryValue {
+        font-size: 24px;
+    }
+    
+    .summaryLabel {
+        font-size: 12px;
+    }
+
+    .actions {
+        margin-bottom: 16px;
+        justify-content: stretch;
+    }
+    
+    .actions button {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    .tabNavigation {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        margin: 16px 0;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    
+    .tabNavigation::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab {
+        padding: 10px 20px;
+        font-size: 14px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .table th,
+    .table td {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+    
+    /* Hide table, show card view for reminders */
+    .table {
+        display: none;
+    }
+    
+    .reminderCards {
+        display: block;
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pageContainer {
+        padding: 12px;
+    }
+
+    .summaryCard {
+        padding: 14px;
+    }
+
+    .summaryLabel {
+        font-size: 11px;
+    }
+
+    .summaryValue {
+        font-size: 22px;
+    }
+    
+    .actions {
+        flex-direction: column;
+    }
+    
+    .actions button {
+        width: 100%;
+    }
+
+    .tab {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px;
+        font-size: 11px;
+    }
+
+    .statusBadge {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+    
+    .reminderCards {
+        padding: 12px;
+    }
+    
+    .reminderCard {
+        padding: 14px;
+    }
 }

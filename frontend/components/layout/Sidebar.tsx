@@ -20,7 +20,12 @@ const settingsNavItems = [
     { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+    isOpen?: boolean;
+    onClose?: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
     const pathname = usePathname();
     const router = useRouter();
     const currentUser = useAuthStore((state) => state.currentUser);
@@ -62,8 +67,16 @@ export const Sidebar: React.FC = () => {
         return name.substring(0, 2).toUpperCase();
     };
 
+    const handleLinkClick = () => {
+        if (onClose) {
+            onClose();
+        }
+    };
+
     return (
-        <aside className={styles.sidebar}>
+        <>
+            {isOpen && <div className={`${styles.overlay} ${isOpen ? styles.active : ''}`} onClick={onClose}></div>}
+            <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
             <div className={styles.logoSection}>
                 <Link href="/dashboard" className={styles.logo}>
                     <div className={styles.logoIcon}>🦷</div>
@@ -90,6 +103,7 @@ export const Sidebar: React.FC = () => {
                             key={item.href}
                             href={item.href}
                             className={`${styles.navItem} ${isActive ? styles.active : ''}`}
+                            onClick={handleLinkClick}
                         >
                             <span className={styles.navItemIcon}>{item.icon}</span>
                             <span>{item.label}</span>
@@ -108,6 +122,7 @@ export const Sidebar: React.FC = () => {
                         <Link
                             key={item.href}
                             href={item.href}
+                            onClick={handleLinkClick}
                             className={`${styles.navItem} ${isActive ? styles.active : ''}`}
                         >
                             <span className={styles.navItemIcon}>{item.icon}</span>
@@ -136,6 +151,7 @@ export const Sidebar: React.FC = () => {
                     </button>
                 </div>
             )}
-        </aside>
+            </aside>
+        </>
     );
 };

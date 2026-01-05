@@ -161,3 +161,185 @@
     font-weight: 600;
     color: var(--danger);
 }
+
+.mobileCardView {
+    display: none;
+}
+
+.notificationCard {
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.notificationCard:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
+}
+
+.notificationCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.notificationCardTitle {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.notificationCardBody {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.notificationCardRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.notificationCardLabel {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.notificationCardValue {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.notificationCardFooter {
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.notificationCardFooter button {
+    width: 100%;
+}
+
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.paginationInfo {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.paginationControls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.paginationBtn {
+    padding: 8px 16px;
+    background-color: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.paginationBtn:hover:not(:disabled) {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.paginationBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pageNumbers {
+    display: flex;
+    gap: 4px;
+}
+
+.pageNumber {
+    padding: 8px 12px;
+    background-color: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pageNumber:hover {
+    background-color: var(--bg-secondary);
+}
+
+.pageNumber.active {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+    .tableContainer {
+        display: none;
+    }
+
+    .mobileCardView {
+        display: block;
+    }
+
+    .tabs {
+        overflow-x: auto;
+    }
+
+    .tab {
+        padding: 10px 16px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .pagination {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .paginationInfo {
+        text-align: center;
+    }
+
+    .paginationControls {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .pageNumbers {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}

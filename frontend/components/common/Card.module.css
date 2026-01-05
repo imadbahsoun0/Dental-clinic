@@ -29,3 +29,31 @@
 .cardBody {
     padding: 18px 22px;
 }
+
+/* Mobile */
+@media (max-width: 768px) {
+    .cardHeader {
+        padding: 14px 16px;
+    }
+
+    .cardTitle {
+        font-size: 14px;
+    }
+
+    .cardBody {
+        padding: 14px 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cardHeader {
+        padding: 12px 14px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .cardBody {
+        padding: 12px 14px;
+    }
+}

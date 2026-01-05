@@ -30,59 +30,103 @@ export function Table<T extends Record<string, any>>({
     emptyMessage = 'No data available'
 }: TableProps<T>) {
     return (
-        <div className={styles.tableContainer}>
+        <>
             {data.length === 0 ? (
                 <div className={styles.emptyState}>
                     <p>{emptyMessage}</p>
                 </div>
             ) : (
-                <table className={styles.table}>
-                    <thead>
-                        <tr>
-                            {columns.map((column) => (
-                                <th key={column.key}>{column.label}</th>
-                            ))}
-                            {actions && actions.length > 0 && (
-                                <th className={styles.actionsHeader}>Actions</th>
-                            )}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {data.map((item, index) => (
-                            <tr key={item.id || index}>
-                                {columns.map((column) => (
-                                    <td key={column.key}>
-                                        {column.render
-                                            ? column.render(item)
-                                            : item[column.key]
-                                        }
-                                    </td>
+                <>
+                    {/* Desktop Table View */}
+                    <div className={styles.tableContainer}>
+                        <table className={styles.table}>
+                            <thead>
+                                <tr>
+                                    {columns.map((column) => (
+                                        <th key={column.key}>{column.label}</th>
+                                    ))}
+                                    {actions && actions.length > 0 && (
+                                        <th className={styles.actionsHeader}>Actions</th>
+                                    )}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.map((item, index) => (
+                                    <tr key={item.id || index}>
+                                        {columns.map((column) => (
+                                            <td key={column.key}>
+                                                {column.render
+                                                    ? column.render(item)
+                                                    : item[column.key]
+                                                }
+                                            </td>
+                                        ))}
+                                        {actions && actions.length > 0 && (
+                                            <td className={styles.actionsCell}>
+                                                <div className={styles.actions}>
+                                                    {actions.map((action, actionIndex) => {
+                                                        const variant = typeof action.variant === 'function' ? action.variant(item) : (action.variant || 'secondary');
+                                                        const label = typeof action.label === 'function' ? action.label(item) : action.label;
+                                                        return (
+                                                            <Button
+                                                                key={actionIndex}
+                                                                variant={variant}
+                                                                size="sm"
+                                                                onClick={() => action.onClick(item)}
+                                                            >
+                                                                {label}
+                                                            </Button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </td>
+                                        )}
+                                    </tr>
                                 ))}
-                                {actions && actions.length > 0 && (
-                                    <td className={styles.actionsCell}>
-                                        <div className={styles.actions}>
-                                            {actions.map((action, actionIndex) => {
-                                                const variant = typeof action.variant === 'function' ? action.variant(item) : (action.variant || 'secondary');
-                                                const label = typeof action.label === 'function' ? action.label(item) : action.label;
-                                                return (
-                                                    <Button
-                                                        key={actionIndex}
-                                                        variant={variant}
-                                                        size="sm"
-                                                        onClick={() => action.onClick(item)}
-                                                    >
-                                                        {label}
-                                                    </Button>
-                                                );
-                                            })}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className={styles.mobileCardView}>
+                        {data.map((item, index) => (
+                            <div key={item.id || index} className={styles.card}>
+                                <div className={styles.cardBody}>
+                                    {columns.map((column) => (
+                                        <div key={column.key} className={styles.cardRow}>
+                                            <span className={styles.cardLabel}>{column.label}</span>
+                                            <span className={styles.cardValue}>
+                                                {column.render
+                                                    ? column.render(item)
+                                                    : item[column.key]
+                                                }
+                                            </span>
                                         </div>
-                                    </td>
+                                    ))}
+                                </div>
+                                {actions && actions.length > 0 && (
+                                    <div className={styles.cardFooter}>
+                                        {actions.map((action, actionIndex) => {
+                                            const variant = typeof action.variant === 'function' ? action.variant(item) : (action.variant || 'secondary');
+                                            const label = typeof action.label === 'function' ? action.label(item) : action.label;
+                                            return (
+                                                <Button
+                                                    key={actionIndex}
+                                                    variant={variant}
+                                                    size="sm"
+                                                    onClick={() => action.onClick(item)}
+                                                >
+                                                    {label}
+                                                </Button>
+                                            );
+                                        })}
+                                    </div>
                                 )}
-                            </tr>
+                            </div>
                         ))}
-                    </tbody>
-                </table>
+                    </div>
+                </>
             )}
-        </div>
+        </>
     );
 }

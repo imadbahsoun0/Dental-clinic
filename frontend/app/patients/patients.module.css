@@ -57,6 +57,11 @@
     overflow-x: auto;
 }
 
+/* Mobile Card View - hidden by default */
+.mobileCardView {
+    display: none;
+}
+
 .patientTable {
     width: 100%;
     border-collapse: collapse;
@@ -148,6 +153,102 @@
 .emptyState {
     padding: 60px 20px;
     text-align: center;
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+    .searchContainer {
+        min-width: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    .pageHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .filterBar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .searchContainer {
+        min-width: 100%;
+    }
+
+    .filterControls {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .pageSizeControl {
+        width: 100%;
+    }
+
+    /* Hide table on mobile, show card view */
+    .tableWrapper {
+        display: none;
+    }
+
+    .mobileCardView {
+        display: block;
+        padding: 16px;
+    }
+
+    .patientCard {
+        margin-bottom: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pageTitle {
+        font-size: 18px;
+    }
+
+    .pageSubtitle {
+        font-size: 12px;
+    }
+
+    .mobileCardView {
+        padding: 12px;
+    }
+
+    .patientCard {
+        padding: 14px;
+    }
+
+    .cardHeader {
+        flex-wrap: wrap;
+    }
+
+    .patientInfo {
+        gap: 8px;
+    }
+
+    .patientAvatar {
+        width: 36px;
+        height: 36px;
+        font-size: 13px;
+    }
+
+    .actionBtn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .cardRow {
+        font-size: 12px;
+    }
+
+    .cardLabel {
+        font-size: 12px;
+    }
+
+    .cardValue {
+        font-size: 12px;
+    }
 }
 
 .emptyState p {
@@ -315,4 +416,61 @@
 
 .toggleOn+.toggleLabel {
     color: #10b981;
+}
+
+/* Mobile Card View Styles */
+.patientCard {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.patientCard:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary);
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.cardActions {
+    display: flex;
+    gap: 6px;
+}
+
+.cardBody {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cardRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.cardLabel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.cardValue {
+    color: var(--text-dark);
+    font-weight: 500;
+    text-align: right;
 }

@@ -148,6 +148,66 @@
     min-width: 0;
 }
 
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Tablet and below */
+@media (max-width: 1024px) {
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 280px;
+    }
+
+    .logoSection {
+        padding: 20px 16px;
+    }
+
+    .logoText {
+        font-size: 18px;
+    }
+
+    .navSection {
+        padding: 16px 10px;
+    }
+
+    .navItem {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        width: 260px;
+    }
+}
+
 .userCard {
     margin-bottom: 12px;
 }

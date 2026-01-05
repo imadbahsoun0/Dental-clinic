@@ -233,3 +233,116 @@
     padding-top: 20px;
     border-top: 1px solid var(--border);
 }
+
+/* Tablet */
+@media (max-width: 1024px) {
+    .container {
+        padding: 30px 16px;
+    }
+
+    .formCard {
+        padding: 32px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px 12px;
+    }
+
+    .formCard {
+        padding: 24px 20px;
+    }
+
+    .title {
+        font-size: 24px;
+    }
+
+    .organizationLogo {
+        max-width: 150px;
+        max-height: 100px;
+    }
+
+    .clinicName {
+        font-size: 20px;
+    }
+
+    .logoPlaceholder {
+        font-size: 22px;
+        padding: 16px 24px;
+    }
+
+    .sectionTitle {
+        font-size: 16px;
+    }
+
+    .signatureCanvas {
+        height: 150px;
+    }
+
+    .radioGroup,
+    .checkboxGroup {
+        gap: 8px;
+    }
+
+    .radioOption,
+    .checkboxOption {
+        padding: 10px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 16px 8px;
+    }
+
+    .formCard {
+        padding: 20px 16px;
+    }
+
+    .title {
+        font-size: 22px;
+    }
+
+    .organizationLogo {
+        max-width: 120px;
+        max-height: 80px;
+    }
+
+    .clinicName {
+        font-size: 18px;
+    }
+
+    .logoPlaceholder {
+        font-size: 20px;
+        padding: 14px 20px;
+    }
+
+    .sectionTitle {
+        font-size: 15px;
+    }
+
+    .questionLabel {
+        font-size: 13px;
+    }
+
+    .signatureCanvas {
+        height: 120px;
+    }
+
+    .signatureContainer {
+        padding: 8px;
+    }
+
+    .submitSection {
+        padding-top: 16px;
+    }
+
+    .radioOption,
+    .checkboxOption {
+        padding: 8px;
+        font-size: 12px;
+    }
+}

@@ -6,8 +6,33 @@
 .mainContent {
     flex: 1;
     margin-left: 260px;
+    transition: margin-left 0.3s ease;
 }
 
 .content {
     padding: 28px;
+}
+
+/* Tablet and below */
+@media (max-width: 1024px) {
+    .mainContent {
+        margin-left: 0;
+    }
+
+    .content {
+        padding: 20px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .content {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .content {
+        padding: 12px;
+    }
 }

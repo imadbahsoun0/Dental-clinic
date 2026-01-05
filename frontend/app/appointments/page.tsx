@@ -23,6 +23,14 @@ export default function AppointmentsPage() {
     const [today, setToday] = useState('');
     const [selectedDoctor, setSelectedDoctor] = useState<string>(''); // Filter by doctor ID
     const [showTodayList, setShowTodayList] = useState(false);
+    
+    // Default to list view on mobile
+    const [viewMode, setViewMode] = useState<'calendar' | 'list'>(() => {
+        if (typeof window !== 'undefined') {
+            return window.innerWidth <= 768 ? 'list' : 'calendar';
+        }
+        return 'calendar';
+    });
 
     // Appointment Store
     const appointments = useAppointmentStore((state) => state.appointments);
@@ -188,9 +196,39 @@ export default function AppointmentsPage() {
                             </svg>
                         </button>
                     </div>
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div className={styles.headerActions}>
+                        {/* View Toggle (Mobile Only) */}
+                        <div className={styles.viewToggleContainer}>
+                            <button 
+                                className={`${styles.viewToggleBtn} ${viewMode === 'calendar' ? styles.active : ''}`}
+                                onClick={() => setViewMode('calendar')}
+                                title="Calendar View"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                    <line x1="16" y1="2" x2="16" y2="6"/>
+                                    <line x1="8" y1="2" x2="8" y2="6"/>
+                                    <line x1="3" y1="10" x2="21" y2="10"/>
+                                </svg>
+                            </button>
+                            <button 
+                                className={`${styles.viewToggleBtn} ${viewMode === 'list' ? styles.active : ''}`}
+                                onClick={() => setViewMode('list')}
+                                title="List View"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"/>
+                                    <line x1="8" y1="12" x2="21" y2="12"/>
+                                    <line x1="8" y1="18" x2="21" y2="18"/>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"/>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"/>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                        
                         {/* Doctor Filter Buttons */}
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <div className={styles.doctorFilters}>
                             <Button
                                 variant={selectedDoctor === '' ? 'primary' : 'secondary'}
                                 onClick={() => setSelectedDoctor('')}
@@ -209,173 +247,124 @@ export default function AppointmentsPage() {
                                 </Button>
                             ))}
                         </div>
-                        <div style={{ width: '1px', height: '24px', backgroundColor: '#e5e7eb' }} />
                         <Button variant="secondary" onClick={goToToday}>Today</Button>
                         <Button onClick={() => {
                             setEditingAppointmentId(null);
                             setSelectedDate(today);
                             setIsModalOpen(true);
-                        }}>+ New Appointment</Button>
+                        }}>+ New</Button>
                     </div>
                 </div>
 
                 {/* Today's Appointments List */}
                 {showTodayList && (
-                    <div style={{
-                        marginTop: '20px',
-                        padding: '20px',
-                        backgroundColor: '#f9fafb',
-                        borderRadius: '8px',
-                        border: '1px solid #e5e7eb'
-                    }}>
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '16px'
-                        }}>
-                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>
-                                Today's Appointments ({appointments.filter(apt => apt.date === today).length})
-                            </h3>
-                            <button
-                                onClick={() => setShowTodayList(false)}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    fontSize: '20px',
-                                    color: '#6b7280'
-                                }}
-                            >
-                                ×
+                    <div className={styles.todayList}>
+                        <div className={styles.todayListHeader}>
+                            <div className={styles.todayListHeaderContent}>
+                                <div className={styles.todayBadgeLarge}>Today</div>
+                                <div className={styles.todayListHeaderText}>
+                                    <h3 className={styles.todayListTitle}>
+                                        {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                    </h3>
+                                    <p className={styles.todayListSubtitle}>
+                                        {appointments.filter(apt => apt.date === today).length} {appointments.filter(apt => apt.date === today).length === 1 ? 'appointment' : 'appointments'}
+                                    </p>
+                                </div>
+                            </div>
+                            <button className={styles.todayListClose} onClick={() => setShowTodayList(false)}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M18 6L6 18M6 6l12 12" />
+                                </svg>
                             </button>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div className={styles.todayAppointments}>
                             {appointments
                                 .filter(apt => apt.date === today && (!selectedDoctor || apt.doctor?.id === selectedDoctor))
                                 .sort((a, b) => a.time.localeCompare(b.time))
-                                .map((apt) => {
+                                .map((apt, index) => {
                                     const patient = patients.find(p => p.id === apt.patient?.id || p.id === (apt.patient as any));
                                     const treatmentType = treatmentTypes.find((t: any) => t.id === apt.treatmentType?.id || t.id === (apt.treatmentType as any));
 
                                     return (
-                                        <div
-                                            key={apt.id}
-                                            style={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                padding: '12px 16px',
-                                                backgroundColor: 'white',
-                                                borderRadius: '6px',
-                                                border: '1px solid #e5e7eb'
-                                            }}
-                                        >
-                                            <div
-                                                style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, cursor: 'pointer' }}
-                                                onClick={() => handleAppointmentClick(apt.id)}
-                                            >
-                                                <div style={{
-                                                    fontWeight: '600',
-                                                    fontSize: '16px',
-                                                    minWidth: '60px',
-                                                    color: treatmentType?.color || '#3b82f6'
-                                                }}>
-                                                    {apt.time}
+                                        <div key={apt.id} className={styles.todayAppointmentCard}>
+                                            <div className={styles.todayCardLeft}>
+                                                <div className={styles.todayTimeBlock}>
+                                                    <div className={styles.todayTimeMain}>{apt.time}</div>
+                                                    <div className={styles.todaySequence}>#{index + 1}</div>
                                                 </div>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ fontWeight: '500', fontSize: '15px' }}>
+                                                <div className={styles.todayTimeBar} style={{ backgroundColor: treatmentType?.color || '#3b82f6' }} />
+                                            </div>
+                                            <div className={styles.todayCardContent} onClick={() => handleAppointmentClick(apt.id)}>
+                                                <div className={styles.todayTopRow}>
+                                                    <div className={styles.todayPatientName}>
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px' }}>
+                                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                            <circle cx="12" cy="7" r="4" />
+                                                        </svg>
                                                         {patient ? `${patient.firstName} ${patient.lastName}` : 'Loading...'}
                                                     </div>
+                                                    <span className={`${styles.statusBadge} ${styles.today}`} style={{
+                                                        backgroundColor: apt.status === 'confirmed' ? '#d1fae5' : apt.status === 'pending' ? '#fef3c7' : '#fee2e2',
+                                                        color: apt.status === 'confirmed' ? '#065f46' : apt.status === 'pending' ? '#92400e' : '#991b1b'
+                                                    }}>
+                                                        {apt.status ? (apt.status.charAt(0).toUpperCase() + apt.status.slice(1)) : 'Pending'}
+                                                    </span>
                                                 </div>
-                                                <div style={{
-                                                    fontSize: '14px',
-                                                    color: '#6b7280',
-                                                    fontWeight: '500'
-                                                }}>
+                                                <div className={styles.todayDoctorRow}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '4px' }}>
+                                                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                                                    </svg>
                                                     {apt.doctor?.name || 'No Doctor Assigned'}
                                                 </div>
-                                                <div style={{
-                                                    padding: '4px 12px',
-                                                    borderRadius: '12px',
-                                                    fontSize: '12px',
-                                                    fontWeight: '500',
-                                                    backgroundColor: apt.status === 'confirmed' ? '#d1fae5' : apt.status === 'pending' ? '#fef3c7' : '#fee2e2',
-                                                    color: apt.status === 'confirmed' ? '#065f46' : apt.status === 'pending' ? '#92400e' : '#991b1b'
-                                                }}>
-                                                    {apt.status ? (apt.status.charAt(0).toUpperCase() + apt.status.slice(1)) : 'Pending'}
-                                                </div>
+                                                {treatmentType && (
+                                                    <div className={styles.todayTreatmentRow}>
+                                                        <div className={styles.todayTreatmentDot} style={{ backgroundColor: treatmentType.color || '#3b82f6' }} />
+                                                        {treatmentType.name}
+                                                    </div>
+                                                )}
                                             </div>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (patient) {
-                                                        router.push(`/treatments/${patient.id}`);
-                                                    }
-                                                }}
-                                                style={{
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                    padding: '8px',
-                                                    marginLeft: '12px',
-                                                    color: '#3b82f6',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    borderRadius: '4px',
-                                                    transition: 'background-color 0.2s'
-                                                }}
-                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'}
-                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                                title="View Patient Profile"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                    <circle cx="12" cy="7" r="4" />
-                                                </svg>
-                                            </button>
-                                            <button
-                                                onClick={(e) => handleDeleteClick(apt.id, e)}
-                                                style={{
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                    padding: '8px',
-                                                    marginLeft: '4px',
-                                                    color: '#ef4444',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    borderRadius: '4px',
-                                                    transition: 'background-color 0.2s'
-                                                }}
-                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
-                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                                title="Delete Appointment"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
-                                                </svg>
-                                            </button>
+                                            <div className={styles.todayCardActions}>
+                                                <button
+                                                    className={`${styles.todayActionButton} ${styles.view}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (patient) {
+                                                            router.push(`/treatments/${patient.id}`);
+                                                        }
+                                                    }}
+                                                    title="View Patient Profile"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                        <circle cx="12" cy="12" r="3" />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    className={`${styles.todayActionButton} ${styles.delete}`}
+                                                    onClick={(e) => handleDeleteClick(apt.id, e)}
+                                                    title="Delete Appointment"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     );
                                 })}
                             {appointments.filter(apt => apt.date === today && (!selectedDoctor || apt.doctor?.id === selectedDoctor)).length === 0 && (
-                                <div style={{
-                                    textAlign: 'center',
-                                    padding: '40px',
-                                    color: '#6b7280',
-                                    fontSize: '14px'
-                                }}>
-                                    No appointments scheduled for today
+                                <div className={styles.emptyState}>
+                                    <div className={styles.emptyIcon}>📅</div>
+                                    <div className={styles.emptyText}>No appointments scheduled for today</div>
+                                    <div className={styles.emptySubtext}>Your schedule is clear!</div>
                                 </div>
                             )}
                         </div>
                     </div>
                 )}
 
-                <div className={styles.calendarGrid}>
+                {/* Calendar or List View */}
+                <div className={`${styles.calendarGrid} ${viewMode === 'list' ? styles.hidden : ''}`}>
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                         <div key={day} className={styles.calendarDayHeader}>{day}</div>
                     ))}
@@ -415,6 +404,110 @@ export default function AppointmentsPage() {
                         );
                     })}
                 </div>
+
+                {/* List/Agenda View */}
+                {viewMode === 'list' && (
+                    <div className={styles.agendaView}>
+                        {getDaysInMonth()
+                            .filter(day => day.isCurrentMonth)
+                            .map((day: any) => {
+                                const dateStr = day.fullDate;
+                                const dayAppointments = appointments.filter((apt) => {
+                                    const matchesDate = apt.date === dateStr;
+                                    const matchesDoctor = !selectedDoctor || apt.doctor?.id === selectedDoctor;
+                                    return matchesDate && matchesDoctor;
+                                }).sort((a, b) => a.time.localeCompare(b.time));
+
+                                if (dayAppointments.length === 0) return null;
+
+                                const date = new Date(dateStr);
+                                const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                                const isToday = dateStr === today;
+
+                                return (
+                                    <div key={dateStr} className={styles.agendaDay}>
+                                        <div className={`${styles.agendaDayHeader} ${isToday ? styles.todayHeader : ''}`}>
+                                            <div className={styles.agendaDayNumber}>{day.date}</div>
+                                            <div className={styles.agendaDayName}>
+                                                {dayName}\n                                                {isToday && <span className={styles.todayBadge}>Today</span>}
+                                            </div>
+                                        </div>
+                                        <div className={styles.agendaAppointments}>
+                                            {dayAppointments.map((apt) => {
+                                                const patient = patients.find(p => p.id === apt.patient?.id || p.id === (apt.patient as any));
+                                                const treatmentType = treatmentTypes.find((t: any) => t.id === apt.treatmentType?.id || t.id === (apt.treatmentType as any));
+
+                                                return (
+                                                    <div key={apt.id} className={styles.agendaAppointment} onClick={() => handleAppointmentClick(apt.id)}>
+                                                        <div className={styles.agendaTimeBar} style={{ backgroundColor: treatmentType?.color || '#3b82f6' }} />
+                                                        <div className={styles.agendaAppointmentContent}>
+                                                            <div className={styles.agendaTimeRow}>
+                                                                <span className={styles.agendaTime}>{apt.time}</span>
+                                                                <span className={`${styles.statusBadge} ${styles.small}`} style={{
+                                                                    backgroundColor: apt.status === 'confirmed' ? '#d1fae5' : apt.status === 'pending' ? '#fef3c7' : '#fee2e2',
+                                                                    color: apt.status === 'confirmed' ? '#065f46' : apt.status === 'pending' ? '#92400e' : '#991b1b'
+                                                                }}>
+                                                                    {apt.status ? (apt.status.charAt(0).toUpperCase() + apt.status.slice(1)) : 'Pending'}
+                                                                </span>
+                                                            </div>
+                                                            <div className={styles.agendaPatientName}>
+                                                                {patient ? `${patient.firstName} ${patient.lastName}` : 'Loading...'}
+                                                            </div>
+                                                            <div className={styles.agendaDoctorName}>
+                                                                👨‍⚕️ {apt.doctor?.name || 'No Doctor Assigned'}
+                                                            </div>
+                                                        </div>
+                                                        <div className={styles.agendaActions}>
+                                                            <button
+                                                                className={`${styles.actionButton} ${styles.view}`}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (patient) {
+                                                                        router.push(`/treatments/${patient.id}`);
+                                                                    }
+                                                                }}
+                                                                title="View Patient"
+                                                            >
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                                    <circle cx="12" cy="7" r="4" />
+                                                                </svg>
+                                                            </button>
+                                                            <button
+                                                                className={`${styles.actionButton} ${styles.delete}`}
+                                                                onClick={(e) => handleDeleteClick(apt.id, e)}
+                                                                title="Delete"
+                                                            >
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        {getDaysInMonth()
+                            .filter(day => day.isCurrentMonth)
+                            .every(day => {
+                                const dateStr = day.fullDate;
+                                const dayAppointments = appointments.filter((apt) => {
+                                    const matchesDate = apt.date === dateStr;
+                                    const matchesDoctor = !selectedDoctor || apt.doctor?.id === selectedDoctor;
+                                    return matchesDate && matchesDoctor;
+                                });
+                                return dayAppointments.length === 0;
+                            }) && (
+                            <div className={styles.emptyState}>
+                                <div className={styles.emptyIcon}>📅</div>
+                                <div className={styles.emptyText}>No appointments this month</div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </Card>
 
             <AppointmentModal

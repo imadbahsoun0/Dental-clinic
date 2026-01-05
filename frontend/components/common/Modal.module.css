@@ -79,3 +79,47 @@
     justify-content: flex-end;
     gap: 12px;
 }
+
+/* Tablet and below */
+@media (max-width: 768px) {
+    .modal {
+        max-width: calc(100vw - 32px);
+        margin: 16px;
+    }
+
+    .modalHeader,
+    .modalBody {
+        padding: 18px;
+    }
+
+    .modalTitle {
+        font-size: 18px;
+    }
+
+    .modalFooter {
+        padding: 16px 18px;
+        flex-wrap: wrap;
+    }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+    .modal {
+        max-width: calc(100vw - 24px);
+        margin: 12px;
+        max-height: 95vh;
+    }
+
+    .modalHeader,
+    .modalBody {
+        padding: 16px;
+    }
+
+    .modalTitle {
+        font-size: 16px;
+    }
+
+    .modalFooter {
+        padding: 14px 16px;
+    }
+}

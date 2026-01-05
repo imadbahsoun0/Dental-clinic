@@ -150,6 +150,86 @@
     margin: 0 8px;
 }
 
+/* Tablet */
+@media (max-width: 1024px) {
+    .dentalChart {
+        padding: 20px 16px;
+    }
+
+    .upperJaw,
+    .lowerJaw {
+        gap: 12px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .toothSelectorContainer {
+        max-width: 100%;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .dentalChart {
+        padding: 16px 12px;
+    }
+
+    .upperJaw,
+    .lowerJaw {
+        gap: 8px;
+    }
+
+    .quadrant {
+        gap: 6px;
+    }
+
+    .teethRow {
+        gap: 3px;
+    }
+
+    .centerLine {
+        height: 50px;
+        margin: 0 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dentalChart {
+        padding: 12px 8px;
+    }
+
+    .upperJaw,
+    .lowerJaw {
+        gap: 6px;
+    }
+
+    .quadrant {
+        gap: 4px;
+    }
+
+    .teethRow {
+        gap: 2px;
+    }
+
+    .centerLine {
+        margin: 0 4px;
+    }
+
+    .quadrantLabel {
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+}
+
 .jawSeparator {
     height: 16px;
     width: 100%;

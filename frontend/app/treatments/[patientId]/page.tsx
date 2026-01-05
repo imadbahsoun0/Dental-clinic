@@ -400,45 +400,87 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
                                 <p>No reminders sent yet</p>
                             </div>
                         ) : (
-                            <table className={styles.table}>
-                                <thead>
-                                    <tr>
-                                        <th>Type</th>
-                                        <th>Content</th>
-                                        <th>Status</th>
-                                        <th>Sent At</th>
-                                        <th>Error</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <>
+                                {/* Desktop Table View */}
+                                <table className={styles.table}>
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Content</th>
+                                            <th>Status</th>
+                                            <th>Sent At</th>
+                                            <th>Error</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {reminders.map((reminder) => (
+                                            <tr key={reminder.id}>
+                                                <td>
+                                                    {reminder.type.split('_').map(word => 
+                                                        word.charAt(0).toUpperCase() + word.slice(1)
+                                                    ).join(' ')}
+                                                </td>
+                                                <td style={{ maxWidth: '400px', wordWrap: 'break-word' }}>
+                                                    {reminder.content}
+                                                </td>
+                                                <td>
+                                                    <span className={`${styles.statusBadge} ${styles[`status${reminder.status.charAt(0).toUpperCase() + reminder.status.slice(1)}`]}`}>
+                                                        {reminder.status.charAt(0).toUpperCase() + reminder.status.slice(1)}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {reminder.sentAt 
+                                                        ? new Date(reminder.sentAt).toLocaleString()
+                                                        : 'Not sent'
+                                                    }
+                                                </td>
+                                                <td style={{ color: 'var(--danger)', fontSize: '13px' }}>
+                                                    {reminder.error || '-'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                {/* Mobile Card View */}
+                                <div className={styles.reminderCards}>
                                     {reminders.map((reminder) => (
-                                        <tr key={reminder.id}>
-                                            <td>
-                                                {reminder.type.split('_').map(word => 
-                                                    word.charAt(0).toUpperCase() + word.slice(1)
-                                                ).join(' ')}
-                                            </td>
-                                            <td style={{ maxWidth: '400px', wordWrap: 'break-word' }}>
-                                                {reminder.content}
-                                            </td>
-                                            <td>
+                                        <div key={reminder.id} className={styles.reminderCard}>
+                                            <div className={styles.reminderCardHeader}>
+                                                <div className={styles.reminderType}>
+                                                    {reminder.type.split('_').map(word => 
+                                                        word.charAt(0).toUpperCase() + word.slice(1)
+                                                    ).join(' ')}
+                                                </div>
                                                 <span className={`${styles.statusBadge} ${styles[`status${reminder.status.charAt(0).toUpperCase() + reminder.status.slice(1)}`]}`}>
                                                     {reminder.status.charAt(0).toUpperCase() + reminder.status.slice(1)}
                                                 </span>
-                                            </td>
-                                            <td>
-                                                {reminder.sentAt 
-                                                    ? new Date(reminder.sentAt).toLocaleString()
-                                                    : 'Not sent'
-                                                }
-                                            </td>
-                                            <td style={{ color: 'var(--danger)', fontSize: '13px' }}>
-                                                {reminder.error || '-'}
-                                            </td>
-                                        </tr>
+                                            </div>
+                                            <div className={styles.reminderCardBody}>
+                                                <div className={styles.reminderContent}>
+                                                    {reminder.content}
+                                                </div>
+                                                <div className={styles.reminderMeta}>
+                                                    <div className={styles.reminderMetaRow}>
+                                                        <span>Sent:</span>
+                                                        <span>
+                                                            {reminder.sentAt 
+                                                                ? new Date(reminder.sentAt).toLocaleString()
+                                                                : 'Not sent'
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                {reminder.error && (
+                                                    <div className={styles.reminderError}>
+                                                        {reminder.error}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
                                     ))}
-                                </tbody>
-                            </table>
+                                </div>
+                            </>
                         )}
                     </Card>
                 )}

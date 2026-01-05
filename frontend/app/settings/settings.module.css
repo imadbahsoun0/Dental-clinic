@@ -1,6 +1,7 @@
 .settingsContainer {
     max-width: 1200px;
     margin: 0 auto;
+    padding: 0 16px;
 }
 
 .tabContentWrapper {
@@ -116,7 +117,86 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+    .settingsContainer {
+        padding: 0 12px;
+    }
+
+    .tabContentWrapper {
+        margin-top: 16px;
+    }
+
     .formGrid {
         grid-template-columns: 1fr;
+    }
+
+    .typesList {
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .typeItem {
+        padding: 10px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .typeName {
+        font-size: 13px;
+    }
+
+    .typeInfo {
+        font-size: 12px;
+    }
+
+    .formTitle {
+        font-size: 15px;
+        margin-bottom: 12px;
+    }
+
+    .addTypeForm {
+        padding-top: 20px;
+    }
+
+    .description {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .settingsContainer {
+        padding: 0 8px;
+    }
+
+    .tabContentWrapper {
+        margin-top: 12px;
+    }
+
+    .typeItem {
+        padding: 8px;
+    }
+
+    .typeName {
+        font-size: 12px;
+    }
+
+    .typeInfo {
+        font-size: 11px;
+    }
+
+    .formTitle {
+        font-size: 14px;
+    }
+
+    .description {
+        font-size: 12px;
+    }
+
+    .colorLabel {
+        font-size: 13px;
+    }
+
+    .questionItem {
+        padding: 10px;
+        font-size: 13px;
     }
 }

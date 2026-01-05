@@ -81,3 +81,72 @@
     border-radius: 50%;
     border: 2px solid white;
 }
+
+.menuToggle {
+    display: none;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background: var(--bg-cream);
+    border: none;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 20px;
+}
+
+.menuToggle:hover {
+    background: var(--border);
+}
+
+/* Tablet and below */
+@media (max-width: 1024px) {
+    .menuToggle {
+        display: flex;
+    }
+
+    .searchBar {
+        display: none;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .header {
+        padding: 12px 16px;
+    }
+
+    .pageTitle {
+        font-size: 20px;
+    }
+
+    .headerRight {
+        gap: 8px;
+    }
+
+    .headerBtn {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pageTitle {
+        font-size: 18px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+    }
+
+    .headerBtn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .menuToggle {
+        width: 36px;
+        height: 36px;
+    }
+}

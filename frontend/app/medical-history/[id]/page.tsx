@@ -157,7 +157,7 @@ export default function MedicalHistoryPage() {
         }
     };
 
-    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         if (existingSubmission) return; // Prevent drawing after submission
         setIsDrawing(true);
         const canvas = canvasRef.current;
@@ -165,20 +165,46 @@ export default function MedicalHistoryPage() {
             const ctx = canvas.getContext('2d');
             if (ctx) {
                 const rect = canvas.getBoundingClientRect();
+                let clientX, clientY;
+                
+                if ('touches' in e) {
+                    // Touch event
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                    e.preventDefault(); // Prevent scrolling while drawing
+                } else {
+                    // Mouse event
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                
                 ctx.beginPath();
-                ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+                ctx.moveTo(clientX - rect.left, clientY - rect.top);
             }
         }
     };
 
-    const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         if (!isDrawing) return;
         const canvas = canvasRef.current;
         if (canvas) {
             const ctx = canvas.getContext('2d');
             if (ctx) {
                 const rect = canvas.getBoundingClientRect();
-                ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+                let clientX, clientY;
+                
+                if ('touches' in e) {
+                    // Touch event
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                    e.preventDefault(); // Prevent scrolling while drawing
+                } else {
+                    // Mouse event
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                
+                ctx.lineTo(clientX - rect.left, clientY - rect.top);
                 ctx.stroke();
             }
         }
@@ -553,7 +579,10 @@ export default function MedicalHistoryPage() {
                             onMouseMove={draw}
                             onMouseUp={stopDrawing}
                             onMouseLeave={stopDrawing}
-                            style={{ cursor: existingSubmission ? 'not-allowed' : 'crosshair', opacity: existingSubmission ? 0.7 : 1 }}
+                            onTouchStart={startDrawing}
+                            onTouchMove={draw}
+                            onTouchEnd={stopDrawing}
+                            style={{ cursor: existingSubmission ? 'not-allowed' : 'crosshair', opacity: existingSubmission ? 0.7 : 1, touchAction: 'none' }}
                         />
                     </div>
                     {!existingSubmission && (

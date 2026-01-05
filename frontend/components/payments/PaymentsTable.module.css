@@ -92,3 +92,102 @@
     margin: 0;
     font-size: 16px;
 }
+
+/* Mobile Card View */
+.mobileCardView {
+    display: none;
+}
+
+.paymentCard {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.cardDate {
+    font-size: 13px;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.cardAmount {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary);
+    font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.cardBody {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.cardRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.cardLabel {
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.cardValue {
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+.cardFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.cardActionBtn {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.cardActionBtn:hover {
+    background: var(--bg-cream);
+}
+
+@media (max-width: 768px) {
+    /* Hide table on mobile, show cards */
+    .tableContainer {
+        display: none;
+    }
+    
+    .mobileCardView {
+        display: block;
+    }
+    
+    .paymentCard {
+        margin-bottom: 14px;
+    }
+}

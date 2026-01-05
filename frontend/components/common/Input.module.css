@@ -46,3 +46,33 @@
     color: var(--danger);
     margin-top: 4px;
 }
+
+@media (max-width: 768px) {
+    .formLabel {
+        font-size: 12px;
+    }
+
+    .formInput {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .errorMessage {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .formLabel {
+        font-size: 11px;
+    }
+
+    .formInput {
+        padding: 9px 11px;
+        font-size: 12px;
+    }
+
+    .errorMessage {
+        font-size: 10px;
+    }
+}

@@ -191,6 +191,8 @@ export default function ExpensesPage() {
                     </div>
                 ) : filteredExpenses.length > 0 ? (
                     <>
+                        {/* Desktop Table View */}
+                        <div className={styles.tableContainer}>
                         <table className={styles.table}>
                             <thead>
                                 <tr>
@@ -283,6 +285,96 @@ export default function ExpensesPage() {
                                 ))}
                             </tbody>
                         </table>
+                        </div>
+
+                        {/* Mobile Card View */}
+                        <div className={styles.mobileCardView}>
+                            {filteredExpenses.map((expense) => (
+                                <div key={expense.id} className={styles.expenseCard}>
+                                    <div className={styles.expenseCardHeader}>
+                                        <div className={styles.expenseCardTitle}>
+                                            <span className={styles.nameIcon}>💰</span>
+                                            {expense.name}
+                                        </div>
+                                        <div className={styles.expenseCardAmount}>
+                                            ${expense.amount.toFixed(2)}
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.expenseCardBody}>
+                                        <div className={styles.expenseCardRow}>
+                                            <span className={styles.expenseCardLabel}>Date</span>
+                                            <span className={styles.expenseCardValue}>
+                                                {new Date(expense.date).toLocaleDateString()}
+                                            </span>
+                                        </div>
+
+                                        {expense.expenseType && (
+                                            <div className={styles.expenseCardRow}>
+                                                <span className={styles.expenseCardLabel}>Type</span>
+                                                <Badge variant="info">
+                                                    <span className={styles.typeBadge}>
+                                                        {expense.expenseType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                                    </span>
+                                                </Badge>
+                                            </div>
+                                        )}
+
+                                        {expense.doctorId && (
+                                            <div className={styles.expenseCardRow}>
+                                                <span className={styles.expenseCardLabel}>Doctor</span>
+                                                <span className={styles.doctorName}>
+                                                    {users.find(u => u.id === expense.doctorId)?.name || 'Unknown'}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        <div className={styles.expenseCardRow}>
+                                            <span className={styles.expenseCardLabel}>Invoice</span>
+                                            {expense.invoiceFile ? (
+                                                <Badge variant="success">
+                                                    <span className={styles.invoiceBadge}>📎 Attached</span>
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="info">
+                                                    <span className={styles.invoiceBadge}>No Invoice</span>
+                                                </Badge>
+                                            )}
+                                        </div>
+
+                                        {expense.notes && (
+                                            <div className={styles.expenseCardRow}>
+                                                <span className={styles.expenseCardLabel}>Notes</span>
+                                                <span className={styles.expenseCardValue}>{expense.notes}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className={styles.expenseCardFooter}>
+                                        <button
+                                            className={styles.expenseCardAction}
+                                            onClick={() => handleEditExpense(expense)}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                            </svg>
+                                            Edit
+                                        </button>
+                                        <button
+                                            className={`${styles.expenseCardAction} ${styles.delete}`}
+                                            onClick={() => handleDeleteExpense(expense.id, expense.name)}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <polyline points="3 6 5 6 21 6" />
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                            </svg>
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
 
                         {/* Pagination */}
                         {pagination.totalPages > 1 && (

@@ -16,8 +16,26 @@ interface TabsProps {
 }
 
 export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onTabChange }) => {
+    const activeTabData = tabs.find(tab => tab.id === activeTab);
+
     return (
         <div className={styles.tabsContainer}>
+            {/* Mobile Dropdown */}
+            <div className={styles.mobileSelect}>
+                <select 
+                    value={activeTab} 
+                    onChange={(e) => onTabChange(e.target.value)}
+                    className={styles.select}
+                >
+                    {tabs.map((tab) => (
+                        <option key={tab.id} value={tab.id}>
+                            {tab.icon ? `${tab.icon} ${tab.label}` : tab.label}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Desktop Tabs */}
             <div className={styles.tabsList}>
                 {tabs.map((tab) => (
                     <button
