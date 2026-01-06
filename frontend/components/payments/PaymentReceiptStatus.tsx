@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Badge } from '@/components/common/Badge';
 import { Message } from '@/types';
+import { useSettingsStore } from '@/store/settingsStore';
 import toast from 'react-hot-toast';
 import styles from './PaymentReceiptStatus.module.css';
 
@@ -16,10 +17,15 @@ export const PaymentReceiptStatus: React.FC<PaymentReceiptStatusProps> = ({ paym
     const [sending, setSending] = useState(false);
     const [messageStatus, setMessageStatus] = useState<'sent' | 'failed' | 'not-sent'>('not-sent');
     const [messageId, setMessageId] = useState<string | null>(null);
+    const notificationSettings = useSettingsStore((state) => state.notificationSettings);
+    const fetchNotificationSettings = useSettingsStore((state) => state.fetchNotificationSettings);
 
     useEffect(() => {
         fetchMessageStatus();
+        fetchNotificationSettings();
     }, [paymentId]);
+
+    const isNotificationEnabled = notificationSettings.notificationToggles?.payment_receipt ?? true;
 
     const fetchMessageStatus = async () => {
         try {
@@ -105,8 +111,8 @@ export const PaymentReceiptStatus: React.FC<PaymentReceiptStatusProps> = ({ paym
                     <button
                         className={styles.resendBtn}
                         onClick={handleResend}
-                        disabled={sending}
-                        title="Resend receipt"
+                        disabled={sending || !isNotificationEnabled}
+                        title={!isNotificationEnabled ? 'Payment receipt notifications are disabled' : 'Resend receipt'}
                     >
                         {sending ? '...' : '↻'}
                     </button>
@@ -117,8 +123,8 @@ export const PaymentReceiptStatus: React.FC<PaymentReceiptStatusProps> = ({ paym
                 <button
                     className={styles.sendBtn}
                     onClick={handleSendReceipt}
-                    disabled={sending}
-                    title="Send receipt"
+                    disabled={sending || !isNotificationEnabled}
+                    title={!isNotificationEnabled ? 'Payment receipt notifications are disabled' : 'Send receipt'}
                 >
                     {sending ? '...' : 'Send'}
                 </button>

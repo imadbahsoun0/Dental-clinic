@@ -36,7 +36,6 @@ export class CreateTreatmentDto {
   @ApiProperty({ description: 'Discount amount', example: 0, default: 0 })
   @IsOptional()
   @IsNumber()
-  @Min(0)
   discount?: number;
 
   @ApiProperty({

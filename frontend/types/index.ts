@@ -229,6 +229,12 @@ export interface MessageTemplates {
 export interface NotificationSettings {
   appointmentReminders: AppointmentReminder[];
   messageTemplates: MessageTemplates;
+  notificationToggles?: {
+    medical_history: boolean;
+    payment_receipt: boolean;
+    follow_up: boolean;
+    payment_overdue: boolean;
+  };
 }
 
 export interface Message {
@@ -260,6 +266,7 @@ export interface ButtonProps {
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
   className?: string;
+  title?: string;
 }
 
 export interface InputProps {
@@ -273,6 +280,7 @@ export interface InputProps {
   className?: string;
   disabled?: boolean;
   step?: string;
+  min?: string;
 }
 
 export interface SelectOption {

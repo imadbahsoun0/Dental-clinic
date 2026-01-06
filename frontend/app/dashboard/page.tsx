@@ -6,6 +6,7 @@ import { Card } from '@/components/common/Card';
 import { Badge } from '@/components/common/Badge';
 import { useAppointmentStore } from '@/store/appointmentStore';
 import { usePatientStore } from '@/store/patientStore';
+import { useExpenseStore } from '@/store/expenseStore';
 import { ExpenseModal } from '@/components/expenses/ExpenseModal';
 import { AppointmentModal } from '@/components/appointments/AppointmentModal';
 import { PatientModal } from '@/components/patients/PatientModal';
@@ -13,6 +14,7 @@ import { ConfirmationModal } from '@/components/common/ConfirmationModal';
 import { formatLocalDate } from '@/utils/dateUtils';
 import { api, DashboardStatsDto, PendingTreatmentDto, StandardResponse } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
+import { Expense } from '@/types';
 import toast from 'react-hot-toast';
 import styles from './dashboard.module.css';
 
@@ -25,6 +27,7 @@ export default function DashboardPage() {
     const appointments = useAppointmentStore((state) => state.appointments);
     const fetchAppointments = useAppointmentStore((state) => state.fetchAppointments);
     const patients = usePatientStore((state) => state.patients);
+    const addExpense = useExpenseStore((state) => state.addExpense);
     const [today, setToday] = useState('');
     const [stats, setStats] = useState<DashboardStats>({
         todayAppointments: 0,
@@ -332,18 +335,23 @@ export default function DashboardPage() {
             <ExpenseModal
                 isOpen={isExpenseModalOpen}
                 onClose={() => setIsExpenseModalOpen(false)}
-                onSave={async () => {
-                    setIsExpenseModalOpen(false);
-                    // Refresh stats
-                    const statsResponse = await api.api.dashboardControllerGetStats();
-                    const maybeStandard = statsResponse as StandardResponse;
-                    const statsData = (maybeStandard.data ?? statsResponse) as DashboardStatsDto;
-                    setStats({
-                        todayAppointments: statsData?.todayAppointments || 0,
-                        totalPatients: statsData?.totalPatients || 0,
-                        pendingPayments: statsData?.pendingPayments || 0,
-                        dailyNetIncome: statsData?.dailyNetIncome || 0,
-                    });
+                onSave={async (expenseData: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>) => {
+                    try {
+                        await addExpense(expenseData);
+                        setIsExpenseModalOpen(false);
+                        // Refresh stats
+                        const statsResponse = await api.api.dashboardControllerGetStats();
+                        const maybeStandard = statsResponse as StandardResponse;
+                        const statsData = (maybeStandard.data ?? statsResponse) as DashboardStatsDto;
+                        setStats({
+                            todayAppointments: statsData?.todayAppointments || 0,
+                            totalPatients: statsData?.totalPatients || 0,
+                            pendingPayments: statsData?.pendingPayments || 0,
+                            dailyNetIncome: statsData?.dailyNetIncome || 0,
+                        });
+                    } catch (error) {
+                        // Error already handled in store with toast
+                    }
                 }}
             />
 

@@ -46,6 +46,12 @@ export const NotificationsTab: React.FC = () => {
         const updatePayload = {
             appointmentReminders: settings.appointmentReminders,
             messageTemplates: settings.messageTemplates,
+            notificationToggles: settings.notificationToggles || {
+                medical_history: true,
+                payment_receipt: true,
+                follow_up: true,
+                payment_overdue: true,
+            },
         };
 
         setLoading(true);
@@ -140,6 +146,26 @@ export const NotificationsTab: React.FC = () => {
         payment_overdue: 'Payment Overdue',
     };
 
+    const toggleNotification = (notificationType: keyof typeof settings.messageTemplates) => {
+        // Skip appointment_reminder as it's controlled separately via appointmentReminders array
+        if (notificationType === 'appointment_reminder') return;
+        
+        const currentToggles = settings.notificationToggles || {
+            medical_history: true,
+            payment_receipt: true,
+            follow_up: true,
+            payment_overdue: true,
+        };
+        
+        setSettings({
+            ...settings,
+            notificationToggles: {
+                ...currentToggles,
+                [notificationType]: !currentToggles[notificationType as keyof typeof currentToggles],
+            },
+        });
+    };
+
     return (
         <div className={styles.tabContent}>
             <Card title="Appointment Reminders">
@@ -187,11 +213,31 @@ export const NotificationsTab: React.FC = () => {
                 </div>
             </Card>
 
-            {Object.entries(templateLabels).map(([key, label]) => (
-                <Card key={key} title={label} className={styles.marginTop}>
-                    <div className={styles.form}>
-                        <div>
-                            <label className={styles.label}>Message Template *</label>
+            {Object.entries(templateLabels).map(([key, label]) => {
+                const notificationType = key as keyof typeof settings.messageTemplates;
+                const isAppointmentReminder = notificationType === 'appointment_reminder';
+                const isEnabled = isAppointmentReminder 
+                    ? true // Appointment reminders controlled via array above
+                    : settings.notificationToggles?.[notificationType as keyof typeof settings.notificationToggles] ?? true;
+                
+                return (
+                    <Card key={key} title={label} className={styles.marginTop}>
+                        <div className={styles.form}>
+                            {!isAppointmentReminder && (
+                                <div className={styles.toggleSection}>
+                                    <label className={styles.toggleLabel}>
+                                        <input
+                                            type="checkbox"
+                                            checked={isEnabled}
+                                            onChange={() => toggleNotification(notificationType)}
+                                            className={styles.checkbox}
+                                        />
+                                        <span>Enable {label} Notifications</span>
+                                    </label>
+                                </div>
+                            )}
+                            <div>
+                                <label className={styles.label}>Message Template *</label>
                             <textarea
                                 id={`${key}-template`}
                                 className={styles.textarea}
@@ -226,7 +272,8 @@ export const NotificationsTab: React.FC = () => {
                         </div>
                     </div>
                 </Card>
-            ))}
+                );
+            })}
 
             <div className={styles.formActions}>
                 <Button onClick={handleSave} disabled={loading}>

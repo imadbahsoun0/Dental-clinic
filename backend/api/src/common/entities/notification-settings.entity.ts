@@ -14,6 +14,13 @@ export interface MessageTemplates {
   payment_overdue: string;
 }
 
+export interface NotificationToggles {
+  medical_history: boolean;
+  payment_receipt: boolean;
+  follow_up: boolean;
+  payment_overdue: boolean;
+}
+
 @Entity({ tableName: 'notification_settings' })
 @Unique({ properties: ['orgId'] })
 export class NotificationSettings extends BaseEntity {
@@ -22,4 +29,7 @@ export class NotificationSettings extends BaseEntity {
 
   @Property({ type: 'jsonb' })
   messageTemplates!: MessageTemplates;
+
+  @Property({ type: 'jsonb' })
+  notificationToggles!: NotificationToggles;
 }

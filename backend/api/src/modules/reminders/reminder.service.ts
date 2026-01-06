@@ -59,12 +59,21 @@ export class ReminderService {
     orgId: string,
   ): Promise<void> {
     try {
+      const settings =
+        await this.notificationSettingsService.getOrCreateSettings(orgId);
+      
+      // Check if medical history notifications are enabled
+      if (!settings.notificationToggles?.medical_history) {
+        this.logger.log(
+          `Medical history notifications disabled for org ${orgId}, skipping`,
+        );
+        return;
+      }
+
       const patient = await this.em.findOneOrFail(Patient, {
         id: patientId,
         orgId,
       });
-      const settings =
-        await this.notificationSettingsService.getOrCreateSettings(orgId);
       const org = await this.em.findOneOrFail(Organization, { id: orgId });
 
       const medicalHistoryLink = `${this.frontendUrl}/medical-history/${patientId}?orgId=${orgId}`;
@@ -129,12 +138,21 @@ export class ReminderService {
     orgId: string,
   ): Promise<void> {
     try {
+      const settings =
+        await this.notificationSettingsService.getOrCreateSettings(orgId);
+      
+      // Check if payment receipt notifications are enabled
+      if (!settings.notificationToggles?.payment_receipt) {
+        this.logger.log(
+          `Payment receipt notifications disabled for org ${orgId}, skipping`,
+        );
+        return;
+      }
+
       const patient = await this.em.findOneOrFail(Patient, {
         id: patientId,
         orgId,
       });
-      const settings =
-        await this.notificationSettingsService.getOrCreateSettings(orgId);
       const org = await this.em.findOneOrFail(Organization, { id: orgId });
 
       const variables = {
@@ -271,12 +289,21 @@ export class ReminderService {
    */
   async sendFollowUpReminder(patientId: string, orgId: string): Promise<void> {
     try {
+      const settings =
+        await this.notificationSettingsService.getOrCreateSettings(orgId);
+      
+      // Check if follow-up notifications are enabled
+      if (!settings.notificationToggles?.follow_up) {
+        this.logger.log(
+          `Follow-up notifications disabled for org ${orgId}, skipping`,
+        );
+        return;
+      }
+
       const patient = await this.em.findOneOrFail(Patient, {
         id: patientId,
         orgId,
       });
-      const settings =
-        await this.notificationSettingsService.getOrCreateSettings(orgId);
       const org = await this.em.findOneOrFail(Organization, { id: orgId });
 
       const variables = {
@@ -338,12 +365,21 @@ export class ReminderService {
     orgId: string,
   ): Promise<void> {
     try {
+      const settings =
+        await this.notificationSettingsService.getOrCreateSettings(orgId);
+      
+      // Check if payment overdue notifications are enabled
+      if (!settings.notificationToggles?.payment_overdue) {
+        this.logger.log(
+          `Payment overdue notifications disabled for org ${orgId}, skipping`,
+        );
+        return;
+      }
+
       const patient = await this.em.findOneOrFail(Patient, {
         id: patientId,
         orgId,
       });
-      const settings =
-        await this.notificationSettingsService.getOrCreateSettings(orgId);
       const org = await this.em.findOneOrFail(Organization, { id: orgId });
 
       const variables = {

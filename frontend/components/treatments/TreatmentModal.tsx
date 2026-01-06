@@ -352,15 +352,17 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                                 <strong>{formatToothNumbers(formData.selectedTeeth)} ({formData.selectedTeeth.length} {formData.selectedTeeth.length === 1 ? 'tooth' : 'teeth'})</strong>
                             </div>
                             <div className={styles.priceRow}>
-                                <span>Total Treatment Price:</span>
+                                <span>Suggested Price:</span>
                                 <strong>${totalBasePrice.toFixed(2)}</strong>
                             </div>
                         </>
                     )}
-                    {parseFloat(formData.discountAmount) > 0 && (
+                    {parseFloat(formData.discountAmount) !== 0 && (
                         <div className={styles.priceRow}>
-                            <span>Discount:</span>
-                            <strong style={{ color: '#10b981' }}>-${discountAmount.toFixed(2)}</strong>
+                            <span>{parseFloat(formData.discountAmount) > 0 ? 'Discount:' : 'Surcharge:'}</span>
+                            <strong style={{ color: parseFloat(formData.discountAmount) > 0 ? '#10b981' : '#ef4444' }}>
+                                {parseFloat(formData.discountAmount) > 0 ? '-' : '+'}${Math.abs(discountAmount).toFixed(2)}
+                            </strong>
                         </div>
                     )}
                     <div className={`${styles.priceRow} ${styles.totalRow}`}>
@@ -375,6 +377,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                         label="Discount ($)"
                         value={formData.discountAmount}
                         step="0.01"
+                        min={undefined}
                         onChange={(value) => {
                             updateSourceRef.current = 'discount';
                             setFormData({ ...formData, discountAmount: value });
@@ -395,11 +398,9 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                             setTotalToPay(inputTotal);
                             
                             // Calculate discount amount directly
-                            if (totalBasePrice > 0 && inputTotal <= totalBasePrice) {
+                            if (totalBasePrice > 0) {
                                 const discountAmount = totalBasePrice - inputTotal;
                                 setFormData({ ...formData, discountAmount: discountAmount.toFixed(2) });
-                            } else if (inputTotal > totalBasePrice) {
-                                setFormData({ ...formData, discountAmount: '0' });
                             }
                         }}
                         placeholder="Enter total amount"

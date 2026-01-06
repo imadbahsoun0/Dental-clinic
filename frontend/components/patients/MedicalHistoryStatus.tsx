@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Badge } from '@/components/common/Badge';
 import { Message } from '@/types';
+import { useSettingsStore } from '@/store/settingsStore';
 import toast from 'react-hot-toast';
 import styles from './MedicalHistoryStatus.module.css';
 
@@ -16,10 +17,15 @@ export const MedicalHistoryStatus: React.FC<MedicalHistoryStatusProps> = ({ pati
     const [sending, setSending] = useState(false);
     const [messageStatus, setMessageStatus] = useState<'sent' | 'failed' | 'not-sent'>('not-sent');
     const [messageId, setMessageId] = useState<string | null>(null);
+    const notificationSettings = useSettingsStore((state) => state.notificationSettings);
+    const fetchNotificationSettings = useSettingsStore((state) => state.fetchNotificationSettings);
 
     useEffect(() => {
         fetchMessageStatus();
+        fetchNotificationSettings();
     }, [patientId]);
+
+    const isNotificationEnabled = notificationSettings.notificationToggles?.medical_history ?? true;
 
     const fetchMessageStatus = async () => {
         try {
@@ -98,8 +104,8 @@ export const MedicalHistoryStatus: React.FC<MedicalHistoryStatusProps> = ({ pati
                     <button
                         className={styles.resendBtn}
                         onClick={handleResend}
-                        disabled={sending}
-                        title="Resend medical history link"
+                        disabled={sending || !isNotificationEnabled}
+                        title={!isNotificationEnabled ? 'Medical history notifications are disabled' : 'Resend medical history link'}
                     >
                         {sending ? '...' : '↻'}
                     </button>
@@ -110,8 +116,8 @@ export const MedicalHistoryStatus: React.FC<MedicalHistoryStatusProps> = ({ pati
                 <button
                     className={styles.sendBtn}
                     onClick={handleSendMedicalHistory}
-                    disabled={sending}
-                    title="Send medical history link"
+                    disabled={sending || !isNotificationEnabled}
+                    title={!isNotificationEnabled ? 'Medical history notifications are disabled' : 'Send medical history link'}
                 >
                     {sending ? 'Sending...' : 'Send'}
                 </button>

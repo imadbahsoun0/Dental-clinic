@@ -454,9 +454,17 @@ export interface MessageTemplatesDto {
   payment_overdue: string;
 }
 
+export interface NotificationTogglesDto {
+  medical_history: boolean;
+  payment_receipt: boolean;
+  follow_up: boolean;
+  payment_overdue: boolean;
+}
+
 export interface UpdateNotificationSettingsDto {
   appointmentReminders: AppointmentReminderDto[];
   messageTemplates: MessageTemplatesDto;
+  notificationToggles: NotificationTogglesDto;
 }
 
 export interface CreateAppointmentDto {

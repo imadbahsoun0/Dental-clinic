@@ -103,6 +103,7 @@ export const BulkDiscountModal: React.FC<BulkDiscountModalProps> = ({
                             label="Discount ($)"
                             value={discountAmount}
                             step="0.01"
+                            min={undefined}
                             onChange={(value) => {
                                 updateSourceRef.current = 'discount';
                                 setDiscountAmount(value);
@@ -120,11 +121,9 @@ export const BulkDiscountModal: React.FC<BulkDiscountModalProps> = ({
                                 const inputTotal = parseFloat(value) || 0;
                                 
                                 // Calculate discount amount directly
-                                if (totalOriginalPrice > 0 && inputTotal <= totalOriginalPrice) {
+                                if (totalOriginalPrice > 0) {
                                     const discount = totalOriginalPrice - inputTotal;
                                     setDiscountAmount(discount.toFixed(2));
-                                } else if (inputTotal > totalOriginalPrice) {
-                                    setDiscountAmount('0');
                                 }
                             }}
                             placeholder="Enter total amount"
@@ -135,13 +134,15 @@ export const BulkDiscountModal: React.FC<BulkDiscountModalProps> = ({
                 {/* Price Summary */}
                 <div className={styles.priceInfo}>
                     <div className={styles.priceRow}>
-                        <span>Total Original Price:</span>
+                        <span>Suggested Price:</span>
                         <strong>${totalOriginalPrice.toFixed(2)}</strong>
                     </div>
-                    {parseFloat(discountAmount) > 0 && (
+                    {parseFloat(discountAmount) !== 0 && (
                         <div className={styles.priceRow}>
-                            <span>Discount:</span>
-                            <strong style={{ color: '#10b981' }}>-${totalDiscountAmount.toFixed(2)}</strong>
+                            <span>{parseFloat(discountAmount) > 0 ? 'Discount:' : 'Surcharge:'}</span>
+                            <strong style={{ color: parseFloat(discountAmount) > 0 ? '#10b981' : '#ef4444' }}>
+                                {parseFloat(discountAmount) > 0 ? '-' : '+'}${Math.abs(totalDiscountAmount).toFixed(2)}
+                            </strong>
                         </div>
                     )}
                     <div className={`${styles.priceRow} ${styles.totalRow}`}>

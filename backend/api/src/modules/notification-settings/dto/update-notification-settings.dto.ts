@@ -40,6 +40,24 @@ class MessageTemplatesDto {
   payment_overdue!: string;
 }
 
+class NotificationTogglesDto {
+  @ApiProperty()
+  @IsBoolean()
+  medical_history!: boolean;
+
+  @ApiProperty()
+  @IsBoolean()
+  payment_receipt!: boolean;
+
+  @ApiProperty()
+  @IsBoolean()
+  follow_up!: boolean;
+
+  @ApiProperty()
+  @IsBoolean()
+  payment_overdue!: boolean;
+}
+
 export class UpdateNotificationSettingsDto {
   @ApiProperty({ type: () => [AppointmentReminderDto] })
   @IsArray()
@@ -51,4 +69,9 @@ export class UpdateNotificationSettingsDto {
   @ValidateNested()
   @Type(() => MessageTemplatesDto)
   messageTemplates!: MessageTemplatesDto;
+
+  @ApiProperty({ type: () => NotificationTogglesDto })
+  @ValidateNested()
+  @Type(() => NotificationTogglesDto)
+  notificationToggles!: NotificationTogglesDto;
 }

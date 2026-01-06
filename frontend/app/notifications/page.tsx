@@ -8,6 +8,7 @@ import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
 import { api } from '@/lib/api';
+import { useSettingsStore } from '@/store/settingsStore';
 import toast from 'react-hot-toast';
 import styles from './notifications.module.css';
 
@@ -39,6 +40,9 @@ export default function NotificationsPage() {
     const [sendingReminder, setSendingReminder] = useState<string | null>(null);
     const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
     
+    const notificationSettings = useSettingsStore((state) => state.notificationSettings);
+    const fetchNotificationSettings = useSettingsStore((state) => state.fetchNotificationSettings);
+    
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
@@ -51,12 +55,19 @@ export default function NotificationsPage() {
     const [endDate, setEndDate] = useState('');
 
     useEffect(() => {
+        fetchNotificationSettings();
+    }, []);
+
+    useEffect(() => {
         if (activeTab === 'follow-ups') {
             fetchFollowUps();
         } else {
             fetchUnpaidPatients();
         }
     }, [activeTab, searchQuery, statusFilter, startDate, endDate, currentPage, pageSize]);
+
+    const isFollowUpEnabled = notificationSettings.notificationToggles?.follow_up ?? true;
+    const isPaymentOverdueEnabled = notificationSettings.notificationToggles?.payment_overdue ?? true;
 
     const fetchFollowUps = async () => {
         setLoading(true);
@@ -368,7 +379,8 @@ export default function NotificationsPage() {
                                                 <td>
                                                     <Button
                                                         onClick={() => sendFollowUpReminder(patient.id)}
-                                                        disabled={sendingReminder === patient.id}
+                                                        disabled={sendingReminder === patient.id || !isFollowUpEnabled}
+                                                        title={!isFollowUpEnabled ? 'Follow-up notifications are disabled in settings' : undefined}
                                                     >
                                                         {sendingReminder === patient.id ? 'Sending...' : 'Send Reminder'}
                                                     </Button>
@@ -430,7 +442,8 @@ export default function NotificationsPage() {
                                         <div className={styles.notificationCardFooter}>
                                             <Button
                                                 onClick={() => sendFollowUpReminder(patient.id)}
-                                                disabled={sendingReminder === patient.id}
+                                                disabled={sendingReminder === patient.id || !isFollowUpEnabled}
+                                                title={!isFollowUpEnabled ? 'Follow-up notifications are disabled in settings' : undefined}
                                             >
                                                 {sendingReminder === patient.id ? 'Sending...' : 'Send Reminder'}
                                             </Button>
@@ -525,7 +538,8 @@ export default function NotificationsPage() {
                                                 <td>
                                                     <Button
                                                         onClick={() => sendPaymentReminder(patient.id)}
-                                                        disabled={sendingReminder === patient.id}
+                                                        disabled={sendingReminder === patient.id || !isPaymentOverdueEnabled}
+                                                        title={!isPaymentOverdueEnabled ? 'Payment overdue notifications are disabled in settings' : undefined}
                                                     >
                                                         {sendingReminder === patient.id ? 'Sending...' : 'Send Reminder'}
                                                     </Button>
@@ -577,7 +591,8 @@ export default function NotificationsPage() {
                                         <div className={styles.notificationCardFooter}>
                                             <Button
                                                 onClick={() => sendPaymentReminder(patient.id)}
-                                                disabled={sendingReminder === patient.id}
+                                                disabled={sendingReminder === patient.id || !isPaymentOverdueEnabled}
+                                                title={!isPaymentOverdueEnabled ? 'Payment overdue notifications are disabled in settings' : undefined}
                                             >
                                                 {sendingReminder === patient.id ? 'Sending...' : 'Send Reminder'}
                                             </Button>

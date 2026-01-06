@@ -30,9 +30,26 @@ export class NotificationSettingsService {
           payment_overdue:
             'Hello {{patientName}}, you have an outstanding balance of {{amountDue}} for completed treatments. Please contact us at {{clinicLocation}} to arrange payment.',
         },
+        notificationToggles: {
+          medical_history: true,
+          payment_receipt: true,
+          follow_up: true,
+          payment_overdue: true,
+        },
       } as NotificationSettings);
 
       await this.em.persistAndFlush(settings);
+    }
+
+    // Ensure notificationToggles exists for existing settings (backward compatibility)
+    if (!settings.notificationToggles) {
+      settings.notificationToggles = {
+        medical_history: true,
+        payment_receipt: true,
+        follow_up: true,
+        payment_overdue: true,
+      };
+      await this.em.flush();
     }
 
     return settings;

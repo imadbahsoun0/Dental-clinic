@@ -13,6 +13,7 @@ export const Input: React.FC<InputProps> = ({
     className = '',
     disabled = false,
     step,
+    min,
 }) => {
     return (
         <div className={styles.formGroup}>
@@ -31,6 +32,7 @@ export const Input: React.FC<InputProps> = ({
                 required={required}
                 disabled={disabled}
                 step={step}
+                {...(min !== undefined && { min })}
             />
             {error && <span className={styles.errorMessage}>{error}</span>}
         </div>

@@ -198,7 +198,7 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
                             )}
                             <th>Treatment</th>
                             <th>Tooth</th>
-                            <th>Total to Pay</th>
+                            <th>Suggested Price</th>
                             <th>Discount</th>
                             <th>Total Price</th>
                             <th>Date</th>
