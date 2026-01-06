@@ -79,8 +79,13 @@ export const useAppointmentStore = create<AppointmentStore>()((set, get) => ({
         try {
             const response = await api.api.appointmentsControllerFindByDate(date);
             const responseData = response.data || response;
-            const appointments = (responseData as { data?: Appointment[] }).data ||
+            const rawAppointments = (responseData as { data?: Appointment[] }).data ||
                 (responseData as Appointment[]) || [];
+
+            const appointments = rawAppointments.map((apt) => ({
+                ...apt,
+                date: normalizeDate(apt.date),
+            }));
 
             // Update the store with these appointments
             set({ appointments });

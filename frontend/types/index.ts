@@ -1,5 +1,7 @@
 // Core Entity Types
 
+import type { CSSProperties, ReactNode } from 'react';
+
 export interface Patient {
   id: string;
   firstName: string;
@@ -261,11 +263,12 @@ export interface FollowUpStatus {
 export interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'danger';
   size?: 'sm' | 'md' | 'lg';
-  children: React.ReactNode;
+  children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
   className?: string;
+  style?: CSSProperties;
   title?: string;
 }
 
@@ -305,14 +308,14 @@ export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  children: React.ReactNode;
-  footer?: React.ReactNode;
+  children: ReactNode;
+  footer?: ReactNode;
 }
 
 export interface CardProps {
   title?: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
+  action?: ReactNode;
+  children: ReactNode;
   className?: string;
 }
 

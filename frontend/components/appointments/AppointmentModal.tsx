@@ -1,3 +1,4 @@
+import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,6 +12,7 @@ import { PatientSearchSelect } from '@/components/patients/PatientSearchSelect';
 import toast from 'react-hot-toast';
 import { useAppointmentStore } from '@/store/appointmentStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import type { UserWithRole } from '@/types';
 
 // Schema for creating appointments (doctor is required)
 const createSchema = z.object({
@@ -38,6 +40,17 @@ type CreateFormData = z.infer<typeof createSchema>;
 type EditFormData = z.infer<typeof editSchema>;
 type FormData = CreateFormData | EditFormData;
 
+type AppointmentUpsertPayload = {
+    patientId: string;
+    treatmentTypeId?: string;
+    treatmentId?: string;
+    date: string;
+    time: string;
+    doctorId: string;
+    notes?: string;
+    status?: 'pending' | 'confirmed' | 'cancelled';
+};
+
 interface AppointmentModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -55,6 +68,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     defaultPatientId,
     defaultTreatmentId
 }) => {
+    const router = useRouter();
     const addAppointment = useAppointmentStore(state => state.addAppointment);
     const updateAppointment = useAppointmentStore(state => state.updateAppointment);
     const appointments = useAppointmentStore(state => state.appointments);
@@ -67,6 +81,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
 
     const isEditing = !!appointmentId;
     const editingAppointment = appointmentId ? appointments.find(a => a.id === appointmentId) : null;
+    const editingPatientId = editingAppointment?.patient?.id || editingAppointment?.patientId;
 
     const { control, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
         resolver: zodResolver(isEditing ? editSchema : createSchema),
@@ -135,7 +150,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
 
     const onSubmit = async (data: FormData) => {
         try {
-            const payload: any = { ...data };
+            const payload: AppointmentUpsertPayload = { ...(data as AppointmentUpsertPayload) };
             if (!payload.notes) delete payload.notes;
             if (!payload.treatmentTypeId) delete payload.treatmentTypeId;
             if (!payload.treatmentId) delete payload.treatmentId;
@@ -160,9 +175,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     };
 
     // Doctor options: include both dentists and admins
-    const doctorOptions = users
-        .filter((u: any) => u.role === 'dentist' || u.role === 'admin')
-        .map((u: any) => ({
+    const doctorOptions = (users as UserWithRole[])
+        .filter((u) => u.role === 'dentist' || u.role === 'admin')
+        .map((u) => ({
             value: u.id,
             label: `${u.name}${u.role === 'admin' ? ' (Admin)' : ''}`,
         }));
@@ -205,11 +220,22 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                 footer={
                     <>
                         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                            {appointmentId && (
-                                <Button variant="danger" onClick={handleDelete} disabled={isSubmitting || loadingData}>
-                                    Delete
-                                </Button>
-                            )}
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                {appointmentId && (
+                                    <Button variant="danger" onClick={handleDelete} disabled={isSubmitting || loadingData}>
+                                        Delete
+                                    </Button>
+                                )}
+                                {appointmentId && editingPatientId && (
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => router.push(`/treatments/${editingPatientId}`)}
+                                        disabled={isSubmitting || loadingData}
+                                    >
+                                        Treatments
+                                    </Button>
+                                )}
+                            </div>
                             <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
                                 <Button variant="secondary" onClick={onClose} disabled={isSubmitting || loadingData}>
                                     Cancel

@@ -10,6 +10,7 @@ export const Button: React.FC<ButtonProps> = ({
     disabled = false,
     type = 'button',
     className = '',
+    style,
     title,
 }) => {
     return (
@@ -19,6 +20,7 @@ export const Button: React.FC<ButtonProps> = ({
             onClick={onClick}
             disabled={disabled}
             title={title}
+            style={style}
         >
             {children}
         </button>
