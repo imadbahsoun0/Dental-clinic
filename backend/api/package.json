@@ -28,6 +28,7 @@
     "schema:create": "mikro-orm schema:create --run --config=./src/common/config/mikro-orm.config.ts",
     "schema:update": "mikro-orm schema:update --run --config=./src/common/config/mikro-orm.config.ts",
     "create:org": "ts-node -r tsconfig-paths/register src/scripts/create-organization.ts",
+    "clone:org-settings": "ts-node -r tsconfig-paths/register src/scripts/clone-org-settings.ts",
     "seed:run": "mikro-orm seeder:run --config=./src/common/config/mikro-orm.config.ts",
     "seed:run:prod": "mikro-orm seeder:run --config=./dist/common/config/mikro-orm.config.js"
   },
