@@ -232,7 +232,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                                         onClick={() => router.push(`/treatments/${editingPatientId}`)}
                                         disabled={isSubmitting || loadingData}
                                     >
-                                        Treatments
+                                        Profile
                                     </Button>
                                 )}
                             </div>
