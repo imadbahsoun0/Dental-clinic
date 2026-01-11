@@ -167,14 +167,14 @@ export interface Settings {
 // User can belong to multiple organizations with different roles
 export interface UserOrganization {
   id: string;
-  userId: string;
+  userId?: string;
   orgId: string;
   role: 'dentist' | 'secretary' | 'admin';
   status: 'active' | 'inactive';
   wallet?: number; // Current wallet balance for dentists in this org (default 0)
   percentage?: number; // Commission percentage for dentists in this org (e.g., 30 for 30%)
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface User {

@@ -1,7 +1,87 @@
 import { create } from 'zustand';
-import { MedicalHistoryQuestion, TreatmentCategory, TreatmentType, User, UserWithRole, ClinicBranding, NotificationSettings } from '@/types';
-import { api } from '@/lib/api';
+import {
+    MedicalHistoryQuestion,
+    TreatmentCategory,
+    TreatmentType,
+    UserWithRole,
+    ClinicBranding,
+    NotificationSettings,
+} from '@/types';
+import {
+    api,
+    type CreateUserDto as ApiCreateUserDto,
+    type UpdateUserDto as ApiUpdateUserDto,
+    type UserResponseDto,
+} from '@/lib/api';
 import toast from 'react-hot-toast';
+
+type UserRole = 'admin' | 'dentist' | 'secretary';
+type UserStatus = 'active' | 'inactive';
+
+const isUserRole = (value: unknown): value is UserRole =>
+    value === 'admin' || value === 'dentist' || value === 'secretary';
+
+const isUserStatus = (value: unknown): value is UserStatus =>
+    value === 'active' || value === 'inactive';
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null;
+
+const extractUserArray = (value: unknown): UserResponseDto[] => {
+    if (Array.isArray(value)) return value as UserResponseDto[];
+
+    if (isRecord(value)) {
+        const level1 = value.data;
+        if (Array.isArray(level1)) return level1 as UserResponseDto[];
+
+        if (isRecord(level1)) {
+            const level2 = level1.data;
+            if (Array.isArray(level2)) return level2 as UserResponseDto[];
+        }
+    }
+
+    return [];
+};
+
+const extractUserObject = (value: unknown): UserResponseDto | null => {
+    if (isRecord(value) && typeof value.id === 'string' && typeof value.email === 'string' && typeof value.name === 'string') {
+        return value as unknown as UserResponseDto;
+    }
+
+    if (isRecord(value)) {
+        return extractUserObject(value.data);
+    }
+
+    return null;
+};
+
+const mapUserResponseToUserWithRole = (user: UserResponseDto): UserWithRole => {
+    const mappedOrgs = (user.organizations ?? []).map((org) => ({
+        id: org.id,
+        userId: user.id,
+        orgId: org.orgId,
+        role: isUserRole(org.role) ? org.role : 'secretary',
+        status: isUserStatus(org.status) ? org.status : 'active',
+        wallet: org.wallet,
+        percentage: org.percentage,
+    }));
+
+    const orgDetails = mappedOrgs[0];
+
+    return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        organizations: mappedOrgs,
+        role: orgDetails?.role,
+        status: orgDetails?.status,
+        wallet: orgDetails?.wallet,
+        percentage: orgDetails?.percentage,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+    };
+};
 
 interface SettingsStore {
     // Treatment Types & Categories
@@ -30,8 +110,8 @@ interface SettingsStore {
     // Users (with flattened role from current org)
     users: UserWithRole[];
     fetchUsers: () => Promise<void>;
-    addUser: (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-    updateUser: (id: string, user: Partial<User>) => Promise<void>;
+    addUser: (user: ApiCreateUserDto) => Promise<void>;
+    updateUser: (id: string, user: ApiUpdateUserDto) => Promise<void>;
     deleteUser: (id: string) => Promise<void>;
     getDentists: () => UserWithRole[]; // Get all users with role 'dentist'
 
@@ -278,21 +358,9 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
     fetchUsers: async () => {
         try {
             const response = await api.api.usersControllerFindAll({ limit: 100 });
-            const result = response as unknown as { data?: { data?: User[] } };
-            const usersData = result.data?.data || [];
-
-            const mappedUsers: UserWithRole[] = usersData.map((u) => {
-                const orgDetails = u.organizations?.[0];
-                return {
-                    ...u,
-                    role: orgDetails?.role,
-                    status: orgDetails?.status,
-                    wallet: orgDetails?.wallet,
-                    percentage: orgDetails?.percentage,
-                };
-            });
-
-            set({ users: mappedUsers });
+            const payload: unknown = (response as { data?: unknown }).data;
+            const usersData = extractUserArray(payload);
+            set({ users: usersData.map(mapUserResponseToUserWithRole) });
         } catch (error) {
             console.error('Failed to fetch users:', error);
         }
@@ -300,26 +368,14 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
     addUser: async (userData) => {
         try {
-            const response = await api.api.usersControllerCreate({
-                name: userData.name,
-                email: userData.email,
-                password: userData.password,
-                phone: userData.phone,
-                role: (userData as any).role,
-                percentage: (userData as any).percentage,
-            } as any);
-            const newUserRaw = response.data as any;
+            const response = await api.api.usersControllerCreate(userData);
+            const payload: unknown = (response as { data?: unknown }).data;
+            const createdUser = extractUserObject(payload);
+            if (!createdUser) throw new Error('Create user response missing data');
 
-            const orgDetails = newUserRaw.organizations?.[0] || {};
-            const newUser = {
-                ...newUserRaw,
-                role: orgDetails.role,
-                status: orgDetails.status,
-                wallet: orgDetails.wallet,
-                percentage: orgDetails.percentage,
-            };
-
-            set((state) => ({ users: [...state.users, newUser] }));
+            set((state) => ({
+                users: [...state.users, mapUserResponseToUserWithRole(createdUser)],
+            }));
             toast.success('User added successfully');
         } catch (error) {
             console.error('Failed to create user:', error);
@@ -329,19 +385,14 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
     updateUser: async (id, userData) => {
         try {
-            const updateDto: any = {};
-            if (userData.name) updateDto.name = userData.name;
-            if (userData.phone) updateDto.phone = userData.phone;
-            if ((userData as any).role) updateDto.role = (userData as any).role;
-            if ((userData as any).percentage) updateDto.percentage = (userData as any).percentage;
-            if ((userData as any).status) updateDto.status = (userData as any).status;
+            const response = await api.api.usersControllerUpdate(id, userData);
+            const payload: unknown = (response as { data?: unknown }).data;
+            const updatedUser = extractUserObject(payload);
+            if (!updatedUser) throw new Error('Update user response missing data');
 
-            await api.api.usersControllerUpdate(id, updateDto);
-
+            const mapped = mapUserResponseToUserWithRole(updatedUser);
             set((state) => ({
-                users: state.users.map((u) =>
-                    u.id === id ? { ...u, ...userData } : u
-                ),
+                users: state.users.map((u) => (u.id === id ? { ...u, ...mapped } : u)),
             }));
             toast.success('User updated successfully');
         } catch (error) {

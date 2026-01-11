@@ -9,6 +9,7 @@ import { UsersTab } from '@/components/settings/UsersTab';
 import { BrandingTab } from '@/components/settings/BrandingTab';
 import { NotificationsTab } from '@/components/settings/NotificationsTab';
 import { MedicalHistoryTab } from '@/components/settings/MedicalHistoryTab';
+import { WhatsappIntegrationTab } from '@/components/settings/WhatsappIntegrationTab';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 import styles from './settings.module.css';
@@ -33,6 +34,7 @@ export default function SettingsPage() {
             { id: 'users', label: 'Users', icon: '👥' },
             { id: 'branding', label: 'Branding', icon: '🏥' },
             { id: 'notifications', label: 'Notifications', icon: '🔔' },
+            { id: 'whatsapp', label: 'WhatsApp', icon: '💬' },
             { id: 'medical-history', label: 'Medical History', icon: '📋' },
         ]
         : [
@@ -59,6 +61,8 @@ export default function SettingsPage() {
                 return <BrandingTab />;
             case 'notifications':
                 return <NotificationsTab />;
+            case 'whatsapp':
+                return <WhatsappIntegrationTab />;
             case 'medical-history':
                 return <MedicalHistoryTab />;
             default:

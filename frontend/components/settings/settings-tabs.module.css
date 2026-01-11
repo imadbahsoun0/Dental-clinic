@@ -36,6 +36,41 @@
     margin-bottom: 16px;
 }
 
+.statusBox {
+    padding: 16px;
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.statusHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.statusTitle {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.statusValue {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-top: 4px;
+}
+
+.qrImage {
+    width: 320px;
+    height: 320px;
+    object-fit: contain;
+}
+
 /* Logo Section */
 .logoSection {
     display: flex;

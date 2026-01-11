@@ -12,6 +12,7 @@ export * from './expense.entity';
 export * from './medical-history-question.entity';
 export * from './medical-history-audit.entity';
 export * from './notification-settings.entity';
+export * from './organization-variable.entity';
 export * from './attachment.entity';
 export * from './tooth.entity';
 export * from './message.entity';

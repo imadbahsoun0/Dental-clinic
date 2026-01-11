@@ -27,6 +27,9 @@ import { MessagesModule } from './modules/messages/messages.module';
 import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 import { RemindersModule } from './modules/reminders/reminders.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { OrganizationVariablesModule } from './modules/organization-variables/organization-variables.module';
+import { WhatsappIntegrationModule } from './modules/whatsapp-integration/whatsapp-integration.module';
 
 @Module({
   imports: [
@@ -51,9 +54,12 @@ import { SchedulerModule } from './modules/scheduler/scheduler.module';
     ExpensesModule,
     DashboardModule,
     MessagesModule,
+    OrganizationVariablesModule,
+    WhatsappIntegrationModule,
     WhatsappModule,
     RemindersModule,
     SchedulerModule,
+    ReportsModule,
     TestModule,
   ],
   providers: [

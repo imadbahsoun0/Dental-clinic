@@ -102,7 +102,7 @@ export class ReminderService {
       );
 
       // Send WhatsApp message
-      const result = await this.whatsappService.sendMessage({
+      const result = await this.whatsappService.sendMessage(orgId, {
         phoneNumber: patient.mobileNumber,
         message: content,
       });
@@ -180,7 +180,7 @@ export class ReminderService {
       );
 
       // Send WhatsApp message
-      const result = await this.whatsappService.sendMessage({
+      const result = await this.whatsappService.sendMessage(orgId, {
         phoneNumber: patient.mobileNumber,
         message: content,
       });
@@ -257,7 +257,7 @@ export class ReminderService {
       );
 
       // Send WhatsApp message
-      const result = await this.whatsappService.sendMessage({
+      const result = await this.whatsappService.sendMessage(orgId, {
         phoneNumber: appointment.patient.mobileNumber,
         message: content,
       });
@@ -333,7 +333,7 @@ export class ReminderService {
       );
 
       // Send WhatsApp message
-      const result = await this.whatsappService.sendMessage({
+      const result = await this.whatsappService.sendMessage(orgId, {
         phoneNumber: patient.mobileNumber,
         message: content,
       });
@@ -406,7 +406,7 @@ export class ReminderService {
       );
 
       // Send WhatsApp message
-      const result = await this.whatsappService.sendMessage({
+      const result = await this.whatsappService.sendMessage(orgId, {
         phoneNumber: patient.mobileNumber,
         message: content,
       });
@@ -444,7 +444,7 @@ export class ReminderService {
       });
 
       // Send WhatsApp message
-      const result = await this.whatsappService.sendMessage({
+      const result = await this.whatsappService.sendMessage(orgId, {
         phoneNumber: patient.mobileNumber,
         message: message.content,
       });

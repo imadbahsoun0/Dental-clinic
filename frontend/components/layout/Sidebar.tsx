@@ -14,6 +14,8 @@ const mainNavItems = [
     { href: '/expenses', label: 'Expenses', icon: '💰' },
     { href: '/doctors-payments', label: 'Doctor Payments', icon: '💳' },
     { href: '/notifications', label: 'Notifications', icon: '🔔' },
+    { href: '/reports', label: 'Reports', icon: '📈' },
+
 ];
 
 const settingsNavItems = [
@@ -35,11 +37,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
     const role = currentOrg?.role;
 
     const visibleMainNavItems = React.useMemo(() => {
-        // Secretary should not see Doctor Payments page.
-        if (role === 'secretary') {
-            return mainNavItems.filter((item) => item.href !== '/doctors-payments');
-        }
-        return mainNavItems;
+        return mainNavItems.filter((item) => {
+            if (item.href === '/reports') {
+                return role === 'admin';
+            }
+            // Secretary should not see Doctor Payments page.
+            if (role === 'secretary' && item.href === '/doctors-payments') {
+                return false;
+            }
+            return true;
+        });
     }, [role]);
 
     // Dynamic Appointment Badge

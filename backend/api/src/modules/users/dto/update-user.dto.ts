@@ -6,6 +6,7 @@ import {
   IsNumber,
   Min,
   Max,
+  MinLength,
 } from 'class-validator';
 import { UserRole } from '../../../common/decorators/roles.decorator';
 import { UserStatus } from '../../../common/entities';
@@ -37,4 +38,10 @@ export class UpdateUserDto {
   @Min(0)
   @Max(100)
   percentage?: number;
+
+  @ApiProperty({ example: 'newPassword123', minLength: 6, required: false })
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  password?: string;
 }

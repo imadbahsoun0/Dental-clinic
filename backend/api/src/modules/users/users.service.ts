@@ -211,6 +211,12 @@ export class UsersService {
     // Update user basic info
     if (updateUserDto.name) user.name = updateUserDto.name;
     if (updateUserDto.phone !== undefined) user.phone = updateUserDto.phone;
+
+    if (updateUserDto.password) {
+      user.password = await bcrypt.hash(updateUserDto.password, 10);
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
+    }
     user.updatedBy = updatedBy;
 
     // Update user-organization specific info

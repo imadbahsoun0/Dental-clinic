@@ -165,6 +165,11 @@ export interface UpdateUserDto {
   status?: "active" | "inactive";
   /** @example 30 */
   percentage?: number;
+  /**
+   * @minLength 6
+   * @example "newPassword123"
+   */
+  password?: string;
 }
 
 export interface OrganizationResponseDto {
@@ -891,6 +896,101 @@ export interface PendingTreatmentDto {
   discount: number;
   notes?: string;
   createdAt: string;
+}
+
+export interface WhatsappIntegrationConfigDto {
+  /** @example "http://localhost:3002" */
+  wahaApiUrl?: string;
+  /** @example true */
+  hasApiKey: boolean;
+}
+
+export interface UpdateWhatsappIntegrationDto {
+  /** @example "http://localhost:3002" */
+  wahaApiUrl?: string;
+  /** @example "your-waha-api-key" */
+  wahaApiKey?: string;
+}
+
+export interface WhatsappIntegrationStatusDto {
+  status: "STOPPED" | "STARTING" | "SCAN_QR_CODE" | "WORKING" | "FAILED";
+  /** @example true */
+  isConnected: boolean;
+  /** @example false */
+  needsQrScan: boolean;
+}
+
+export interface IncomeReportTotalsDto {
+  paymentsTotal: number;
+  expensesTotal: number;
+  netIncome: number;
+  paymentsCount: number;
+  expensesCount: number;
+}
+
+export interface IncomeReportPointDto {
+  /** UTC period key (YYYY-MM-DD for day, YYYY-MM for month) */
+  period: string;
+  paymentsTotal: number;
+  expensesTotal: number;
+  netIncome: number;
+  paymentsCount: number;
+  expensesCount: number;
+}
+
+export interface IncomeReportDto {
+  groupBy: "day" | "month";
+  /** UTC start ISO used for the report */
+  startDate: string;
+  /** UTC end ISO used for the report */
+  endDate: string;
+  /** How net income is computed */
+  formula: string;
+  totals: IncomeReportTotalsDto;
+  series: IncomeReportPointDto[];
+}
+
+export interface TreatmentStatusSummaryDto {
+  planned: number;
+  inProgress: number;
+  completed: number;
+  cancelled: number;
+}
+
+export interface TreatmentValueSummaryDto {
+  /** Sum of totalPrice */
+  grossTotal: number;
+  /** Sum of discount */
+  discountTotal: number;
+  /** grossTotal - discountTotal */
+  netTotal: number;
+}
+
+export interface TreatmentTypeReportRowDto {
+  treatmentTypeId: string;
+  treatmentTypeName: string;
+  count: number;
+  value: TreatmentValueSummaryDto;
+}
+
+export interface DoctorTreatmentReportRowDto {
+  doctorId: string;
+  doctorName: string;
+  count: number;
+  value: TreatmentValueSummaryDto;
+}
+
+export interface TreatmentReportDto {
+  /** UTC start ISO used for the report */
+  startDate: string;
+  /** UTC end ISO used for the report */
+  endDate: string;
+  /** How value totals are computed */
+  valueRules: string;
+  statusSummary: TreatmentStatusSummaryDto;
+  valueSummary: TreatmentValueSummaryDto;
+  byTreatmentType: TreatmentTypeReportRowDto[];
+  byDoctor: DoctorTreatmentReportRowDto[];
 }
 
 import type {
@@ -3447,6 +3547,186 @@ export class Api<
       >({
         path: `/api/v1/dashboard/pending-treatments/${id}/cancel`,
         method: "PATCH",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags WhatsApp Integration
+     * @name WhatsappIntegrationControllerGetConfig
+     * @summary Get WhatsApp (WAHA) config for current organization
+     * @request GET:/api/v1/whatsapp-integration/config
+     * @secure
+     */
+    whatsappIntegrationControllerGetConfig: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: WhatsappIntegrationConfigDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/whatsapp-integration/config`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags WhatsApp Integration
+     * @name WhatsappIntegrationControllerUpdateConfig
+     * @summary Update WhatsApp (WAHA) config for current organization
+     * @request PATCH:/api/v1/whatsapp-integration/config
+     * @secure
+     */
+    whatsappIntegrationControllerUpdateConfig: (
+      data: UpdateWhatsappIntegrationDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: WhatsappIntegrationConfigDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/whatsapp-integration/config`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags WhatsApp Integration
+     * @name WhatsappIntegrationControllerGetStatus
+     * @summary Get WhatsApp connection status for current organization
+     * @request GET:/api/v1/whatsapp-integration/status
+     * @secure
+     */
+    whatsappIntegrationControllerGetStatus: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: WhatsappIntegrationStatusDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/whatsapp-integration/status`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags WhatsApp Integration
+     * @name WhatsappIntegrationControllerGetQr
+     * @summary Get QR code (PNG) for WAHA session (when SCAN_QR_CODE)
+     * @request GET:/api/v1/whatsapp-integration/qr
+     * @secure
+     */
+    whatsappIntegrationControllerGetQr: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/v1/whatsapp-integration/qr`,
+        method: "GET",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags WhatsApp Integration
+     * @name WhatsappIntegrationControllerDeleteSession
+     * @summary Delete WhatsApp session (resets connection)
+     * @request DELETE:/api/v1/whatsapp-integration/session
+     * @secure
+     */
+    whatsappIntegrationControllerDeleteSession: (params: RequestParams = {}) =>
+      this.request<
+        StandardResponse & {
+          data?: Object;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/whatsapp-integration/session`,
+        method: "DELETE",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Reports
+     * @name ReportsControllerGetIncomeReport
+     * @summary Income report (payments - expenses) grouped by day/month
+     * @request GET:/api/v1/reports/income
+     * @secure
+     */
+    reportsControllerGetIncomeReport: (
+      query?: {
+        /** Start date (ISO). Defaults to last 30 days. */
+        startDate?: string;
+        /** End date (ISO). Defaults to today. */
+        endDate?: string;
+        /** Group by period. 'day' (default) or 'month' */
+        groupBy?: "day" | "month";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: IncomeReportDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/reports/income`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Reports
+     * @name ReportsControllerGetTreatmentReport
+     * @summary Treatment report (counts and values) for the org
+     * @request GET:/api/v1/reports/treatments
+     * @secure
+     */
+    reportsControllerGetTreatmentReport: (
+      query?: {
+        /** Start date (ISO). Defaults to last 30 days. */
+        startDate?: string;
+        /** End date (ISO). Defaults to today. */
+        endDate?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: TreatmentReportDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/reports/treatments`,
+        method: "GET",
+        query: query,
         secure: true,
         format: "json",
         ...params,

@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { OrganizationVariablesService } from '../organization-variables/organization-variables.service';
+import { OrganizationVariableKey } from '../../common/entities/organization-variable.entity';
 
 export interface SendWhatsAppMessageParams {
   phoneNumber: string;
@@ -14,20 +16,33 @@ export interface WhatsAppResponse {
 @Injectable()
 export class WhatsappService {
   private readonly logger = new Logger(WhatsappService.name);
-  private readonly wahaApiUrl: string;
-  private readonly wahaApiKey: string;
   private readonly wahaSession: string;
 
-  constructor(private readonly configService: ConfigService) {
-    this.wahaApiUrl = this.configService.get<string>(
-      'WAHA_API_URL',
-      'http://localhost:3002',
-    );
-    this.wahaApiKey = this.configService.get<string>('WAHA_API_KEY', '');
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly orgVars: OrganizationVariablesService,
+  ) {
     this.wahaSession = this.configService.get<string>(
       'WAHA_SESSION',
       'default',
     );
+  }
+
+  private normalizeBaseUrl(url: string): string {
+    return url.replace(/\/+$/, '');
+  }
+
+  private async getWahaAuth(
+    orgId: string,
+  ): Promise<{ baseUrl: string; apiKey: string } | null> {
+    const { [OrganizationVariableKey.WAHA_API_URL]: rawUrl, [OrganizationVariableKey.WAHA_API_KEY]: apiKey } =
+      await this.orgVars.getMany(orgId, [
+        OrganizationVariableKey.WAHA_API_URL,
+        OrganizationVariableKey.WAHA_API_KEY,
+      ]);
+
+    if (!rawUrl || !apiKey) return null;
+    return { baseUrl: this.normalizeBaseUrl(rawUrl), apiKey };
   }
 
   /**
@@ -47,20 +62,30 @@ export class WhatsappService {
    * @returns Success status and error if any
    */
   async sendMessage(
+    orgId: string,
     params: SendWhatsAppMessageParams,
   ): Promise<WhatsAppResponse> {
     const { phoneNumber, message } = params;
 
     try {
+      const auth = await this.getWahaAuth(orgId);
+      if (!auth) {
+        return {
+          success: false,
+          error:
+            'WhatsApp integration is not configured for this organization. Please contact the administrator.',
+        };
+      }
+
       const chatId = this.formatChatId(phoneNumber);
 
       this.logger.log(`Sending WhatsApp message to ${chatId}`);
 
-      const response = await fetch(`${this.wahaApiUrl}/api/sendText`, {
+      const response = await fetch(`${auth.baseUrl}/api/sendText`, {
         method: 'POST',
         headers: {
           accept: 'application/json',
-          'X-Api-Key': this.wahaApiKey,
+          'X-Api-Key': auth.apiKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -102,7 +127,8 @@ export class WhatsappService {
    * Check if WAHA service is configured
    * @returns True if API URL and API key are set
    */
-  isConfigured(): boolean {
-    return !!(this.wahaApiUrl && this.wahaApiKey);
+  async isConfigured(orgId: string): Promise<boolean> {
+    const auth = await this.getWahaAuth(orgId);
+    return !!auth;
   }
 }

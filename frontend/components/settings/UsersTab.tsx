@@ -6,10 +6,24 @@ import { Modal } from '@/components/common/Modal';
 import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
 import { useSettingsStore } from '@/store/settingsStore';
-import { User } from '@/types';
+import type { UserWithRole } from '@/types';
 import styles from './settings-tabs.module.css';
 import { ConfirmationModal } from '../common/ConfirmationModal';
 import toast from 'react-hot-toast';
+
+type UserRole = 'secretary' | 'dentist' | 'admin';
+type UserStatus = 'active' | 'inactive';
+
+type UserFormState = {
+    name: string;
+    email: string;
+    phone: string;
+    role: UserRole;
+    status: UserStatus;
+    wallet: string;
+    percentage: string;
+    password: string;
+};
 
 export const UsersTab: React.FC = () => {
     const users = useSettingsStore((state) => state.users);
@@ -23,19 +37,20 @@ export const UsersTab: React.FC = () => {
     }, [fetchUsers]);
 
     const [modalOpen, setModalOpen] = useState(false);
-    const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-    const [userToDelete, setUserToDelete] = useState<any>(null); // any to handle legacy props
+    const [userToDelete, setUserToDelete] = useState<UserWithRole | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const [userForm, setUserForm] = useState({
+    const [userForm, setUserForm] = useState<UserFormState>({
         name: '',
         email: '',
         phone: '',
-        role: 'secretary' as 'secretary' | 'dentist' | 'admin',
-        status: 'active' as 'active' | 'inactive',
+        role: 'secretary',
+        status: 'active',
         wallet: '0',
         percentage: '',
+        password: '',
     });
 
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -47,25 +62,27 @@ export const UsersTab: React.FC = () => {
             name: '',
             email: '',
             phone: '',
-            role: 'secretary' as 'secretary' | 'dentist' | 'admin',
-            status: 'active' as 'active' | 'inactive',
+            role: 'secretary',
+            status: 'active',
             wallet: '0',
             percentage: '',
+            password: '',
         });
         setModalOpen(true);
     };
 
-    const handleEditUser = (user: any) => {
+    const handleEditUser = (user: UserWithRole) => {
         setEditingUser(user);
         setFormErrors({});
         setUserForm({
             name: user.name,
             email: user.email,
             phone: user.phone || '',
-            role: user.role,
-            status: user.status,
+            role: user.role ?? 'secretary',
+            status: user.status ?? 'active',
             wallet: user.wallet?.toString() || '0',
             percentage: user.percentage?.toString() || '',
+            password: '',
         });
         setModalOpen(true);
     };
@@ -75,6 +92,10 @@ export const UsersTab: React.FC = () => {
         if (!userForm.name.trim()) errors.name = 'Full Name is required';
         if (!userForm.email.trim()) errors.email = 'Email Address is required';
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userForm.email)) errors.email = 'Invalid email format';
+
+        if (userForm.password && userForm.password.length < 6) {
+            errors.password = 'Password must be at least 6 characters';
+        }
 
         if (userForm.role === 'dentist') {
             if (!userForm.percentage || isNaN(Number(userForm.percentage))) {
@@ -91,25 +112,31 @@ export const UsersTab: React.FC = () => {
 
         setIsLoading(true);
         try {
-            const userData: any = {
-                name: userForm.name,
-                email: userForm.email,
-                phone: userForm.phone,
-                role: userForm.role,
-                status: userForm.status,
-            };
-
-            // Add wallet and percentage for dentists
-            if (userForm.role === 'dentist') {
-                userData.wallet = parseFloat(userForm.wallet) || 0;
-                userData.percentage = parseFloat(userForm.percentage) || 0;
-            }
-
             if (editingUser) {
-                await updateUser(editingUser.id, userData);
+                await updateUser(editingUser.id, {
+                    name: userForm.name,
+                    phone: userForm.phone,
+                    role: userForm.role,
+                    status: userForm.status,
+                    percentage:
+                        userForm.role === 'dentist'
+                            ? parseFloat(userForm.percentage) || 0
+                            : undefined,
+                    password: userForm.password || undefined,
+                });
                 toast.success('User updated successfully');
             } else {
-                await addUser(userData);
+                await addUser({
+                    name: userForm.name,
+                    email: userForm.email,
+                    phone: userForm.phone,
+                    role: userForm.role,
+                    percentage:
+                        userForm.role === 'dentist'
+                            ? parseFloat(userForm.percentage) || 0
+                            : undefined,
+                    password: userForm.password || undefined,
+                });
                 toast.success('User created successfully');
             }
             setModalOpen(false);
@@ -122,7 +149,7 @@ export const UsersTab: React.FC = () => {
         }
     };
 
-    const initiateDeleteUser = (user: any) => {
+    const initiateDeleteUser = (user: UserWithRole) => {
         setUserToDelete(user);
         setConfirmDeleteOpen(true);
     };
@@ -143,19 +170,21 @@ export const UsersTab: React.FC = () => {
         }
     };
 
-    const handleToggleStatus = (user: any) => {
-        updateUser(user.id, { status: user.status === 'active' ? 'inactive' : 'active' } as any);
-        toast.success(`User set to ${user.status === 'active' ? 'Inactive' : 'Active'}`);
+    const handleToggleStatus = (user: UserWithRole) => {
+        const currentStatus: UserStatus = user.status ?? 'active';
+        const nextStatus: UserStatus = currentStatus === 'active' ? 'inactive' : 'active';
+        updateUser(user.id, { status: nextStatus });
+        toast.success(`User set to ${nextStatus === 'inactive' ? 'Inactive' : 'Active'}`);
     };
 
-    const columns: TableColumn<any>[] = [
+    const columns: TableColumn<UserWithRole>[] = [
         { key: 'name', label: 'Name' },
         { key: 'email', label: 'Email' },
         { key: 'phone', label: 'Phone' },
         {
             key: 'role',
             label: 'Role',
-            render: (user: any) => (
+            render: (user: UserWithRole) => (
                 <span
                     style={{
                         padding: '4px 12px',
@@ -183,7 +212,7 @@ export const UsersTab: React.FC = () => {
         {
             key: 'percentage',
             label: 'Commission',
-            render: (user: any) => (
+            render: (user: UserWithRole) => (
                 user.role === 'dentist' && user.percentage ? (
                     <span style={{ fontWeight: 600, color: '#059669' }}>
                         {user.percentage}%
@@ -196,7 +225,7 @@ export const UsersTab: React.FC = () => {
         {
             key: 'wallet',
             label: 'Wallet',
-            render: (user: any) => (
+            render: (user: UserWithRole) => (
                 user.role === 'dentist' ? (
                     <span style={{ fontWeight: 600, color: user.wallet && user.wallet > 0 ? '#dc2626' : '#6b7280' }}>
                         ${(user.wallet || 0).toFixed(2)}
@@ -209,7 +238,7 @@ export const UsersTab: React.FC = () => {
         {
             key: 'status',
             label: 'Status',
-            render: (user: any) => (
+            render: (user: UserWithRole) => (
                 <span
                     style={{
                         padding: '4px 12px',
@@ -226,11 +255,11 @@ export const UsersTab: React.FC = () => {
         },
     ];
 
-    const actions: TableAction<any>[] = [
+    const actions: TableAction<UserWithRole>[] = [
         {
-            label: (user: any) => (user.status === 'active' ? 'Deactivate' : 'Activate'),
+            label: (user: UserWithRole) => (user.status === 'active' ? 'Deactivate' : 'Activate'),
             onClick: handleToggleStatus, // Ensure this updates status correctly
-            variant: (user: any) => (user.status === 'active' ? 'danger' : 'primary'),
+            variant: (user: UserWithRole) => (user.status === 'active' ? 'danger' : 'primary'),
         },
         { label: 'Edit', onClick: handleEditUser, variant: 'secondary' },
         { label: 'Delete', onClick: initiateDeleteUser, variant: 'danger' },
@@ -296,7 +325,7 @@ export const UsersTab: React.FC = () => {
                             { value: 'admin', label: 'Admin' },
                         ]}
                         value={userForm.role}
-                        onChange={(value) => setUserForm({ ...userForm, role: value as any })}
+                        onChange={(value) => setUserForm({ ...userForm, role: value as UserRole })}
                         error={formErrors.role}
                         required
                     />
@@ -307,9 +336,17 @@ export const UsersTab: React.FC = () => {
                             { value: 'inactive', label: 'Inactive' },
                         ]}
                         value={userForm.status}
-                        onChange={(value) => setUserForm({ ...userForm, status: value as any })}
+                        onChange={(value) => setUserForm({ ...userForm, status: value as UserStatus })}
                         error={formErrors.status}
                         required
+                    />
+                    <Input
+                        type="password"
+                        label={editingUser ? 'New Password (optional)' : 'Password (optional)'}
+                        value={userForm.password}
+                        onChange={(value) => setUserForm({ ...userForm, password: value })}
+                        placeholder={editingUser ? 'Leave blank to keep current password' : 'Set an initial password'}
+                        error={formErrors.password}
                     />
                     {userForm.role === 'dentist' && (
                         <>
