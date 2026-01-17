@@ -201,11 +201,13 @@ export interface UserWithRole extends User {
 
 export interface ClinicBranding {
   logo?: string; // base64 or URL
+  logoId?: string; // Attachment ID (for updates)
   clinicName: string;
   location: string;
   phone: string;
   email: string;
   website?: string;
+  defaultDoctorId?: string | null;
 }
 
 export interface NotificationTemplate {

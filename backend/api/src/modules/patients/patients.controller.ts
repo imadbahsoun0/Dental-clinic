@@ -202,6 +202,27 @@ export class PatientsController {
     );
   }
 
+  @Get('medical-history/missing')
+  @Roles(UserRole.ADMIN, UserRole.SECRETARY, UserRole.DENTIST)
+  @ApiOperation({ summary: 'Get patients missing medical history' })
+  @ApiStandardResponse(PatientResponseDto, true)
+  async getPatientsMissingMedicalHistory(
+    @Query() query: PatientQueryDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const { page, limit, ...filter } = query;
+    const pagination = { page, limit };
+    const result = await this.patientsService.getPatientsMissingMedicalHistory(
+      user.orgId,
+      pagination,
+      filter,
+    );
+    return new StandardResponse(
+      { data: result.data, meta: result.meta },
+      'Patients missing medical history retrieved successfully',
+    );
+  }
+
   @Post(':id/send-medical-history')
   @Roles(UserRole.ADMIN, UserRole.SECRETARY)
   @ApiOperation({ summary: 'Manually send medical history link to patient' })

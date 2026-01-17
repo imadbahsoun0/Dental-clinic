@@ -12,7 +12,6 @@ import { PatientSearchSelect } from '@/components/patients/PatientSearchSelect';
 import toast from 'react-hot-toast';
 import { useAppointmentStore } from '@/store/appointmentStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import type { UserWithRole } from '@/types';
 
 // Schema for creating appointments (doctor is required)
 const createSchema = z.object({
@@ -75,6 +74,8 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
 
     const users = useSettingsStore(state => state.users);
     const fetchUsers = useSettingsStore(state => state.fetchUsers);
+    const clinicBranding = useSettingsStore((state) => state.clinicBranding);
+    const fetchClinicBranding = useSettingsStore((state) => state.fetchClinicBranding);
 
     const [loadingData, setLoadingData] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState<{ id: string; firstName: string; lastName: string; mobileNumber: string } | null>(null);
@@ -83,7 +84,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     const editingAppointment = appointmentId ? appointments.find(a => a.id === appointmentId) : null;
     const editingPatientId = editingAppointment?.patient?.id || editingAppointment?.patientId;
 
-    const { control, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
+    const { control, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
         resolver: zodResolver(isEditing ? editSchema : createSchema),
         defaultValues: {
             patientId: defaultPatientId || '',
@@ -96,13 +97,19 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         }
     });
 
+    const watchedDoctorId = watch('doctorId');
+
     useEffect(() => {
         if (isOpen) {
             // Fetch required data
             const loadData = async () => {
                 setLoadingData(true);
                 try {
-                    await fetchUsers();
+                    await Promise.all([
+                        fetchUsers(),
+                        // Needed to read defaultDoctorId for new appointments
+                        fetchClinicBranding(),
+                    ]);
                 } catch (error) {
                     console.error('Failed to load data:', error);
                     toast.error('Failed to load form data');
@@ -146,7 +153,29 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                 });
             }
         }
-    }, [isOpen, editingAppointment, reset, defaultDate, defaultPatientId, defaultTreatmentId, fetchUsers]);
+    }, [isOpen, editingAppointment, reset, defaultDate, defaultPatientId, defaultTreatmentId, fetchUsers, fetchClinicBranding]);
+
+    // Doctor options: include both dentists and admins
+    const doctorOptions = users
+        .filter((u) => u.role === 'dentist' || u.role === 'admin')
+        .map((u) => ({
+            value: u.id,
+            label: `${u.name}${u.role === 'admin' ? ' (Admin)' : ''}`,
+        }));
+
+    // Apply default doctor only for NEW appointments, and only if the user hasn't chosen one yet
+    useEffect(() => {
+        if (!isOpen || isEditing) return;
+        if (watchedDoctorId) return;
+
+        const defaultDoctorId = clinicBranding.defaultDoctorId;
+        if (!defaultDoctorId) return;
+
+        const existsInOptions = doctorOptions.some((o) => o.value === defaultDoctorId);
+        if (!existsInOptions) return;
+
+        setValue('doctorId', defaultDoctorId);
+    }, [isOpen, isEditing, watchedDoctorId, clinicBranding.defaultDoctorId, doctorOptions, setValue]);
 
     const onSubmit = async (data: FormData) => {
         try {
@@ -173,14 +202,6 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             toast.error(appointmentId ? 'Failed to update appointment' : 'Failed to create appointment');
         }
     };
-
-    // Doctor options: include both dentists and admins
-    const doctorOptions = (users as UserWithRole[])
-        .filter((u) => u.role === 'dentist' || u.role === 'admin')
-        .map((u) => ({
-            value: u.id,
-            label: `${u.name}${u.role === 'admin' ? ' (Admin)' : ''}`,
-        }));
 
     const statusOptions = [
         { value: 'pending', label: 'Pending' },
@@ -270,19 +291,66 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                             )}
                         />
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div style={{ display: 'grid', gap: '16px' }}>
                             <Controller
                                 name="date"
                                 control={control}
                                 render={({ field }) => (
-                                    <Input
-                                        label="Date"
-                                        type="date"
-                                        value={field.value || ''}
-                                        onChange={field.onChange}
-                                        error={errors.date?.message}
-                                        required
-                                    />
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+                                            Date <span style={{ color: 'red' }}>*</span>
+                                        </label>
+                                        {/* Quick date shortcuts */}
+                                        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                                            {[
+                                                { label: 'Today', days: 0 },
+                                                { label: 'Tomorrow', days: 1 },
+                                                { label: '+2 days', days: 2 },
+                                                { label: '+3 days', days: 3 },
+                                                { label: 'Next week', days: 7 },
+                                            ].map((shortcut) => {
+                                                const date = new Date();
+                                                date.setDate(date.getDate() + shortcut.days);
+                                                const dateStr = date.toISOString().split('T')[0];
+                                                return (
+                                                    <button
+                                                        key={shortcut.label}
+                                                        type="button"
+                                                        onClick={() => field.onChange(dateStr)}
+                                                        style={{
+                                                            padding: '6px 12px',
+                                                            border: '1px solid #ddd',
+                                                            borderRadius: '6px',
+                                                            background: field.value === dateStr ? '#3b82f6' : 'white',
+                                                            color: field.value === dateStr ? 'white' : '#374151',
+                                                            cursor: 'pointer',
+                                                            fontSize: '13px',
+                                                            fontWeight: 500,
+                                                            transition: 'all 0.2s',
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            if (field.value !== dateStr) {
+                                                                e.currentTarget.style.background = '#f3f4f6';
+                                                            }
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            if (field.value !== dateStr) {
+                                                                e.currentTarget.style.background = 'white';
+                                                            }
+                                                        }}
+                                                    >
+                                                        {shortcut.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        <Input
+                                            type="date"
+                                            value={field.value || ''}
+                                            onChange={field.onChange}
+                                            error={errors.date?.message}
+                                        />
+                                    </div>
                                 )}
                             />
 
@@ -290,14 +358,73 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                                 name="time"
                                 control={control}
                                 render={({ field }) => (
-                                    <Input
-                                        label="Time"
-                                        type="time"
-                                        value={field.value || ''}
-                                        onChange={field.onChange}
-                                        error={errors.time?.message}
-                                        required
-                                    />
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+                                            Time <span style={{ color: 'red' }}>*</span>
+                                        </label>
+                                        {/* Time slots organized by period */}
+                                        <div style={{ display: 'grid', gap: '12px' }}>
+                                            {[
+                                                { period: 'Morning', slots: ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30'] },
+                                                { period: 'Afternoon', slots: ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30'] },
+                                                { period: 'Evening', slots: ['16:00', '16:30', '17:00', '17:30', '18:00', '18:30'] },
+                                            ].map((group) => (
+                                                <div key={group.period}>
+                                                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', marginBottom: '6px' }}>
+                                                        {group.period}
+                                                    </div>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', gap: '6px' }}>
+                                                        {group.slots.map((slot) => (
+                                                            <button
+                                                                key={slot}
+                                                                type="button"
+                                                                onClick={() => field.onChange(slot)}
+                                                                style={{
+                                                                    padding: '8px 12px',
+                                                                    border: field.value === slot ? '2px solid #3b82f6' : '1px solid #ddd',
+                                                                    borderRadius: '6px',
+                                                                    background: field.value === slot ? '#eff6ff' : 'white',
+                                                                    color: field.value === slot ? '#3b82f6' : '#374151',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '13px',
+                                                                    fontWeight: field.value === slot ? 600 : 500,
+                                                                    transition: 'all 0.2s',
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    if (field.value !== slot) {
+                                                                        e.currentTarget.style.background = '#f9fafb';
+                                                                        e.currentTarget.style.borderColor = '#9ca3af';
+                                                                    }
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    if (field.value !== slot) {
+                                                                        e.currentTarget.style.background = 'white';
+                                                                        e.currentTarget.style.borderColor = '#ddd';
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {slot}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {/* Custom time input for flexibility */}
+                                        <div style={{ marginTop: '12px' }}>
+                                            <Input
+                                                type="time"
+                                                value={field.value || ''}
+                                                onChange={field.onChange}
+                                                placeholder="Or enter custom time"
+                                            />
+                                        </div>
+                                        {errors.time && (
+                                            <span style={{ color: 'red', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                                                {errors.time.message}
+                                            </span>
+                                        )}
+                                    </div>
                                 )}
                             />
                         </div>

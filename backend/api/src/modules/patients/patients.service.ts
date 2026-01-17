@@ -436,6 +436,56 @@ export class PatientsService {
   }
 
   /**
+   * Get patients who have not submitted medical history yet
+   */
+  async getPatientsMissingMedicalHistory(
+    orgId: string,
+    pagination: PaginationDto,
+    filter?: FilterDto,
+  ) {
+    const { page = 1, limit = 10 } = pagination;
+    const offset = (page - 1) * limit;
+
+    const where: Record<string, unknown> = {
+      orgId,
+      deletedAt: null,
+      medicalHistory: null,
+    };
+
+    if (filter?.search) {
+      where.$or = [
+        { firstName: { $ilike: `%${filter.search}%` } },
+        { lastName: { $ilike: `%${filter.search}%` } },
+        { mobileNumber: { $ilike: `%${filter.search}%` } },
+        { email: { $ilike: `%${filter.search}%` } },
+      ];
+    }
+
+    const sortBy = filter?.sortBy || 'createdAt';
+    const sortOrder = filter?.sortOrder || 'DESC';
+    const orderBy = { [sortBy]: sortOrder };
+
+    const [patients, total] = await this.em.findAndCount(Patient, where, {
+      limit,
+      offset,
+      orderBy,
+      populate: ['documents'],
+    });
+
+    const data = await Promise.all(patients.map((p) => this.mapToResponse(p)));
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
    * Get patients with pending follow-ups
    */
   async getPatientsWithFollowUps(

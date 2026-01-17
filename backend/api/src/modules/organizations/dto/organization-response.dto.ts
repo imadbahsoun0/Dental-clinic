@@ -42,6 +42,9 @@ export class OrganizationResponseDto {
   @ApiProperty()
   timeZone!: string;
 
+  @ApiProperty({ required: false, nullable: true })
+  defaultDoctorId?: string | null;
+
   @ApiProperty()
   isActive!: boolean;
 

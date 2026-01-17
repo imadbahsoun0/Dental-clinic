@@ -54,4 +54,14 @@ export class UpdateOrganizationDto {
   @IsString()
   @Matches(/^(UTC|[A-Za-z_]+(?:\/[A-Za-z_]+)+)$/)
   timeZone?: string;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description:
+      'Default doctor user ID to preselect when creating a new appointment. Set null to clear.',
+  })
+  @IsOptional()
+  @IsUUID()
+  defaultDoctorId?: string | null;
 }

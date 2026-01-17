@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
-import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/common/Input';
 import { Select } from '@/components/common/Select';
 import { api } from '@/lib/api';
 import { useSettingsStore } from '@/store/settingsStore';
+import { MedicalHistoryStatus } from '@/components/patients/MedicalHistoryStatus';
 import toast from 'react-hot-toast';
 import styles from './notifications.module.css';
 
@@ -32,10 +32,61 @@ interface UnpaidPatient {
     remainingBalance: number;
 }
 
+interface MissingMedicalHistoryPatient {
+    id: string;
+    firstName: string;
+    lastName: string;
+    mobileNumber: string;
+    email?: string | null;
+    createdAt?: string;
+}
+
+type FollowUpStatus = 'pending' | 'completed' | 'cancelled';
+type FollowUpStatusFilter = 'all' | FollowUpStatus;
+
+type UnknownRecord = Record<string, unknown>;
+
+const isRecord = (value: unknown): value is UnknownRecord => {
+    return typeof value === 'object' && value !== null;
+};
+
+const getItemsAndTotal = <T,>(response: { success?: boolean; data?: unknown }): { items: T[]; total: number } => {
+    if (!response.success) {
+        return { items: [], total: 0 };
+    }
+
+    const payload = response.data;
+
+    if (Array.isArray(payload)) {
+        return { items: payload as unknown as T[], total: payload.length };
+    }
+
+    if (isRecord(payload)) {
+        const maybeData = payload.data;
+        const maybeItems = payload.items;
+        const maybeMeta = payload.meta;
+
+        const items = Array.isArray(maybeData)
+            ? (maybeData as unknown as T[])
+            : Array.isArray(maybeItems)
+                ? (maybeItems as unknown as T[])
+                : [];
+
+        const total = isRecord(maybeMeta) && typeof maybeMeta.total === 'number'
+            ? maybeMeta.total
+            : items.length;
+
+        return { items, total };
+    }
+
+    return { items: [], total: 0 };
+};
+
 export default function NotificationsPage() {
-    const [activeTab, setActiveTab] = useState<'follow-ups' | 'unpaid'>('follow-ups');
+    const [activeTab, setActiveTab] = useState<'follow-ups' | 'unpaid' | 'missing-history'>('follow-ups');
     const [followUps, setFollowUps] = useState<FollowUpPatient[]>([]);
     const [unpaidPatients, setUnpaidPatients] = useState<UnpaidPatient[]>([]);
+    const [missingHistoryPatients, setMissingHistoryPatients] = useState<MissingMedicalHistoryPatient[]>([]);
     const [loading, setLoading] = useState(false);
     const [sendingReminder, setSendingReminder] = useState<string | null>(null);
     const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
@@ -50,7 +101,7 @@ export default function NotificationsPage() {
     
     // Filters
     const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('pending');
+    const [statusFilter, setStatusFilter] = useState<FollowUpStatusFilter>('pending');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
 
@@ -61,8 +112,10 @@ export default function NotificationsPage() {
     useEffect(() => {
         if (activeTab === 'follow-ups') {
             fetchFollowUps();
-        } else {
+        } else if (activeTab === 'unpaid') {
             fetchUnpaidPatients();
+        } else {
+            fetchMissingMedicalHistoryPatients();
         }
     }, [activeTab, searchQuery, statusFilter, startDate, endDate, currentPage, pageSize]);
 
@@ -72,41 +125,27 @@ export default function NotificationsPage() {
     const fetchFollowUps = async () => {
         setLoading(true);
         try {
-            const response = await api.api.patientsControllerGetFollowUps({ 
-                page: currentPage, 
-                limit: pageSize, 
-                search: searchQuery, 
-                startDate, 
-                endDate,
-                followUpStatus: statusFilter as 'pending' | 'completed' | 'cancelled'
-            });
-            console.log('Follow-ups API response:', response);
-            
-            if (response.success) {
-                // Check if data is directly an array or nested
-                let dataArray: FollowUpPatient[] = [];
-                let metaData = { total: 0 };
-                
-                if (Array.isArray(response.data)) {
-                    dataArray = response.data as unknown as FollowUpPatient[];
-                } else if (response.data && typeof response.data === 'object') {
-                    const dataObj = response.data as any;
-                    if (Array.isArray(dataObj.data)) {
-                        dataArray = dataObj.data as unknown as FollowUpPatient[];
-                        metaData = dataObj.meta || { total: 0 };
-                    } else if (Array.isArray(dataObj.items)) {
-                        dataArray = dataObj.items as unknown as FollowUpPatient[];
-                        metaData = dataObj.meta || { total: 0 };
-                    }
-                }
-                
-                console.log('Parsed follow-ups array:', dataArray);
-                setFollowUps(dataArray);
-                setTotal(metaData.total || 0);
-            } else {
-                setFollowUps([]);
-                setTotal(0);
-            }
+            const query: {
+                page: number;
+                limit: number;
+                search?: string;
+                startDate?: string;
+                endDate?: string;
+                followUpStatus?: FollowUpStatus;
+            } = {
+                page: currentPage,
+                limit: pageSize,
+            };
+
+            if (searchQuery.trim() !== '') query.search = searchQuery;
+            if (startDate.trim() !== '') query.startDate = startDate;
+            if (endDate.trim() !== '') query.endDate = endDate;
+            if (statusFilter !== 'all') query.followUpStatus = statusFilter;
+
+            const response = await api.api.patientsControllerGetFollowUps(query);
+            const { items, total: totalCount } = getItemsAndTotal<FollowUpPatient>(response);
+            setFollowUps(items);
+            setTotal(totalCount);
         } catch (error) {
             console.error('Error fetching follow-ups:', error);
             toast.error('Failed to load follow-ups');
@@ -121,38 +160,36 @@ export default function NotificationsPage() {
         setLoading(true);
         try {
             const response = await api.api.patientsControllerGetUnpaidPatients({ page: currentPage, limit: pageSize });
-            console.log('Unpaid patients API response:', response);
-            
-            if (response.success) {
-                // Check if data is directly an array or nested
-                let dataArray: UnpaidPatient[] = [];
-                let metaData = { total: 0 };
-                
-                if (Array.isArray(response.data)) {
-                    dataArray = response.data as unknown as UnpaidPatient[];
-                } else if (response.data && typeof response.data === 'object') {
-                    // Maybe it's wrapped in another data property
-                    const dataObj = response.data as any;
-                    if (Array.isArray(dataObj.data)) {
-                        dataArray = dataObj.data as unknown as UnpaidPatient[];
-                        metaData = dataObj.meta || { total: 0 };
-                    } else if (Array.isArray(dataObj.items)) {
-                        dataArray = dataObj.items as unknown as UnpaidPatient[];
-                        metaData = dataObj.meta || { total: 0 };
-                    }
-                }
-                
-                console.log('Parsed unpaid patients array:', dataArray);
-                setUnpaidPatients(dataArray);
-                setTotal(metaData.total || 0);
-            } else {
-                setUnpaidPatients([]);
-                setTotal(0);
-            }
+            const { items, total: totalCount } = getItemsAndTotal<UnpaidPatient>(response);
+            setUnpaidPatients(items);
+            setTotal(totalCount);
         } catch (error) {
             console.error('Error fetching unpaid patients:', error);
             toast.error('Failed to load unpaid patients');
             setUnpaidPatients([]);
+            setTotal(0);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchMissingMedicalHistoryPatients = async () => {
+        setLoading(true);
+        try {
+            const query: { page: number; limit: number; search?: string } = {
+                page: currentPage,
+                limit: pageSize,
+            };
+            if (searchQuery.trim() !== '') query.search = searchQuery;
+
+            const response = await api.api.patientsControllerGetPatientsMissingMedicalHistory(query);
+            const { items, total: totalCount } = getItemsAndTotal<MissingMedicalHistoryPatient>(response);
+            setMissingHistoryPatients(items);
+            setTotal(totalCount);
+        } catch (error) {
+            console.error('Error fetching missing medical history patients:', error);
+            toast.error('Failed to load patients missing medical history');
+            setMissingHistoryPatients([]);
             setTotal(0);
         } finally {
             setLoading(false);
@@ -221,15 +258,6 @@ export default function NotificationsPage() {
 
     const totalPages = Math.ceil(total / pageSize);
 
-    const getStatusBadge = (status: string) => {
-        const statusMap: Record<string, 'success' | 'warning' | 'danger'> = {
-            pending: 'warning',
-            completed: 'success',
-            cancelled: 'danger',
-        };
-        return <Badge variant={statusMap[status] || 'warning'}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
-    };
-
     // Filter follow-ups client-side (basic filtering since API may not support all filters)
     const filteredFollowUps = followUps.filter((patient) => {
         const matchesSearch = searchQuery === '' || 
@@ -244,6 +272,14 @@ export default function NotificationsPage() {
             `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
             patient.mobileNumber.includes(searchQuery);
         
+        return matchesSearch;
+    });
+
+    const filteredMissingHistoryPatients = missingHistoryPatients.filter((patient) => {
+        const matchesSearch = searchQuery === '' ||
+            `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            patient.mobileNumber.includes(searchQuery);
+
         return matchesSearch;
     });
 
@@ -269,6 +305,15 @@ export default function NotificationsPage() {
                             <span className={styles.badge}>{total}</span>
                         )}
                     </button>
+                    <button
+                        className={`${styles.tab} ${activeTab === 'missing-history' ? styles.activeTab : ''}`}
+                        onClick={() => setActiveTab('missing-history')}
+                    >
+                        Medical History Missing
+                        {activeTab === 'missing-history' && total > 0 && (
+                            <span className={styles.badge}>{total}</span>
+                        )}
+                    </button>
                 </div>
 
                 {/* Filters */}
@@ -291,7 +336,7 @@ export default function NotificationsPage() {
                                         { value: 'cancelled', label: 'Cancelled' },
                                     ]}
                                     value={statusFilter}
-                                    onChange={setStatusFilter}
+                                    onChange={(value) => setStatusFilter(value as FollowUpStatusFilter)}
                                 />
                                 <Input
                                     type="date"
@@ -648,6 +693,121 @@ export default function NotificationsPage() {
                                     </div>
                                 </div>
                             )}
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'missing-history' && (
+                    <div className={styles.tabContent}>
+                        {loading ? (
+                            <p className={styles.loading}>Loading...</p>
+                        ) : filteredMissingHistoryPatients.length === 0 ? (
+                            <p className={styles.emptyState}>No patients found missing medical history</p>
+                        ) : (
+                            <>
+                                {/* Desktop Table View */}
+                                <div className={styles.tableContainer}>
+                                    <table className={styles.table}>
+                                        <thead>
+                                            <tr>
+                                                <th>Patient</th>
+                                                <th>Phone</th>
+                                                <th>Email</th>
+                                                <th>Reminder</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredMissingHistoryPatients.map((patient) => (
+                                                <tr key={patient.id}>
+                                                    <td>{`${patient.firstName} ${patient.lastName}`}</td>
+                                                    <td>{patient.mobileNumber}</td>
+                                                    <td>{patient.email || 'N/A'}</td>
+                                                    <td>
+                                                        <MedicalHistoryStatus patientId={patient.id} />
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Mobile Card View */}
+                                <div className={styles.mobileCardView}>
+                                    {filteredMissingHistoryPatients.map((patient) => (
+                                        <div key={patient.id} className={styles.notificationCard}>
+                                            <div className={styles.notificationCardHeader}>
+                                                <div className={styles.notificationCardTitle}>
+                                                    {`${patient.firstName} ${patient.lastName}`}
+                                                </div>
+                                            </div>
+
+                                            <div className={styles.notificationCardBody}>
+                                                <div className={styles.notificationCardRow}>
+                                                    <span className={styles.notificationCardLabel}>Phone</span>
+                                                    <span className={styles.notificationCardValue}>{patient.mobileNumber}</span>
+                                                </div>
+
+                                                <div className={styles.notificationCardRow}>
+                                                    <span className={styles.notificationCardLabel}>Email</span>
+                                                    <span className={styles.notificationCardValue}>{patient.email || 'N/A'}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className={styles.notificationCardFooter}>
+                                                <MedicalHistoryStatus patientId={patient.id} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Pagination */}
+                                {totalPages > 1 && (
+                                    <div className={styles.pagination}>
+                                        <div className={styles.paginationInfo}>
+                                            Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, total)} of {total} patients
+                                        </div>
+                                        <div className={styles.paginationControls}>
+                                            <button
+                                                className={styles.paginationBtn}
+                                                onClick={() => goToPage(currentPage - 1)}
+                                                disabled={currentPage === 1}
+                                            >
+                                                Previous
+                                            </button>
+                                            <div className={styles.pageNumbers}>
+                                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                    let pageNum;
+                                                    if (totalPages <= 5) {
+                                                        pageNum = i + 1;
+                                                    } else if (currentPage <= 3) {
+                                                        pageNum = i + 1;
+                                                    } else if (currentPage >= totalPages - 2) {
+                                                        pageNum = totalPages - 4 + i;
+                                                    } else {
+                                                        pageNum = currentPage - 2 + i;
+                                                    }
+                                                    return (
+                                                        <button
+                                                            key={pageNum}
+                                                            className={`${styles.pageNumber} ${currentPage === pageNum ? styles.active : ''}`}
+                                                            onClick={() => goToPage(pageNum)}
+                                                        >
+                                                            {pageNum}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <button
+                                                className={styles.paginationBtn}
+                                                onClick={() => goToPage(currentPage + 1)}
+                                                disabled={currentPage === totalPages}
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>

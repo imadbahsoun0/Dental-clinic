@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { Card } from '@/components/common/Card';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
+import { Select } from '@/components/common/Select';
 import { useSettingsStore } from '@/store/settingsStore';
 import styles from './settings-tabs.module.css';
 
@@ -12,6 +13,8 @@ export const BrandingTab: React.FC = () => {
     const clinicBranding = useSettingsStore((state) => state.clinicBranding);
     const fetchClinicBranding = useSettingsStore((state) => state.fetchClinicBranding);
     const updateClinicBranding = useSettingsStore((state) => state.updateClinicBranding);
+    const users = useSettingsStore((state) => state.users);
+    const fetchUsers = useSettingsStore((state) => state.fetchUsers);
     const doctorLogo = useSettingsStore((state) => state.doctorLogo);
     const updateDoctorLogo = useSettingsStore((state) => state.updateDoctorLogo);
     const uploadLogo = useSettingsStore((state) => state.uploadLogo);
@@ -20,7 +23,8 @@ export const BrandingTab: React.FC = () => {
 
     useEffect(() => {
         fetchClinicBranding();
-    }, [fetchClinicBranding]);
+        fetchUsers();
+    }, [fetchClinicBranding, fetchUsers]);
 
     useEffect(() => {
         setBranding(clinicBranding);
@@ -40,8 +44,7 @@ export const BrandingTab: React.FC = () => {
             try {
                 const { id, url } = await uploadLogo(file);
                 // Store logoId in branding state so "Save" sends it
-                // We cast to any because ClinicBranding doesn't have logoId explicitly, but settingsStore handles it
-                setBranding((prev) => ({ ...prev, logoId: id, logo: url } as any));
+                setBranding((prev) => ({ ...prev, logoId: id, logo: url }));
                 toast.success('Logo uploaded successfully!');
             } catch (error) {
                 console.error(error);
@@ -50,10 +53,16 @@ export const BrandingTab: React.FC = () => {
         }
     };
 
-    const handleSave = () => {
-        updateClinicBranding(branding);
-        toast.success('Branding information saved successfully!');
+    const handleSave = async () => {
+        await updateClinicBranding(branding);
     };
+
+    const doctorOptions = users
+        .filter((u) => u.role === 'dentist' || u.role === 'admin')
+        .map((u) => ({
+            value: u.id,
+            label: `${u.name}${u.role === 'admin' ? ' (Admin)' : ''}`,
+        }));
 
     return (
         <div className={styles.tabContent}>
@@ -113,6 +122,22 @@ export const BrandingTab: React.FC = () => {
                         onChange={(value) => setBranding({ ...branding, website: value })}
                         placeholder="https://www.dentacarepro.com"
                     />
+
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+                            Default Doctor (New Appointments)
+                        </label>
+                        <Select
+                            options={[{ value: '', label: 'None' }, ...doctorOptions]}
+                            value={branding.defaultDoctorId || ''}
+                            onChange={(value) => setBranding({ ...branding, defaultDoctorId: value || null })}
+                            placeholder="Select a default doctor..."
+                        />
+                        <p className={styles.description} style={{ marginTop: '8px', marginBottom: 0 }}>
+                            This doctor will be preselected when creating a new appointment.
+                        </p>
+                    </div>
+
                     <div className={styles.formActions}>
                         <Button onClick={handleSave}>Save Branding</Button>
                     </div>

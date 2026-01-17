@@ -12,6 +12,7 @@ import {
     type CreateUserDto as ApiCreateUserDto,
     type UpdateUserDto as ApiUpdateUserDto,
     type UserResponseDto,
+    type UpdateOrganizationDto as ApiUpdateOrganizationDto,
 } from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -429,9 +430,9 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
     fetchClinicBranding: async () => {
         try {
-            const response = await api.api.organizationsControllerGetCurrent();
-            const result = response as any;
-            const org = result.data || result;
+            const result = await api.api.organizationsControllerGetCurrent();
+            const org = result.data;
+            if (!org) return;
 
             set({
                 clinicBranding: {
@@ -440,9 +441,11 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
                     phone: org.phone || '',
                     email: org.email || '',
                     website: org.website,
-                    logo: org.logo?.url || null,
+                    logo: org.logo?.url ?? null,
+                    logoId: org.logo?.id,
+                    defaultDoctorId: org.defaultDoctorId ?? null,
                 },
-                doctorLogo: org.logo?.url || null,
+                doctorLogo: org.logo?.url ?? null,
             });
         } catch (error) {
             console.error('Failed to fetch clinic branding:', error);
@@ -451,20 +454,43 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
     updateClinicBranding: async (branding) => {
         try {
-            const updateDto: any = {};
-            if (branding.clinicName) updateDto.name = branding.clinicName;
-            if (branding.location) updateDto.location = branding.location;
-            if (branding.phone) updateDto.phone = branding.phone;
-            if (branding.email) updateDto.email = branding.email;
-            if (branding.website) updateDto.website = branding.website;
-            if ((branding as any).logoId) updateDto.logoId = (branding as any).logoId;
+            const updateDto: ApiUpdateOrganizationDto = {};
+            if (branding.clinicName !== undefined) updateDto.name = branding.clinicName;
+            if (branding.location !== undefined) updateDto.location = branding.location;
+            if (branding.phone !== undefined) updateDto.phone = branding.phone;
+            if (branding.email !== undefined) updateDto.email = branding.email;
+            if (branding.website !== undefined) updateDto.website = branding.website;
+            if (branding.logoId !== undefined) updateDto.logoId = branding.logoId;
 
-            await api.api.organizationsControllerUpdateCurrent(updateDto);
+            if (branding.defaultDoctorId !== undefined) {
+                updateDto.defaultDoctorId = branding.defaultDoctorId || null;
+            }
 
-            set((state) => ({
-                clinicBranding: { ...state.clinicBranding, ...branding },
-                doctorLogo: branding.logo || state.doctorLogo,
-            }));
+            const result = await api.api.organizationsControllerUpdateCurrent(updateDto);
+            const org = result.data;
+
+            // Keep local state consistent with server response
+            if (org) {
+                set({
+                    clinicBranding: {
+                        clinicName: org.name || '',
+                        location: org.location || '',
+                        phone: org.phone || '',
+                        email: org.email || '',
+                        website: org.website,
+                        logo: org.logo?.url ?? null,
+                        logoId: org.logo?.id,
+                        defaultDoctorId: org.defaultDoctorId ?? null,
+                    },
+                    doctorLogo: org.logo?.url ?? null,
+                });
+            } else {
+                set((state) => ({
+                    clinicBranding: { ...state.clinicBranding, ...branding },
+                    doctorLogo: branding.logo ?? state.doctorLogo,
+                }));
+            }
+
             toast.success('Branding updated successfully');
         } catch (error) {
             console.error('Failed to update clinic branding:', error);

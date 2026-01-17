@@ -181,6 +181,7 @@ export interface OrganizationResponseDto {
   website?: string;
   logo?: object;
   timeZone: string;
+  defaultDoctorId?: object | null;
   isActive: boolean;
   /** @format date-time */
   createdAt: string;
@@ -227,6 +228,8 @@ export interface UpdateOrganizationDto {
    * @example "Africa/Casablanca"
    */
   timeZone?: string;
+  /** Default doctor user ID to preselect when creating a new appointment. Set null to clear. */
+  defaultDoctorId?: object | null;
 }
 
 export interface PatientResponseDto {
@@ -2125,6 +2128,51 @@ export class Api<
         ErrorResponse
       >({
         path: `/api/v1/patients/unpaid/list`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Patients
+     * @name PatientsControllerGetPatientsMissingMedicalHistory
+     * @summary Get patients missing medical history
+     * @request GET:/api/v1/patients/medical-history/missing
+     * @secure
+     */
+    patientsControllerGetPatientsMissingMedicalHistory: (
+      query?: {
+        /**
+         * @min 1
+         * @default 1
+         */
+        page?: number;
+        /**
+         * @min 1
+         * @max 1000
+         * @default 10
+         */
+        limit?: number;
+        search?: string;
+        startDate?: string;
+        endDate?: string;
+        followUpStatus?: "pending" | "completed" | "cancelled";
+        sortBy?: string;
+        sortOrder?: "ASC" | "DESC";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: PatientResponseDto[];
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/patients/medical-history/missing`,
         method: "GET",
         query: query,
         secure: true,

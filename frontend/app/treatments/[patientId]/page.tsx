@@ -94,20 +94,28 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
                 page: 1,
                 limit: 1000
             });
+
+            const isRecord = (value: unknown): value is Record<string, unknown> =>
+                typeof value === 'object' && value !== null;
+
+            const isMessage = (value: unknown): value is Message => {
+                if (!isRecord(value)) return false;
+                return (
+                    typeof value.id === 'string' &&
+                    typeof value.patientId === 'string' &&
+                    typeof value.type === 'string' &&
+                    typeof value.content === 'string' &&
+                    typeof value.status === 'string' &&
+                    typeof value.createdAt === 'string' &&
+                    typeof value.updatedAt === 'string'
+                );
+            };
             
-            if (response.success && response.data) {
-                // Handle both array and object with data property formats
-                const data = response.data as any;
-                if (Array.isArray(data)) {
-                    setReminders(data);
-                } else if (data.data && Array.isArray(data.data)) {
-                    setReminders(data.data);
-                } else {
-                    setReminders([]);
-                }
-            } else {
-                setReminders([]);
-            }
+            if (response.success) {
+                const raw = response.data;
+                const parsed = Array.isArray(raw) ? raw.filter(isMessage) : [];
+                setReminders(parsed);
+            } else setReminders([]);
         } catch (error) {
             console.error('Error fetching reminders:', error);
             toast.error('Failed to load reminders');
@@ -160,8 +168,11 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
         }
     };
 
-    const handleStatusChange = (treatmentId: string, newStatus: Treatment['status']) => {
-        updateTreatment(treatmentId, { status: newStatus });
+    const handleStatusChange = (treatmentId: string, newStatus: NonNullable<Treatment['status']>, appointmentId?: string) => {
+        updateTreatment(treatmentId, {
+            status: newStatus,
+            ...(appointmentId ? { appointmentId } : {}),
+        });
     };
 
     const handleSaveTreatment = (treatmentData: Partial<Treatment>) => {

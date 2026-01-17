@@ -315,3 +315,51 @@
     color: var(--text-dark);
     font-weight: normal;
 }
+
+.pendingLinkContainer {
+    margin-top: 8px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-cream);
+}
+
+.pendingLinkLabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+}
+
+.pendingLinkSelect {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-white);
+    font-size: 13px;
+}
+
+.pendingLinkActions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.pendingLinkConfirm,
+.pendingLinkCancel {
+    padding: 6px 10px;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg-white);
+    color: var(--text-dark);
+}
+
+.pendingLinkConfirm:disabled,
+.pendingLinkCancel:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

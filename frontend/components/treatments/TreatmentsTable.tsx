@@ -8,13 +8,15 @@ import { formatToothNumbers } from '@/constants/teeth';
 import { TreatmentCompletionModal } from './TreatmentCompletionModal';
 import styles from './TreatmentsTable.module.css';
 
+type TreatmentStatus = NonNullable<Treatment['status']>;
+
 interface TreatmentsTableProps {
     treatments: Treatment[];
     selectedTreatments?: string[]; // Array of selected treatment IDs
     onSelectionChange?: (selectedIds: string[]) => void;
     onEdit: (treatment: Treatment) => void;
     onDelete: (treatmentId: string) => void;
-    onStatusChange: (treatmentId: string, newStatus: Treatment['status']) => void;
+    onStatusChange: (treatmentId: string, newStatus: TreatmentStatus, appointmentId?: string) => Promise<void> | void;
 }
 
 export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
@@ -33,6 +35,12 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
         treatment: Treatment | null;
     }>({ isOpen: false, treatment: null });
     const [isProcessing, setIsProcessing] = useState(false);
+
+    const [pendingLink, setPendingLink] = useState<{
+        treatmentId: string;
+        desiredStatus: TreatmentStatus;
+        appointmentId: string;
+    } | null>(null);
 
     const getTreatmentTypeName = (treatmentTypeId: string) => {
         const type = treatmentTypes.find((t) => t.id === treatmentTypeId);
@@ -99,12 +107,38 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
     };
 
     const handleStatusChange = (treatment: Treatment, newStatus: Treatment['status']) => {
+        if (!newStatus) return;
+
+        const requiresAppointment = newStatus !== 'planned';
+        const hasAppointment = Boolean(treatment.appointmentId || treatment.appointment);
+
+        if (requiresAppointment && !hasAppointment) {
+            setPendingLink({
+                treatmentId: treatment.id,
+                desiredStatus: newStatus,
+                appointmentId: '',
+            });
+            return;
+        }
+
         // If changing to completed, show confirmation modal
         if (newStatus === 'completed' && treatment.status !== 'completed') {
             setCompletionModalState({ isOpen: true, treatment });
         } else {
             // For other status changes, proceed directly
             onStatusChange(treatment.id, newStatus);
+        }
+    };
+
+    const handleConfirmPendingLink = async () => {
+        if (!pendingLink || !pendingLink.appointmentId) return;
+
+        setIsProcessing(true);
+        try {
+            await onStatusChange(pendingLink.treatmentId, pendingLink.desiredStatus, pendingLink.appointmentId);
+            setPendingLink(null);
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -158,12 +192,65 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
     if (treatments.length === 0) {
         return (
             <div className={styles.emptyState}>
-                <p>No treatments yet. Click "Add Treatment" to get started.</p>
+                <p>No treatments yet. Click &quot;Add Treatment&quot; to get started.</p>
             </div>
         );
     }
 
     const isAllSelected = selectedTreatments.length === treatments.length && treatments.length > 0;
+
+    const getPatientAppointments = (patientId: string) =>
+        appointments
+            .filter((apt) => apt.patientId === patientId || apt.patient?.id === patientId)
+            .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+
+    const renderPendingLinkUI = (treatment: Treatment) => {
+        if (!pendingLink || pendingLink.treatmentId !== treatment.id) return null;
+
+        const options = getPatientAppointments(treatment.patientId);
+
+        return (
+            <div className={styles.pendingLinkContainer}>
+                <div className={styles.pendingLinkLabel}>Select appointment to set this status</div>
+                <select
+                    className={styles.pendingLinkSelect}
+                    value={pendingLink.appointmentId}
+                    onChange={(e) =>
+                        setPendingLink({
+                            ...pendingLink,
+                            appointmentId: e.target.value,
+                        })
+                    }
+                    disabled={isProcessing}
+                >
+                    <option value="">Select an appointment...</option>
+                    {options.map((apt) => (
+                        <option key={apt.id} value={apt.id}>
+                            {apt.date} {apt.time} - {apt.treatmentType?.name || 'Appointment'}
+                        </option>
+                    ))}
+                </select>
+                <div className={styles.pendingLinkActions}>
+                    <button
+                        type="button"
+                        className={styles.pendingLinkConfirm}
+                        onClick={handleConfirmPendingLink}
+                        disabled={!pendingLink.appointmentId || isProcessing}
+                    >
+                        Confirm
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.pendingLinkCancel}
+                        onClick={() => setPendingLink(null)}
+                        disabled={isProcessing}
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <>
@@ -242,8 +329,12 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
                                     <td>
                                         <select
                                             className={`${styles.statusSelect} ${getStatusBadgeClass(treatment.status)}`}
-                                            value={treatment.status || 'planned'}
-                                            onChange={(e) => handleStatusChange(treatment, e.target.value as Treatment['status'])}
+                                            value={
+                                                pendingLink?.treatmentId === treatment.id
+                                                    ? pendingLink.desiredStatus
+                                                    : treatment.status || 'planned'
+                                            }
+                                            onChange={(e) => handleStatusChange(treatment, e.target.value as TreatmentStatus)}
                                             title={isCompleted ? "Completed treatments cannot be changed" : "Click to change status"}
                                             disabled={isCompleted}
                                         >
@@ -252,6 +343,7 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
                                             <option value="completed">Completed</option>
                                             <option value="cancelled">Cancelled</option>
                                         </select>
+                                        {renderPendingLinkUI(treatment)}
                                     </td>
                                     <td>
                                         <div className={styles.actions}>
@@ -350,8 +442,12 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
                             <div className={styles.cardFooter}>
                                 <select
                                     className={`${styles.cardStatusSelect} ${getStatusBadgeClass(treatment.status)}`}
-                                    value={treatment.status || 'planned'}
-                                    onChange={(e) => handleStatusChange(treatment, e.target.value as Treatment['status'])}
+                                    value={
+                                        pendingLink?.treatmentId === treatment.id
+                                            ? pendingLink.desiredStatus
+                                            : treatment.status || 'planned'
+                                    }
+                                    onChange={(e) => handleStatusChange(treatment, e.target.value as TreatmentStatus)}
                                     disabled={isCompleted}
                                 >
                                     <option value="planned">Planned</option>
@@ -383,6 +479,7 @@ export const TreatmentsTable: React.FC<TreatmentsTableProps> = ({
                                     </button>
                                 </div>
                             </div>
+                            {renderPendingLinkUI(treatment)}
                         </div>
                     );
                 })}

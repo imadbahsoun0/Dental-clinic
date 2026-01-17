@@ -46,6 +46,9 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
     const [totalToPayInput, setTotalToPayInput] = useState('');
     const updateSourceRef = useRef<'discount' | 'total' | null>(null);
 
+    // Queue for batch adding treatments
+    const [treatmentQueue, setTreatmentQueue] = useState<Partial<Treatment>[]>([]);
+
     // Get patient's appointments for linking
     // Handle both flat patientId and nested patient object structures
     const patientAppointments = appointments.filter(apt =>
@@ -106,6 +109,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
             setSelectedCategoryId('');
             setTotalToPay(0);
             setTotalToPayInput('');
+            setTreatmentQueue([]); // Clear queue when opening for new treatment
         }
     }, [isOpen, treatment, treatmentTypes]);
 
@@ -196,8 +200,93 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
             status: formData.status,
         };
 
-        onSave(treatmentData);
+        // If editing existing treatment, just save and close
+        if (treatment) {
+            onSave(treatmentData);
+            onClose();
+            return;
+        }
+
+        // For new treatments: save current treatment and all queued treatments
+        const allTreatments = [...treatmentQueue, treatmentData];
+        
+        allTreatments.forEach((treatment) => {
+            onSave(treatment);
+        });
+
         onClose();
+    };
+
+    const handleAddToQueue = () => {
+        if (formData.selectedTeeth.length === 0) {
+            alert('Please select at least one tooth');
+            return;
+        }
+
+        // Warn if status is not planned and no appointment is selected
+        if (formData.status !== 'planned' && !formData.appointmentId) {
+            toast('Warning: Treatment is not planned but no appointment is linked', {
+                icon: '⚠️',
+                duration: 4000,
+            });
+        }
+
+        // Calculate total price for all teeth
+        let totalPrice = 0;
+        for (const toothNum of formData.selectedTeeth) {
+            const price = findPriceForTooth(formData.treatmentTypeId, toothNum);
+            totalPrice += price;
+        }
+
+        // Get discount as dollar amount
+        const discountAmount = parseFloat(formData.discountAmount) || 0;
+
+        // Get date and doctor from appointment if linked
+        let date = formatLocalDate(new Date());
+        let drName = undefined;
+
+        if (formData.appointmentId) {
+            const linkedAppointment = appointments.find(apt => apt.id === formData.appointmentId);
+            if (linkedAppointment) {
+                date = linkedAppointment.date;
+                drName = linkedAppointment.drName;
+            }
+        }
+
+        const treatmentData: Partial<Treatment> = {
+            treatmentTypeId: formData.treatmentTypeId,
+            toothNumber: formData.selectedTeeth[0], // Legacy: use first tooth
+            toothNumbers: formData.selectedTeeth, // New: all selected teeth
+            appointmentId: formData.appointmentId || undefined,
+            totalPrice: totalPrice,
+            amountPaid: 0,
+            discount: discountAmount, // Store as dollar amount
+            date: date,
+            drName: drName,
+            status: formData.status,
+        };
+
+        // Add to queue
+        setTreatmentQueue([...treatmentQueue, treatmentData]);
+
+        // Reset form for next treatment
+        setFormData({
+            treatmentTypeId: '',
+            selectedTeeth: [],
+            discountAmount: '0',
+            appointmentId: '',
+            status: 'planned',
+        });
+        setSelectedCategoryId('');
+        setTotalToPay(0);
+        setTotalToPayInput('');
+
+        toast.success('Treatment added to queue');
+    };
+
+    const handleRemoveFromQueue = (index: number) => {
+        const newQueue = treatmentQueue.filter((_, i) => i !== index);
+        setTreatmentQueue(newQueue);
     };
 
     const isValid = formData.treatmentTypeId && formData.selectedTeeth.length > 0;
@@ -222,6 +311,12 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
         return minPrice === maxPrice ? `$${minPrice}` : `$${minPrice}-$${maxPrice}`;
     };
 
+    // Get treatment type name for queue display
+    const getTreatmentTypeName = (treatmentTypeId: string) => {
+        const treatmentType = treatmentTypes.find(t => t.id === treatmentTypeId);
+        return treatmentType?.name || 'Unknown Treatment';
+    };
+
     return (
         <Modal
             isOpen={isOpen}
@@ -232,13 +327,58 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                     <Button variant="secondary" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button onClick={handleSubmit} disabled={!isValid}>
-                        {treatment ? 'Update' : 'Add'} Treatment
+                    {!treatment && (
+                        <Button 
+                            variant="secondary" 
+                            onClick={handleAddToQueue} 
+                            disabled={!isValid}
+                        >
+                            Add to Queue ({treatmentQueue.length})
+                        </Button>
+                    )}
+                    <Button onClick={handleSubmit} disabled={!isValid && treatmentQueue.length === 0}>
+                        {treatment 
+                            ? 'Update Treatment' 
+                            : treatmentQueue.length > 0 
+                                ? `Save All (${treatmentQueue.length + (isValid ? 1 : 0)})` 
+                                : 'Add Treatment'}
                     </Button>
                 </>
             }
         >
             <div className={styles.form}>
+                {/* Queue Display */}
+                {!treatment && treatmentQueue.length > 0 && (
+                    <div className={styles.queueContainer}>
+                        <h4 className={styles.queueTitle}>
+                            Queued Treatments ({treatmentQueue.length})
+                        </h4>
+                        <div className={styles.queueList}>
+                            {treatmentQueue.map((queuedTreatment, index) => (
+                                <div key={index} className={styles.queueItem}>
+                                    <div className={styles.queueItemContent}>
+                                        <span className={styles.queueItemName}>
+                                            {getTreatmentTypeName(queuedTreatment.treatmentTypeId || '')}
+                                        </span>
+                                        <span className={styles.queueItemDetails}>
+                                            Teeth: {formatToothNumbers(queuedTreatment.toothNumbers || [])} • 
+                                            ${((queuedTreatment.totalPrice || 0) - (queuedTreatment.discount || 0)).toFixed(2)}
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveFromQueue(index)}
+                                        className={styles.queueItemRemove}
+                                        aria-label="Remove from queue"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Treatment Category Dropdown */}
                 <div>
                     <label htmlFor="treatmentCategory" style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px' }}>

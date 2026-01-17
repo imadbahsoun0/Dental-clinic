@@ -2,18 +2,24 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/core';
-import { Organization, Attachment } from '../../common/entities';
+import { Organization, Attachment, UserOrganization } from '../../common/entities';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { FilesService } from '../files/files.service';
+import { OrganizationVariablesService } from '../organization-variables/organization-variables.service';
+import { OrganizationVariableKey } from '../../common/entities/organization-variable.entity';
+import { UserRole } from '../../common/decorators/roles.decorator';
+import { UserStatus } from '../../common/entities/user-organization.entity';
 
 @Injectable()
 export class OrganizationsService {
   constructor(
     private em: EntityManager,
     private filesService: FilesService,
+    private orgVars: OrganizationVariablesService,
   ) {}
 
   async create(createOrgDto: CreateOrganizationDto, createdBy: string) {
@@ -100,6 +106,41 @@ export class OrganizationsService {
     if (updateOrgDto.isActive !== undefined)
       organization.isActive = updateOrgDto.isActive;
 
+    if (updateOrgDto.defaultDoctorId !== undefined) {
+      const normalized = updateOrgDto.defaultDoctorId || undefined;
+
+      if (normalized) {
+        const membership = await this.em.findOne(UserOrganization, {
+          orgId,
+          user: normalized,
+        });
+
+        if (!membership) {
+          throw new BadRequestException(
+            'Default doctor must belong to the current organization',
+          );
+        }
+
+        const allowedRoles: UserRole[] = [UserRole.DENTIST, UserRole.ADMIN];
+        if (!allowedRoles.includes(membership.role)) {
+          throw new BadRequestException(
+            'Default doctor must have role dentist or admin',
+          );
+        }
+
+        if (membership.status !== UserStatus.ACTIVE) {
+          throw new BadRequestException('Default doctor must be active');
+        }
+      }
+
+      await this.orgVars.setValue(
+        orgId,
+        OrganizationVariableKey.DEFAULT_DOCTOR_ID,
+        normalized,
+        updatedBy,
+      );
+    }
+
     organization.updatedBy = updatedBy;
 
     await this.em.flush();
@@ -115,6 +156,12 @@ export class OrganizationsService {
   }
 
   private async mapToResponse(org: Organization) {
+    const defaultDoctorId =
+      (await this.orgVars.getValue(
+        org.id,
+        OrganizationVariableKey.DEFAULT_DOCTOR_ID,
+      )) ?? null;
+
     let logoUrl: string | null = null;
     if (org.logo) {
       try {
@@ -134,6 +181,7 @@ export class OrganizationsService {
       logo: org.logo ? { ...org.logo, url: logoUrl } : null,
       isActive: org.isActive,
       timeZone: org.timeZone,
+      defaultDoctorId,
       createdAt: org.createdAt,
       updatedAt: org.updatedAt,
     };

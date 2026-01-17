@@ -47,10 +47,10 @@ export class OrganizationVariablesService {
       key: { $in: keys },
     });
 
-    const result: Record<OrganizationVariableKey, string | undefined> = {
-      [OrganizationVariableKey.WAHA_API_URL]: undefined,
-      [OrganizationVariableKey.WAHA_API_KEY]: undefined,
-    };
+    const result = {} as Record<OrganizationVariableKey, string | undefined>;
+    for (const key of keys) {
+      result[key] = undefined;
+    }
 
     for (const row of rows) {
       result[row.key] = row.value ?? undefined;

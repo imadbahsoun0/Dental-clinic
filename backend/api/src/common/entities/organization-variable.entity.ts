@@ -4,6 +4,7 @@ import { BaseEntity } from './base.entity';
 export enum OrganizationVariableKey {
   WAHA_API_URL = 'waha.apiUrl',
   WAHA_API_KEY = 'waha.apiKey',
+  DEFAULT_DOCTOR_ID = 'appointments.defaultDoctorId',
 }
 
 @Entity({ tableName: 'organization_variables' })
