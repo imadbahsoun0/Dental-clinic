@@ -8,6 +8,12 @@ import {
   IncomeReportTotalsDto,
 } from './dto/income-report.dto';
 import {
+  IncomePeriodDetailsDto,
+  IncomePeriodDetailsTotalsDto,
+  IncomePeriodExpenseDto,
+  IncomePeriodPaymentDto,
+} from './dto/income-period-details.dto';
+import {
   TreatmentReportDto,
   TreatmentStatusSummaryDto,
   TreatmentTypeReportRowDto,
@@ -43,6 +49,54 @@ const buildUtcRange = (startDate?: string, endDate?: string): UtcRange => {
     start: toUtcDayStart(start),
     end: toUtcDayEnd(end),
   };
+};
+
+const buildUtcRangeForPeriod = (
+  period: string,
+  groupBy: IncomeGroupBy,
+): UtcRange => {
+  if (groupBy === 'month') {
+    const match = /^([0-9]{4})-([0-9]{2})$/.exec(period);
+    const year = match ? Number(match[1]) : NaN;
+    const month1 = match ? Number(match[2]) : NaN; // 1-12
+
+    if (!Number.isFinite(year) || !Number.isFinite(month1) || month1 < 1 || month1 > 12) {
+      const fallback = new Date();
+      return {
+        start: toUtcDayStart(fallback),
+        end: toUtcDayEnd(fallback),
+      };
+    }
+
+    const start = new Date(Date.UTC(year, month1 - 1, 1, 0, 0, 0, 0));
+    const end = new Date(Date.UTC(year, month1, 0, 23, 59, 59, 999));
+    return { start, end };
+  }
+
+  const match = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(period);
+  const year = match ? Number(match[1]) : NaN;
+  const month1 = match ? Number(match[2]) : NaN;
+  const day = match ? Number(match[3]) : NaN;
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month1) ||
+    !Number.isFinite(day) ||
+    month1 < 1 ||
+    month1 > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    const fallback = new Date();
+    return {
+      start: toUtcDayStart(fallback),
+      end: toUtcDayEnd(fallback),
+    };
+  }
+
+  const start = new Date(Date.UTC(year, month1 - 1, day, 0, 0, 0, 0));
+  const end = new Date(Date.UTC(year, month1 - 1, day, 23, 59, 59, 999));
+  return { start, end };
 };
 
 const periodKey = (date: Date, groupBy: IncomeGroupBy): string => {
@@ -145,6 +199,89 @@ export class ReportsService {
       formula: 'netIncome = sum(payments.amount) - sum(expenses.amount) for the selected period (UTC)',
       totals,
       series,
+    };
+  }
+
+  async getIncomePeriodDetails(
+    orgId: string,
+    query: { period: string; groupBy: IncomeGroupBy },
+  ): Promise<IncomePeriodDetailsDto> {
+    const { start, end } = buildUtcRangeForPeriod(query.period, query.groupBy);
+
+    const payments = await this.em.find(
+      Payment,
+      {
+        orgId,
+        deletedAt: null,
+        date: { $gte: start, $lte: end },
+      },
+      {
+        populate: ['patient'],
+      },
+    );
+
+    const expenses = await this.em.find(
+      Expense,
+      {
+        orgId,
+        deletedAt: null,
+        date: { $gte: start, $lte: end },
+      },
+      {
+        populate: ['doctor'],
+      },
+    );
+
+    const totals: IncomePeriodDetailsTotalsDto = {
+      paymentsTotal: round2(payments.reduce((sum, p) => sum + Number(p.amount), 0)),
+      expensesTotal: round2(expenses.reduce((sum, e) => sum + Number(e.amount), 0)),
+      netIncome: 0,
+      paymentsCount: payments.length,
+      expensesCount: expenses.length,
+    };
+    totals.netIncome = round2(totals.paymentsTotal - totals.expensesTotal);
+
+    const paymentRows: IncomePeriodPaymentDto[] = payments
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .map((p) => ({
+        id: p.id,
+        patientId: p.patient.id,
+        patient: {
+          id: p.patient.id,
+          firstName: p.patient.firstName,
+          lastName: p.patient.lastName,
+        },
+        amount: round2(Number(p.amount)),
+        date: p.date.toISOString(),
+        paymentMethod: p.paymentMethod,
+        notes: p.notes,
+      }));
+
+    const expenseRows: IncomePeriodExpenseDto[] = expenses
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .map((e) => ({
+        id: e.id,
+        name: e.name,
+        expenseType: e.expenseType,
+        amount: round2(Number(e.amount)),
+        date: e.date.toISOString(),
+        notes: e.notes,
+        doctor: e.doctor
+          ? {
+              id: e.doctor.id,
+              name: e.doctor.name,
+            }
+          : undefined,
+      }));
+
+    return {
+      groupBy: query.groupBy,
+      period: query.period,
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+      totals,
+      payments: paymentRows,
+      expenses: expenseRows,
     };
   }
 
