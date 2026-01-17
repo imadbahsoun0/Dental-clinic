@@ -950,6 +950,67 @@ export interface IncomeReportDto {
   series: IncomeReportPointDto[];
 }
 
+export interface IncomePeriodDetailsTotalsDto {
+  paymentsTotal: number;
+  expensesTotal: number;
+  netIncome: number;
+  paymentsCount: number;
+  expensesCount: number;
+}
+
+export interface IncomePeriodPatientDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface IncomePeriodPaymentDto {
+  id: string;
+  patientId: string;
+  patient?: IncomePeriodPatientDto;
+  amount: number;
+  /** ISO date (UTC) for the payment record */
+  date: string;
+  paymentMethod: "cash" | "card" | "transfer" | "check" | "other";
+  notes?: string;
+}
+
+export interface IncomePeriodDoctorDto {
+  id: string;
+  name: string;
+}
+
+export interface IncomePeriodExpenseDto {
+  id: string;
+  name: string;
+  expenseType:
+    | "lab"
+    | "equipment"
+    | "utilities"
+    | "rent"
+    | "salary"
+    | "doctor_payment"
+    | "other";
+  amount: number;
+  /** ISO date (UTC) for the expense record */
+  date: string;
+  notes?: string;
+  doctor?: IncomePeriodDoctorDto;
+}
+
+export interface IncomePeriodDetailsDto {
+  groupBy: "day" | "month";
+  /** Period key (YYYY-MM-DD for day, YYYY-MM for month) */
+  period: string;
+  /** UTC start ISO used for the details range */
+  startDate: string;
+  /** UTC end ISO used for the details range */
+  endDate: string;
+  totals: IncomePeriodDetailsTotalsDto;
+  payments: IncomePeriodPaymentDto[];
+  expenses: IncomePeriodExpenseDto[];
+}
+
 export interface TreatmentStatusSummaryDto {
   planned: number;
   inProgress: number;
@@ -3693,6 +3754,37 @@ export class Api<
         ErrorResponse
       >({
         path: `/api/v1/reports/income`,
+        method: "GET",
+        query: query,
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Reports
+     * @name ReportsControllerGetIncomePeriodDetails
+     * @summary Income report period details (payments + expenses) for a specific day/month period key
+     * @request GET:/api/v1/reports/income/details
+     * @secure
+     */
+    reportsControllerGetIncomePeriodDetails: (
+      query: {
+        /** Period key from income report series. For 'day': YYYY-MM-DD. For 'month': YYYY-MM. */
+        period: string;
+        groupBy: "day" | "month";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<
+        StandardResponse & {
+          data?: IncomePeriodDetailsDto;
+        },
+        ErrorResponse
+      >({
+        path: `/api/v1/reports/income/details`,
         method: "GET",
         query: query,
         secure: true,
