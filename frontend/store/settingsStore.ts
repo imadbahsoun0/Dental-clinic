@@ -16,6 +16,26 @@ import {
 } from '@/lib/api';
 import toast from 'react-hot-toast';
 
+// Type helpers for API responses with object types
+type LogoAttachment = { id: string; url: string };
+type OrganizationWithTypedFields = {
+    name: string;
+    location?: string;
+    phone?: string;
+    email?: string;
+    website?: string;
+    logo?: LogoAttachment;
+    defaultDoctorId?: string | null;
+};
+
+// Helper to type StandardResponse with specific data type
+type TypedResponse<T> = {
+    success: boolean;
+    message: string;
+    data: T;
+    timestamp: string;
+};
+
 type UserRole = 'admin' | 'dentist' | 'secretary';
 type UserStatus = 'active' | 'inactive';
 
@@ -138,7 +158,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
     fetchTreatmentCategories: async () => {
         try {
             const response = await api.api.treatmentTypesControllerFindAllCategories();
-            const result = response as any; // StandardResponse
+            const result = response as TypedResponse<TreatmentCategory[]>;
             if (result.success && result.data) {
                 set({ treatmentCategories: result.data });
             }
@@ -155,7 +175,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
                 icon: categoryData.icon,
                 order: categoryData.order,
             });
-            const result = response as any;
+            const result = response as TypedResponse<TreatmentCategory>;
             if (result.success && result.data) {
                 set((state) => ({
                     treatmentCategories: [...state.treatmentCategories, result.data]
@@ -171,7 +191,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
     updateTreatmentCategory: async (id, categoryData) => {
         try {
             const response = await api.api.treatmentTypesControllerUpdateCategory(id, categoryData);
-            const result = response as any;
+            const result = response as TypedResponse<TreatmentCategory>;
             if (result.success && result.data) {
                 set((state) => ({
                     treatmentCategories: state.treatmentCategories.map((c) =>
@@ -205,7 +225,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
     fetchTreatmentTypes: async () => {
         try {
             const response = await api.api.treatmentTypesControllerFindAllTypes();
-            const result = response as any;
+            const result = response as TypedResponse<TreatmentType[]>;
             if (result.success && result.data) {
                 set({ treatmentTypes: result.data });
             }
@@ -224,13 +244,13 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
                     name: pv.name || pv.label || 'Default',
                     price: pv.price,
                     currency: 'USD',
-                    toothNumbers: (pv.toothNumbers || []) as any,
+                    toothNumbers: (pv.toothNumbers || []).map(String),
                     isDefault: pv.isDefault || false,
                 })),
                 duration: typeData.duration,
                 color: typeData.color,
             });
-            const result = response as any;
+            const result = response as TypedResponse<TreatmentType>;
             if (result.success && result.data) {
                 set((state) => ({
                     treatmentTypes: [...state.treatmentTypes, result.data]
@@ -245,19 +265,19 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
     updateTreatmentType: async (id, typeData) => {
         try {
-            const updatePayload: any = { ...typeData };
+            const updatePayload: Record<string, unknown> = { ...typeData };
             if (typeData.priceVariants) {
                 updatePayload.priceVariants = typeData.priceVariants.map(pv => ({
                     name: pv.name || pv.label || 'Default',
                     price: pv.price,
                     currency: 'USD',
-                    toothNumbers: (pv.toothNumbers || []) as any,
+                    toothNumbers: (pv.toothNumbers || []).map(String),
                     isDefault: pv.isDefault || false,
                 }));
             }
 
             const response = await api.api.treatmentTypesControllerUpdateType(id, updatePayload);
-            const result = response as any;
+            const result = response as TypedResponse<TreatmentType>;
             if (result.success && result.data) {
                 set((state) => ({
                     treatmentTypes: state.treatmentTypes.map((t) =>
@@ -296,7 +316,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
     fetchMedicalHistoryQuestions: async () => {
         try {
             const response = await api.api.medicalHistoryControllerFindAll();
-            const result = response as any;
+            const result = response as TypedResponse<MedicalHistoryQuestion[]>;
             if (result.success && result.data) {
                 set({ medicalHistoryQuestions: result.data });
             }
@@ -308,8 +328,8 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
     addMedicalHistoryQuestion: async (questionData) => {
         try {
-            const response = await api.api.medicalHistoryControllerCreate(questionData as any);
-            const result = response as any;
+            const response = await api.api.medicalHistoryControllerCreate(questionData);
+            const result = response as TypedResponse<MedicalHistoryQuestion>;
             if (result.success && result.data) {
                 set((state) => ({
                     medicalHistoryQuestions: [...state.medicalHistoryQuestions, result.data]
@@ -324,8 +344,8 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
     updateMedicalHistoryQuestion: async (id, questionData) => {
         try {
-            const response = await api.api.medicalHistoryControllerUpdate(id, questionData as any);
-            const result = response as any;
+            const response = await api.api.medicalHistoryControllerUpdate(id, questionData);
+            const result = response as TypedResponse<MedicalHistoryQuestion>;
             if (result.success && result.data) {
                 set((state) => ({
                     medicalHistoryQuestions: state.medicalHistoryQuestions.map((q) =>
@@ -431,7 +451,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
     fetchClinicBranding: async () => {
         try {
             const result = await api.api.organizationsControllerGetCurrent();
-            const org = result.data;
+            const org = result.data as OrganizationWithTypedFields | undefined;
             if (!org) return;
 
             set({
@@ -441,7 +461,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
                     phone: org.phone || '',
                     email: org.email || '',
                     website: org.website,
-                    logo: org.logo?.url ?? null,
+                    logo: org.logo?.url,
                     logoId: org.logo?.id,
                     defaultDoctorId: org.defaultDoctorId ?? null,
                 },
@@ -463,11 +483,11 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
             if (branding.logoId !== undefined) updateDto.logoId = branding.logoId;
 
             if (branding.defaultDoctorId !== undefined) {
-                updateDto.defaultDoctorId = branding.defaultDoctorId || null;
+                updateDto.defaultDoctorId = (branding.defaultDoctorId as unknown) || null;
             }
 
             const result = await api.api.organizationsControllerUpdateCurrent(updateDto);
-            const org = result.data;
+            const org = result.data as OrganizationWithTypedFields | undefined;
 
             // Keep local state consistent with server response
             if (org) {
@@ -478,7 +498,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
                         phone: org.phone || '',
                         email: org.email || '',
                         website: org.website,
-                        logo: org.logo?.url ?? null,
+                        logo: org.logo?.url,
                         logoId: org.logo?.id,
                         defaultDoctorId: org.defaultDoctorId ?? null,
                     },
@@ -500,9 +520,9 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
     uploadLogo: async (file) => {
         try {
-            const response = await api.api.filesControllerUploadFile({ file: file as any }) as any;
-            const result = response as any;
-            const attachment = result.data || result;
+            const response = await api.api.filesControllerUploadFile({ file }) as unknown;
+            const result = response as TypedResponse<LogoAttachment>;
+            const attachment = result.data || (response as LogoAttachment);
             return { id: attachment.id, url: attachment.url };
         } catch (error) {
             console.error('Failed to upload logo:', error);
@@ -527,7 +547,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
     fetchNotificationSettings: async () => {
         try {
             const response = await api.api.notificationSettingsControllerGet();
-            const result = response as any;
+            const result = response as TypedResponse<NotificationSettings>;
             if (result.success && result.data) {
                 set({ notificationSettings: result.data });
             }
@@ -538,8 +558,9 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => ({
 
     updateNotificationSettings: async (settings) => {
         try {
-            const response = await api.api.notificationSettingsControllerUpdate(settings as any);
-            const result = response as any;
+            // Cast to unknown first to bypass strict type checking, as the DTO requires all fields
+            const response = await api.api.notificationSettingsControllerUpdate(settings as unknown as Parameters<typeof api.api.notificationSettingsControllerUpdate>[0]);
+            const result = response as TypedResponse<NotificationSettings>;
             if (result.success && result.data) {
                 set({ notificationSettings: result.data });
                 toast.success('Notification settings updated successfully');
