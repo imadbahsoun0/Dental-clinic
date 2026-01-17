@@ -5,6 +5,8 @@ import {
   Attachment,
   Treatment,
   Payment,
+  Appointment,
+  Message,
   User,
 } from '../../common/entities';
 import { MedicalHistoryQuestion } from '../../common/entities/medical-history-question.entity';
@@ -170,22 +172,57 @@ export class PatientsService {
   }
 
   async remove(id: string, orgId: string, deletedBy: string) {
-    const patient = await this.em.findOne(Patient, {
-      id,
-      orgId,
-      deletedAt: null,
+    return this.em.transactional(async (em) => {
+      const patient = await em.findOne(Patient, {
+        id,
+        orgId,
+        deletedAt: null,
+      });
+
+      if (!patient) {
+        throw new NotFoundException('Patient not found');
+      }
+
+      const deletedAt = new Date();
+
+      // Soft delete patient
+      patient.deletedAt = deletedAt;
+      patient.deletedBy = deletedBy;
+
+      // Cascade soft delete for patient-owned records
+      await em.nativeUpdate(
+        Treatment,
+        { patient: { id }, orgId, deletedAt: null },
+        { deletedAt, deletedBy },
+      );
+
+      await em.nativeUpdate(
+        Payment,
+        { patient: { id }, orgId, deletedAt: null },
+        { deletedAt, deletedBy },
+      );
+
+      await em.nativeUpdate(
+        Appointment,
+        { patient: { id }, orgId, deletedAt: null },
+        { deletedAt, deletedBy },
+      );
+
+      await em.nativeUpdate(
+        Message,
+        { patient: { id }, orgId, deletedAt: null },
+        { deletedAt, deletedBy },
+      );
+
+      await em.nativeUpdate(
+        MedicalHistoryAudit,
+        { patient: { id }, orgId, deletedAt: null },
+        { deletedAt, deletedBy },
+      );
+
+      await em.flush();
+      return { message: 'Patient deleted successfully' };
     });
-
-    if (!patient) {
-      throw new NotFoundException('Patient not found');
-    }
-
-    // Soft delete
-    patient.deletedAt = new Date();
-    patient.deletedBy = deletedBy;
-
-    await this.em.flush();
-    return { message: 'Patient deleted successfully' };
   }
 
   async search(query: string, orgId: string) {
