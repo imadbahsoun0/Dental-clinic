@@ -48,7 +48,7 @@ export class UsersController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN) // Only admins can view all users
+  @Roles(UserRole.ADMIN, UserRole.SECRETARY) // Admins and secretaries can view users (needed for appointment creation)
   @ApiOperation({ summary: 'Get all users in the organization' })
   @ApiStandardResponse(UserResponseDto, true)
   async findAll(
@@ -82,7 +82,7 @@ export class UsersController {
   }
 
   @Get('dentists')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.SECRETARY)
   @ApiOperation({ summary: 'Get all dentists in the organization' })
   @ApiStandardResponse(Object, true)
   async getDentists(@CurrentUser() user: CurrentUserData) {
