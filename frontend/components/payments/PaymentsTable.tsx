@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
-import { Payment } from '@/types';
+import React, { useEffect, useState } from 'react';
+import { Payment, Message } from '@/types';
 import { PaymentReceiptStatus } from './PaymentReceiptStatus';
+import { api } from '@/lib/api';
 import styles from './PaymentsTable.module.css';
 
 interface PaymentsTableProps {
@@ -16,6 +17,34 @@ export const PaymentsTable: React.FC<PaymentsTableProps> = ({
     onEdit,
     onDelete,
 }) => {
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [loadingMessages, setLoadingMessages] = useState(false);
+
+    // Fetch all payment receipt messages once
+    useEffect(() => {
+        const fetchMessages = async () => {
+            try {
+                setLoadingMessages(true);
+                const response = await api.api.messagesControllerFindAll({
+                    type: 'payment_receipt',
+                });
+                
+                if (response.data) {
+                    const messagesData = (response.data as { data?: Message[] }).data || [];
+                    setMessages(messagesData);
+                }
+            } catch (error) {
+                console.error('Failed to fetch payment receipt messages:', error);
+            } finally {
+                setLoadingMessages(false);
+            }
+        };
+
+        if (payments.length > 0) {
+            fetchMessages();
+        }
+    }, [payments.length > 0]);
+
     const getPaymentMethodLabel = (method: Payment['paymentMethod']) => {
         const labels = {
             cash: 'Cash',
@@ -25,6 +54,26 @@ export const PaymentsTable: React.FC<PaymentsTableProps> = ({
             other: 'Other',
         };
         return labels[method];
+    };
+
+    // Helper to get message for a payment
+    const getMessageForPayment = (paymentId: string) => {
+        return messages.find(msg => msg.metadata?.paymentId === paymentId);
+    };
+
+    const refreshMessages = async () => {
+        try {
+            const response = await api.api.messagesControllerFindAll({
+                type: 'payment_receipt',
+            });
+            
+            if (response.data) {
+                const messagesData = (response.data as { data?: Message[] }).data || [];
+                setMessages(messagesData);
+            }
+        } catch (error) {
+            console.error('Failed to refresh payment receipt messages:', error);
+        }
     };
 
     if (payments.length === 0) {
@@ -62,7 +111,12 @@ export const PaymentsTable: React.FC<PaymentsTableProps> = ({
                                 </td>
                                 <td>{payment.notes || '-'}</td>
                                 <td>
-                                    <PaymentReceiptStatus paymentId={payment.id} />
+                                    <PaymentReceiptStatus 
+                                        paymentId={payment.id}
+                                        message={getMessageForPayment(payment.id)}
+                                        onRefresh={refreshMessages}
+                                        loading={loadingMessages}
+                                    />
                                 </td>
                                 <td>
                                     <div className={styles.actions}>
@@ -115,7 +169,12 @@ export const PaymentsTable: React.FC<PaymentsTableProps> = ({
                             <div className={styles.cardRow}>
                                 <span className={styles.cardLabel}>Receipt Status</span>
                                 <span className={styles.cardValue}>
-                                    <PaymentReceiptStatus paymentId={payment.id} />
+                                    <PaymentReceiptStatus 
+                                        paymentId={payment.id}
+                                        message={getMessageForPayment(payment.id)}
+                                        onRefresh={refreshMessages}
+                                        loading={loadingMessages}
+                                    />
                                 </span>
                             </div>
                         </div>

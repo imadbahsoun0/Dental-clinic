@@ -19,7 +19,7 @@ export const NotificationsTab: React.FC = () => {
 
     useEffect(() => {
         fetchNotificationSettings();
-    }, [fetchNotificationSettings]);
+    }, []);
 
     useEffect(() => {
         if (notificationSettings) {

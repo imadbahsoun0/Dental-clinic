@@ -9,6 +9,7 @@ import { Select } from '@/components/common/Select';
 import { api } from '@/lib/api';
 import { useSettingsStore } from '@/store/settingsStore';
 import { MedicalHistoryStatus } from '@/components/patients/MedicalHistoryStatus';
+import { Message } from '@/types';
 import toast from 'react-hot-toast';
 import styles from './notifications.module.css';
 
@@ -92,7 +93,10 @@ export default function NotificationsPage() {
     const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
     
     const notificationSettings = useSettingsStore((state) => state.notificationSettings);
-    const fetchNotificationSettings = useSettingsStore((state) => state.fetchNotificationSettings);
+    
+    // Medical history messages
+    const [medicalHistoryMessages, setMedicalHistoryMessages] = useState<Message[]>([]);
+    const [loadingMessages, setLoadingMessages] = useState(false);
     
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -106,10 +110,6 @@ export default function NotificationsPage() {
     const [endDate, setEndDate] = useState('');
 
     useEffect(() => {
-        fetchNotificationSettings();
-    }, []);
-
-    useEffect(() => {
         if (activeTab === 'follow-ups') {
             fetchFollowUps();
         } else if (activeTab === 'unpaid') {
@@ -118,6 +118,35 @@ export default function NotificationsPage() {
             fetchMissingMedicalHistoryPatients();
         }
     }, [activeTab, searchQuery, statusFilter, startDate, endDate, currentPage, pageSize]);
+    
+    // Fetch medical history messages when on missing-history tab
+    useEffect(() => {
+        if (activeTab === 'missing-history' && missingHistoryPatients.length > 0) {
+            fetchMedicalHistoryMessages();
+        }
+    }, [activeTab, missingHistoryPatients.length > 0]);
+    
+    const fetchMedicalHistoryMessages = async () => {
+        try {
+            setLoadingMessages(true);
+            const response = await api.api.messagesControllerFindAll({
+                type: 'medical_history',
+            });
+            
+            if (response.data) {
+                const messagesData = (response.data as { data?: Message[] }).data || [];
+                setMedicalHistoryMessages(messagesData);
+            }
+        } catch (error) {
+            console.error('Failed to fetch medical history messages:', error);
+        } finally {
+            setLoadingMessages(false);
+        }
+    };
+    
+    const getMessageForPatient = (patientId: string) => {
+        return medicalHistoryMessages.find(msg => msg.patientId === patientId);
+    };
 
     const isFollowUpEnabled = notificationSettings.notificationToggles?.follow_up ?? true;
     const isPaymentOverdueEnabled = notificationSettings.notificationToggles?.payment_overdue ?? true;
@@ -724,7 +753,12 @@ export default function NotificationsPage() {
                                                     <td>{patient.mobileNumber}</td>
                                                     <td>{patient.email || 'N/A'}</td>
                                                     <td>
-                                                        <MedicalHistoryStatus patientId={patient.id} />
+                                                        <MedicalHistoryStatus 
+                                                            patientId={patient.id}
+                                                            message={getMessageForPatient(patient.id)}
+                                                            onRefresh={fetchMedicalHistoryMessages}
+                                                            loading={loadingMessages}
+                                                        />
                                                     </td>
                                                 </tr>
                                             ))}
@@ -755,7 +789,12 @@ export default function NotificationsPage() {
                                             </div>
 
                                             <div className={styles.notificationCardFooter}>
-                                                <MedicalHistoryStatus patientId={patient.id} />
+                                                <MedicalHistoryStatus 
+                                                    patientId={patient.id}
+                                                    message={getMessageForPatient(patient.id)}
+                                                    onRefresh={fetchMedicalHistoryMessages}
+                                                    loading={loadingMessages}
+                                                />
                                             </div>
                                         </div>
                                     ))}

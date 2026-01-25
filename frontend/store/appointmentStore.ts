@@ -114,6 +114,9 @@ export const useAppointmentStore = create<AppointmentStore>()((set, get) => ({
                 total: state.total + 1,
                 loading: false,
             }));
+            
+            // Refresh today's count
+            get().fetchTodayStats();
         } catch (error) {
             console.error('Failed to add appointment:', error);
             set({ error: 'Failed to add appointment', loading: false });
@@ -130,6 +133,9 @@ export const useAppointmentStore = create<AppointmentStore>()((set, get) => ({
                     a.id === id ? { ...a, ...appointmentData, updatedAt: new Date().toISOString() } : a
                 ),
             }));
+            
+            // Refresh today's count in case the date changed
+            get().fetchTodayStats();
         } catch (error) {
             console.error('Failed to update appointment:', error);
             throw error;
@@ -144,6 +150,9 @@ export const useAppointmentStore = create<AppointmentStore>()((set, get) => ({
                 appointments: state.appointments.filter((a) => a.id !== id),
                 total: state.total - 1,
             }));
+            
+            // Refresh today's count
+            get().fetchTodayStats();
         } catch (error) {
             console.error('Failed to delete appointment:', error);
             throw error;

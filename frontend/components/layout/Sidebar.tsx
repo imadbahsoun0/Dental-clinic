@@ -54,11 +54,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
     const fetchTodayStats = useAppointmentStore((state) => state.fetchTodayStats);
 
     React.useEffect(() => {
+        // Only fetch once when sidebar mounts
         fetchTodayStats();
-        // Poll every minute to keep the count fresh
-        const interval = setInterval(fetchTodayStats, 60000);
-        return () => clearInterval(interval);
-    }, [fetchTodayStats]);
+    }, []);
 
     const handleLogout = () => {
         logout();

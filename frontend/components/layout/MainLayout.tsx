@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { useSettingsStore } from '@/store/settingsStore';
 import styles from './MainLayout.module.css';
 
 interface MainLayoutProps {
@@ -13,6 +14,12 @@ interface MainLayoutProps {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const fetchNotificationSettings = useSettingsStore((state) => state.fetchNotificationSettings);
+
+    // Load notification settings once when MainLayout mounts (after authentication)
+    useEffect(() => {
+        fetchNotificationSettings();
+    }, []);
 
     const toggleSidebar = () => {
         setSidebarOpen(!sidebarOpen);

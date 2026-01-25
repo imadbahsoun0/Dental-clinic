@@ -11,6 +11,8 @@ import { usePatientStore } from '@/store/patientStore';
 import { PatientModal } from '@/components/patients/PatientModal';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { MedicalHistoryStatus } from '@/components/patients/MedicalHistoryStatus';
+import { Message } from '@/types';
+import { api } from '@/lib/api';
 import styles from './patients.module.css';
 import toast from 'react-hot-toast';
 
@@ -37,6 +39,29 @@ export default function PatientsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [searchQuery, setSearchQuery] = useState('');
+    
+    // Medical history messages
+    const [medicalHistoryMessages, setMedicalHistoryMessages] = useState<Message[]>([]);
+    const [loadingMessages, setLoadingMessages] = useState(false);
+
+    // Fetch medical history messages
+    const fetchMedicalHistoryMessages = async () => {
+        try {
+            setLoadingMessages(true);
+            const response = await api.api.messagesControllerFindAll({
+                type: 'medical_history',
+            });
+            
+            if (response.data) {
+                const messagesData = (response.data as { data?: Message[] }).data || [];
+                setMedicalHistoryMessages(messagesData);
+            }
+        } catch (error) {
+            console.error('Failed to fetch medical history messages:', error);
+        } finally {
+            setLoadingMessages(false);
+        }
+    };
 
     // Fetch patients on mount and when params change
     useEffect(() => {
@@ -46,6 +71,18 @@ export default function PatientsPage() {
         }, 300);
         return () => clearTimeout(timer);
     }, [fetchPatients, currentPage, pageSize, searchQuery]);
+    
+    // Fetch medical history messages when patients load
+    useEffect(() => {
+        if (patients.length > 0) {
+            fetchMedicalHistoryMessages();
+        }
+    }, [patients.length > 0]);
+    
+    // Helper to get message for a patient
+    const getMessageForPatient = (patientId: string) => {
+        return medicalHistoryMessages.find(msg => msg.patientId === patientId);
+    };
 
     const handleSearchChange = (value: string) => {
         setSearchQuery(value);
@@ -206,7 +243,12 @@ export default function PatientsPage() {
                                                     : 'N/A'}
                                             </td>
                                             <td>
-                                                <MedicalHistoryStatus patientId={patient.id} />
+                                                <MedicalHistoryStatus 
+                                                    patientId={patient.id}
+                                                    message={getMessageForPatient(patient.id)}
+                                                    onRefresh={fetchMedicalHistoryMessages}
+                                                    loading={loadingMessages}
+                                                />
                                             </td>
                                             <td>
                                                 <div className={styles.actionButtons}>
@@ -369,7 +411,12 @@ export default function PatientsPage() {
                                                 Medical History
                                             </div>
                                             <div className={styles.cardValue}>
-                                                <MedicalHistoryStatus patientId={patient.id} />
+                                                <MedicalHistoryStatus 
+                                                    patientId={patient.id}
+                                                    message={getMessageForPatient(patient.id)}
+                                                    onRefresh={fetchMedicalHistoryMessages}
+                                                    loading={loadingMessages}
+                                                />
                                             </div>
                                         </div>
                                     </div>

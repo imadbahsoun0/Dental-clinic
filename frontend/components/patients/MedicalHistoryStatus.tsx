@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { api } from '@/lib/api';
 import { Badge } from '@/components/common/Badge';
 import { Message } from '@/types';
@@ -10,45 +10,26 @@ import styles from './MedicalHistoryStatus.module.css';
 
 interface MedicalHistoryStatusProps {
     patientId: string;
+    message?: Message;
+    onRefresh?: () => void | Promise<void>;
+    loading?: boolean;
 }
 
-export const MedicalHistoryStatus: React.FC<MedicalHistoryStatusProps> = ({ patientId }) => {
-    const [loading, setLoading] = useState(true);
+export const MedicalHistoryStatus: React.FC<MedicalHistoryStatusProps> = ({ 
+    patientId,
+    message,
+    onRefresh,
+    loading = false
+}) => {
     const [sending, setSending] = useState(false);
-    const [messageStatus, setMessageStatus] = useState<'sent' | 'failed' | 'not-sent'>('not-sent');
-    const [messageId, setMessageId] = useState<string | null>(null);
     const notificationSettings = useSettingsStore((state) => state.notificationSettings);
-    const fetchNotificationSettings = useSettingsStore((state) => state.fetchNotificationSettings);
-
-    useEffect(() => {
-        fetchMessageStatus();
-        fetchNotificationSettings();
-    }, [patientId]);
 
     const isNotificationEnabled = notificationSettings.notificationToggles?.medical_history ?? true;
-
-    const fetchMessageStatus = async () => {
-        try {
-            setLoading(true);
-            const response = await api.api.messagesControllerFindAll({
-                patientId,
-                type: 'medical_history',
-            });
-            
-            if (response.data && response.data.length > 0) {
-                const messages = response.data as unknown as Message[];
-                const latestMessage = messages[0]; // Assuming sorted by newest first
-                setMessageId(latestMessage.id);
-                setMessageStatus(latestMessage.status === 'sent' ? 'sent' : 'failed');
-            } else {
-                setMessageStatus('not-sent');
-            }
-        } catch (error) {
-            console.error('Failed to fetch message status:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    
+    const messageStatus = message 
+        ? (message.status === 'sent' ? 'sent' : 'failed')
+        : 'not-sent';
+    const messageId = message?.id || null;
 
     const handleSendMedicalHistory = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -57,7 +38,7 @@ export const MedicalHistoryStatus: React.FC<MedicalHistoryStatusProps> = ({ pati
             setSending(true);
             await api.api.patientsControllerSendMedicalHistoryReminder(patientId);
             toast.success('Medical history link sent successfully');
-            fetchMessageStatus(); // Refresh status
+            if (onRefresh) await onRefresh(); // Refresh messages from parent
         } catch (error) {
             toast.error('Failed to send medical history link');
             console.error(error);
@@ -75,7 +56,7 @@ export const MedicalHistoryStatus: React.FC<MedicalHistoryStatusProps> = ({ pati
             setSending(true);
             await api.api.messagesControllerResendMessage(messageId);
             toast.success('Medical history link resent successfully');
-            fetchMessageStatus(); // Refresh status
+            if (onRefresh) await onRefresh(); // Refresh messages from parent
         } catch (error) {
             toast.error('Failed to resend medical history link');
             console.error(error);

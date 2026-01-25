@@ -83,7 +83,7 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
             }
         };
         loadPatient();
-    }, [patientId, fetchPatient, setSelectedPatient]);
+    }, [patientId]);
 
     // Fetch reminders
     const fetchReminders = async () => {
@@ -94,27 +94,10 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
                 page: 1,
                 limit: 1000
             });
-
-            const isRecord = (value: unknown): value is Record<string, unknown> =>
-                typeof value === 'object' && value !== null;
-
-            const isMessage = (value: unknown): value is Message => {
-                if (!isRecord(value)) return false;
-                return (
-                    typeof value.id === 'string' &&
-                    typeof value.patientId === 'string' &&
-                    typeof value.type === 'string' &&
-                    typeof value.content === 'string' &&
-                    typeof value.status === 'string' &&
-                    typeof value.createdAt === 'string' &&
-                    typeof value.updatedAt === 'string'
-                );
-            };
             
-            if (response.success) {
-                const raw = response.data;
-                const parsed = Array.isArray(raw) ? raw.filter(isMessage) : [];
-                setReminders(parsed);
+            if (response.success && response.data) {
+                const messagesData = (response.data as { data?: Message[] }).data || [];
+                setReminders(messagesData);
             } else setReminders([]);
         } catch (error) {
             console.error('Error fetching reminders:', error);
@@ -136,7 +119,7 @@ export default function TreatmentsPage({ params }: { params: Promise<{ patientId
         // Fetch specific patient's appointments for linking
         fetchAppointments(1, 1000, undefined, undefined, undefined, patientId);
         fetchReminders();
-    }, [patientId, fetchTreatments, fetchPayments, fetchTreatmentCategories, fetchTreatmentTypes, fetchUsers, fetchMedicalHistoryQuestions, fetchAppointments]);
+    }, [patientId]);
 
     // Calculate totals (excluding planned and cancelled treatments from balance)
     const totalPrice = treatments.filter( t => t.status !== 'planned' && t.status !== 'cancelled').reduce((sum, t) => sum + (t.totalPrice - t.discount), 0);
